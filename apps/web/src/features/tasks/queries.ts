@@ -12,6 +12,7 @@ import {
   createTask,
   deleteTask,
   listTasks,
+  taskKeys,
   toggleTask,
   updateTask,
 } from '../../entities/task/index.js'
@@ -19,15 +20,10 @@ import {
 /**
  * Estado de servidor da feature de tarefas.
  *
- * As chaves ficam num lugar só para que invalidar seja previsível: qualquer escrita
- * derruba `['tasks']` inteiro, e as listas de projeto/etiqueta só quando a contagem
- * delas puder ter mudado.
+ * As chaves vêm de `entities/task` porque o planner lê a mesma entidade: chave
+ * duplicada em duas features é cache que diverge sem ninguém perceber. Qualquer
+ * escrita derruba `['tasks']` inteiro, e as de projeto quando a contagem muda.
  */
-export const taskKeys = {
-  all: ['tasks'] as const,
-  list: (query: Partial<ListTasksQuery>) => ['tasks', query] as const,
-}
-
 export const projectKeys = { all: ['projects'] as const }
 export const labelKeys = { all: ['labels'] as const }
 

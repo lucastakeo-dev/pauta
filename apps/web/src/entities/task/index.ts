@@ -1,4 +1,5 @@
 export { createTask, deleteTask, listTasks, toggleTask, updateTask } from './api.js'
+export { taskKeys } from './keys.js'
 export {
   daysUntil,
   dueLabel,
