@@ -5,10 +5,16 @@ import {
   blockGeometry,
   dayBounds,
   dayLabel,
+  durationInMinutes,
+  fitBlockInDay,
   isSameDay,
   MIN_BLOCK_MINUTES,
+  MIN_DURATION_MINUTES,
   minutesFromDayStart,
   nowOffset,
+  resizeEnd,
+  snapMinutes,
+  timeFromOffset,
   toPlannerItems,
 } from './model.js'
 
@@ -240,5 +246,91 @@ describe('isSameDay', () => {
   it('compara o dia, não o instante', () => {
     expect(isSameDay(at(15, 0), at(15, 23, 59))).toBe(true)
     expect(isSameDay(at(15, 23, 59), at(16, 0))).toBe(false)
+  })
+})
+
+describe('snapMinutes', () => {
+  it('arredonda para o encaixe mais próximo', () => {
+    expect(snapMinutes(0)).toBe(0)
+    expect(snapMinutes(7)).toBe(0)
+    expect(snapMinutes(8)).toBe(15)
+    expect(snapMinutes(22)).toBe(15)
+    expect(snapMinutes(23)).toBe(30)
+    expect(snapMinutes(60)).toBe(60)
+  })
+})
+
+describe('timeFromOffset', () => {
+  it('converte posição em horário encaixado', () => {
+    // 9h em pixels, mais um pouco: encaixa nos 15 minutos mais próximos.
+    const t = timeFromOffset(9 * HOUR + 10, DIA, HOUR)
+
+    expect(t.getHours()).toBe(9)
+    expect(t.getMinutes()).toBe(15)
+  })
+
+  it('não deixa passar do topo do dia', () => {
+    // Soltar acima da grade vira meia-noite, não o dia anterior.
+    const t = timeFromOffset(-500, DIA, HOUR)
+
+    expect(t.getHours()).toBe(0)
+    expect(t.getDate()).toBe(15)
+  })
+
+  it('não deixa passar do fim do dia', () => {
+    const t = timeFromOffset(999 * HOUR, DIA, HOUR)
+
+    expect(t.getTime()).toBe(dayBounds(DIA).end.getTime())
+  })
+})
+
+describe('fitBlockInDay', () => {
+  it('mantém a duração pedida', () => {
+    const { start, end } = fitBlockInDay(at(15, 9), 90, DIA)
+
+    expect(durationInMinutes(start, end)).toBe(90)
+    expect(start.getHours()).toBe(9)
+  })
+
+  it('recua o bloco que vazaria para o dia seguinte', () => {
+    // Uma hora solta às 23h30 termina à meia-noite, começando às 23h.
+    const { start, end } = fitBlockInDay(at(15, 23, 30), 60, DIA)
+
+    expect(start.getHours()).toBe(23)
+    expect(start.getMinutes()).toBe(0)
+    expect(end.getTime()).toBe(dayBounds(DIA).end.getTime())
+  })
+
+  it('aplica o piso de duração', () => {
+    const { start, end } = fitBlockInDay(at(15, 9), 1, DIA)
+
+    expect(durationInMinutes(start, end)).toBe(MIN_DURATION_MINUTES)
+  })
+
+  it('não deixa começar antes da meia-noite', () => {
+    const { start } = fitBlockInDay(at(14, 23), 60, DIA)
+
+    expect(start.getTime()).toBe(dayBounds(DIA).start.getTime())
+  })
+})
+
+describe('resizeEnd', () => {
+  it('estica até a posição solta', () => {
+    const fim = resizeEnd(at(15, 9), 11 * HOUR, DIA, HOUR)
+
+    expect(fim.getHours()).toBe(11)
+  })
+
+  it('respeita a duração mínima ao encolher demais', () => {
+    // Arrastar a borda para cima do início não pode inverter o bloco.
+    const fim = resizeEnd(at(15, 9), 8 * HOUR, DIA, HOUR)
+
+    expect(durationInMinutes(at(15, 9), fim)).toBe(MIN_DURATION_MINUTES)
+  })
+
+  it('não passa da meia-noite', () => {
+    const fim = resizeEnd(at(15, 23), 999 * HOUR, DIA, HOUR)
+
+    expect(fim.getTime()).toBe(dayBounds(DIA).end.getTime())
   })
 })

@@ -1,3 +1,4 @@
+import { useDroppable } from '@dnd-kit/core'
 import { useEffect, useRef, useState } from 'react'
 import {
   HOURS_IN_DAY,
@@ -7,6 +8,7 @@ import {
   WORKDAY_START_HOUR,
 } from '../../entities/planner/index.js'
 import { cn } from '../../shared/lib/cn.js'
+import { GRID_DROPPABLE_ID } from './planner-dnd.js'
 import { useDayPlanner } from './queries.js'
 import { TimeBlock } from './time-block.js'
 
@@ -33,6 +35,10 @@ export function DayGrid({ day }: DayGridProps) {
   const { items, isPending, isError } = useDayPlanner(day)
   const scrollRef = useRef<HTMLDivElement>(null)
   const [now, setNow] = useState(() => new Date())
+
+  // O alvo é a área de 24h, não o container com rolagem: assim `over.rect.top` já
+  // desconta a rolagem, e a conta de "onde caiu" vale em qualquer posição do scroll.
+  const { setNodeRef: setDropRef } = useDroppable({ id: GRID_DROPPABLE_ID })
 
   // O marcador precisa andar sozinho: sem isto ele congela na hora em que a aba abriu.
   useEffect(() => {
@@ -72,7 +78,12 @@ export function DayGrid({ day }: DayGridProps) {
       ) : null}
 
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
-        <div className="relative" style={{ height: HOURS_IN_DAY * HOUR_HEIGHT }}>
+        <div
+          ref={setDropRef}
+          data-planner-grid
+          className="relative"
+          style={{ height: HOURS_IN_DAY * HOUR_HEIGHT }}
+        >
           {HOURS.map((hour) => (
             <div
               key={hour}
