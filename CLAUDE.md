@@ -2,7 +2,7 @@
 
 Workspace pessoal keyboard-first no formato do [routine.co](https://routine.co): **planner do dia
 com time-blocking, tarefas, captura rápida e notas** num lugar só. Uso próprio, com app mobile
-previsto para depois. **Fases 0 e 1 concluídas** (fundação + tarefas).
+previsto para depois. **Fases 0, 1 e 2 concluídas** (fundação, tarefas e planner do dia).
 
 Fontes da verdade: **PRODUCT.md** (produto e decisões), **DESIGN.md** (sistema visual).
 Decisões novas de produto entram no PRODUCT.md — não neste arquivo.

@@ -7,15 +7,20 @@ import {
   dayLabel,
   durationInMinutes,
   fitBlockInDay,
+  fromDateTimeInputs,
   isSameDay,
+  layoutOverlaps,
   MIN_BLOCK_MINUTES,
   MIN_DURATION_MINUTES,
   minutesFromDayStart,
   nowOffset,
+  type PlannerItem,
   resizeEnd,
   snapMinutes,
   timeFromOffset,
+  toDateInputValue,
   toPlannerItems,
+  toTimeInputValue,
 } from './model.js'
 
 const HOUR = 56
@@ -332,5 +337,96 @@ describe('resizeEnd', () => {
     const fim = resizeEnd(at(15, 23), 999 * HOUR, DIA, HOUR)
 
     expect(fim.getTime()).toBe(dayBounds(DIA).end.getTime())
+  })
+})
+
+describe('layoutOverlaps', () => {
+  function item(id: string, startHour: number, endHour: number): PlannerItem {
+    return {
+      id,
+      kind: 'event',
+      title: id,
+      startsAt: at(15, startHour),
+      endsAt: at(15, endHour),
+      color: null,
+      done: false,
+      priority: null,
+      continuesFromPreviousDay: false,
+      continuesToNextDay: false,
+    }
+  }
+
+  it('deixa item sozinho ocupando a largura toda', () => {
+    const [a] = layoutOverlaps([item('a', 9, 10)])
+
+    expect(a).toMatchObject({ columnIndex: 0, columnCount: 1 })
+  })
+
+  it('divide dois sobrepostos em duas colunas', () => {
+    const saida = layoutOverlaps([item('a', 9, 11), item('b', 10, 12)])
+
+    expect(saida.map((i) => [i.id, i.columnIndex, i.columnCount])).toEqual([
+      ['a', 0, 2],
+      ['b', 1, 2],
+    ])
+  })
+
+  it('não divide o que apenas encosta', () => {
+    // 9–10 e 10–11 se tocam mas não se sobrepõem: cada um usa a largura toda.
+    const saida = layoutOverlaps([item('a', 9, 10), item('b', 10, 11)])
+
+    expect(saida.every((i) => i.columnCount === 1)).toBe(true)
+  })
+
+  it('reaproveita a coluna livre', () => {
+    // c começa depois de a terminar, então volta para a coluna 0.
+    const saida = layoutOverlaps([item('a', 9, 10), item('b', 9, 12), item('c', 10, 11)])
+    const coluna = (id: string) => saida.find((i) => i.id === id)?.columnIndex
+
+    expect(coluna('a')).toBe(0)
+    expect(coluna('b')).toBe(1)
+    expect(coluna('c')).toBe(0)
+    expect(saida.find((i) => i.id === 'c')?.columnCount).toBe(2)
+  })
+
+  it('agrupa em cadeia: a toca b, b toca c', () => {
+    // a e c não se sobrepõem, mas b liga os dois — os três dividem a mesma largura.
+    const saida = layoutOverlaps([item('a', 9, 10), item('b', 9, 12), item('c', 11, 13)])
+
+    expect(saida.every((i) => i.columnCount === 2)).toBe(true)
+  })
+
+  it('empilha três simultâneos em três colunas', () => {
+    const saida = layoutOverlaps([item('a', 9, 12), item('b', 9, 12), item('c', 9, 12)])
+
+    expect(saida.map((i) => i.columnIndex)).toEqual([0, 1, 2])
+    expect(saida.every((i) => i.columnCount === 3)).toBe(true)
+  })
+
+  it('devolve lista vazia para entrada vazia', () => {
+    expect(layoutOverlaps([])).toEqual([])
+  })
+})
+
+describe('campos nativos de data e hora', () => {
+  it('formata para os valores que o input espera', () => {
+    const instante = at(15, 9, 5)
+
+    expect(toDateInputValue(instante)).toBe('2026-09-15')
+    expect(toTimeInputValue(instante)).toBe('09:05')
+  })
+
+  it('vai e volta sem perder o instante', () => {
+    const original = at(15, 14, 30)
+    const voltou = fromDateTimeInputs(toDateInputValue(original), toTimeInputValue(original))
+
+    expect(voltou?.getTime()).toBe(original.getTime())
+  })
+
+  it('devolve null para entrada incompleta', () => {
+    // Melhor null explícito que uma data silenciosamente errada.
+    expect(fromDateTimeInputs('2026-09-15', '')).toBeNull()
+    expect(fromDateTimeInputs('', '09:00')).toBeNull()
+    expect(fromDateTimeInputs('15/09/2026', '09:00')).toBeNull()
   })
 })

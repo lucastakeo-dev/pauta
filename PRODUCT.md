@@ -12,7 +12,7 @@ Quatro módulos, entregues em fases para que cada uma seja usável sozinha.
 |---|---|---|
 | 0 | Fundação: monorepo, banco, camadas, conta e sessão | **concluída** |
 | 1 | Tarefas: CRUD, prioridade, projetos, labels, subtasks, recorrência, inbox | **concluída** |
-| 2 | Planner dia/semana com time-blocking por arrastar | a fazer |
+| 2 | Planner do dia com time-blocking por arrastar | **concluída** |
 | 3 | Console (Cmd+K) com linguagem natural em pt-BR | a fazer |
 | 4 | Notas: editor, nota diária, `[[links]]` e backlinks | a fazer |
 
@@ -57,6 +57,18 @@ tipos de teste ficam — eles cobrem coisas diferentes.
 montava o conjunto de ocorrências existentes a partir da lista já filtrada; concluir uma
 ocorrência a tirava do resultado e o expansor a recriava em aberto — a tarefa concluída
 ressuscitava. O conjunto agora é buscado à parte, sem filtros.
+
+## Aprendizados da Fase 2
+
+**Arrastar não é interface suficiente.** O time-blocking nasceu só com ponteiro, o que
+deixava quem navega por teclado sem forma nenhuma de agendar. O formulário de agendar
+(data, hora, duração, com campos nativos) resolveu isso — e acabou sendo também o
+caminho mais preciso para quem usa mouse e quer um horário exato.
+
+**A regra de camadas se pagou.** Arrastar da lista para a grade é exatamente o caso em
+que duas features precisariam se conhecer. Elas continuam sem se importar: a lista
+publica um `DragPayload` definido em `entities`, a grade consome, e um provider faz a
+ponte. O lint segurou a fronteira sem exceção nenhuma.
 
 ## Riscos conhecidos
 

@@ -71,7 +71,7 @@ export function PlannerPage() {
           {/* A grade não rola com a página: ela tem a própria rolagem, ancorada no dia útil. */}
           <section
             aria-label="Planner do dia"
-            className="hidden w-[22rem] shrink-0 flex-col border-line border-l px-4 py-6 md:flex xl:w-[26rem]"
+            className="hidden w-[22rem] shrink-0 flex-col border-line border-l px-4 py-6 md:flex xl:w-[28rem] 2xl:w-[32rem]"
           >
             <DayNav day={day} onChange={setDay} />
             <DayGrid day={day} />

@@ -254,3 +254,115 @@ export function resizeEnd(start: Date, offsetY: number, day: Date, hourHeight: n
 
   return new Date(Math.min(target.getTime(), dayEnd.getTime()))
 }
+
+/** Um item já com a coluna que ocupa quando há sobreposição. */
+export type LaidOutItem = PlannerItem & {
+  /** Coluna que este item ocupa, de 0 a `columnCount - 1`. */
+  columnIndex: number
+  /** Quantas colunas o grupo sobreposto usa. 1 quando o item está sozinho. */
+  columnCount: number
+}
+
+/**
+ * Distribui itens sobrepostos em colunas lado a lado.
+ *
+ * Sem isto, dois compromissos no mesmo horário se empilham e só o de cima é clicável.
+ *
+ * O algoritmo é o de sempre em calendário, em dois passos:
+ * 1. agrupa em "blocos" de itens que se tocam em cadeia (A toca B, B toca C → um grupo);
+ * 2. dentro do grupo, cada item vai para a primeira coluna livre naquele horário.
+ *
+ * Todos no grupo dividem a mesma largura, para as colunas ficarem alinhadas em vez de
+ * cada item ter uma largura própria.
+ */
+export function layoutOverlaps(items: PlannerItem[]): LaidOutItem[] {
+  const ordered = [...items].sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime())
+  const result: LaidOutItem[] = []
+
+  let group: PlannerItem[] = []
+  let groupEnd = Number.NEGATIVE_INFINITY
+
+  const flush = () => {
+    if (group.length === 0) return
+
+    // Fim de cada coluna, para saber onde o próximo item cabe.
+    const columnEnds: number[] = []
+    const assigned = group.map((item) => {
+      let columnIndex = columnEnds.findIndex((end) => end <= item.startsAt.getTime())
+
+      if (columnIndex === -1) {
+        columnIndex = columnEnds.length
+      }
+
+      columnEnds[columnIndex] = item.endsAt.getTime()
+      return { item, columnIndex }
+    })
+
+    for (const { item, columnIndex } of assigned) {
+      result.push({ ...item, columnIndex, columnCount: columnEnds.length })
+    }
+
+    group = []
+    groupEnd = Number.NEGATIVE_INFINITY
+  }
+
+  for (const item of ordered) {
+    // Começa depois do fim de todo o grupo: é um grupo novo.
+    if (item.startsAt.getTime() >= groupEnd) {
+      flush()
+    }
+
+    group.push(item)
+    groupEnd = Math.max(groupEnd, item.endsAt.getTime())
+  }
+
+  flush()
+
+  return result
+}
+
+/**
+ * Conversões para os campos nativos `<input type="date">` e `<input type="time">`.
+ *
+ * Eles falam em horário local e em texto, não em ISO. Fazer isso na mão em cada tela
+ * é onde nasce erro de fuso — por isso mora aqui, com teste.
+ */
+export function toDateInputValue(instant: Date): string {
+  const year = instant.getFullYear()
+  const month = String(instant.getMonth() + 1).padStart(2, '0')
+  const day = String(instant.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
+
+export function toTimeInputValue(instant: Date): string {
+  const hours = String(instant.getHours()).padStart(2, '0')
+  const minutes = String(instant.getMinutes()).padStart(2, '0')
+
+  return `${hours}:${minutes}`
+}
+
+/**
+ * Junta o que veio dos dois campos num instante local.
+ *
+ * Devolve `null` para entrada incompleta ou inválida — o formulário decide o que
+ * fazer, em vez de receber uma data silenciosamente errada.
+ */
+export function fromDateTimeInputs(date: string, time: string): Date | null {
+  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date)
+  const timeMatch = /^(\d{2}):(\d{2})$/.exec(time)
+
+  if (!dateMatch || !timeMatch) return null
+
+  const instant = new Date(
+    Number(dateMatch[1]),
+    Number(dateMatch[2]) - 1,
+    Number(dateMatch[3]),
+    Number(timeMatch[1]),
+    Number(timeMatch[2]),
+    0,
+    0,
+  )
+
+  return Number.isNaN(instant.getTime()) ? null : instant
+}

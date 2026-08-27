@@ -13,12 +13,14 @@ import {
 import { cn } from '../../shared/lib/cn.js'
 import { Checkbox } from '../../shared/ui/checkbox.js'
 import { useDeleteTask, useToggleTask, useUpdateTask } from './queries.js'
+import { TaskSchedule } from './task-schedule.js'
 
 const COPY = {
   concluir: 'Concluir',
   remover: 'Remover tarefa',
   repete: 'Repete',
   arrastar: 'Arrastar para o planner',
+  agendar: 'Agendar',
 }
 
 type TaskItemProps = {
@@ -31,6 +33,7 @@ export function TaskItem({ task }: TaskItemProps) {
   const remove = useDeleteTask()
 
   const [editing, setEditing] = useState(false)
+  const [scheduling, setScheduling] = useState(false)
   const [draft, setDraft] = useState(task.title)
 
   // O payload é o contrato com a grade — definido em `entities`, para as duas features
@@ -174,7 +177,29 @@ export function TaskItem({ task }: TaskItemProps) {
             </span>
           ))}
         </div>
+
+        {scheduling ? <TaskSchedule task={task} onClose={() => setScheduling(false)} /> : null}
       </div>
+
+      {/*
+        Caminho de teclado para agendar. Arrastar é gesto de ponteiro: sem este botão,
+        quem não usa mouse não conseguiria pôr a tarefa no planner.
+      */}
+      <button
+        type="button"
+        onClick={() => setScheduling((open) => !open)}
+        aria-expanded={scheduling}
+        aria-label={`${COPY.agendar}: ${task.title}`}
+        className={cn(
+          'shrink-0 rounded-control px-2 py-1 text-xs transition',
+          'hover:bg-surface-raised hover:text-ink',
+          scheduling
+            ? 'text-iris opacity-100'
+            : 'text-ink-subtle opacity-0 group-hover:opacity-100 focus-visible:opacity-100',
+        )}
+      >
+        🕑
+      </button>
 
       <button
         type="button"

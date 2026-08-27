@@ -2,7 +2,7 @@ import { useDraggable } from '@dnd-kit/core'
 import {
   blockGeometry,
   type DragPayload,
-  type PlannerItem,
+  type LaidOutItem,
   timeLabel,
 } from '../../entities/planner/index.js'
 import { cn } from '../../shared/lib/cn.js'
@@ -17,10 +17,13 @@ const COPY = {
 const COMPACT_HEIGHT_PX = 34
 
 type TimeBlockProps = {
-  item: PlannerItem
+  item: LaidOutItem
   day: Date
   hourHeight: number
 }
+
+/** Folga entre colunas vizinhas, para as bordas não se colarem. */
+const COLUMN_GAP_PERCENT = 1
 
 /**
  * Um compromisso desenhado na grade.
@@ -62,7 +65,7 @@ export function TimeBlock({ item, day, hourHeight }: TimeBlockProps) {
     <div
       ref={setNodeRef}
       className={cn(
-        'absolute right-1 left-1 overflow-hidden rounded-[6px] border text-left transition-colors',
+        'absolute overflow-hidden rounded-[6px] border text-left transition-colors',
         isTask
           ? 'border-line-strong bg-surface-raised hover:bg-surface-overlay'
           : 'border-iris-soft bg-iris-soft/30 hover:bg-iris-soft/45',
@@ -74,6 +77,9 @@ export function TimeBlock({ item, day, hourHeight }: TimeBlockProps) {
       style={{
         top,
         height: visualHeight,
+        // Sobreposição: cada item ocupa uma fatia da largura, deslocada pela coluna.
+        left: `calc(${(item.columnIndex / item.columnCount) * 100}% + 4px)`,
+        width: `calc(${100 / item.columnCount - COLUMN_GAP_PERCENT}% - 8px)`,
         // Uma linha em vez de depender de @dnd-kit/utilities só para isto.
         transform: transform ? `translate3d(0, ${transform.y}px, 0)` : undefined,
       }}
