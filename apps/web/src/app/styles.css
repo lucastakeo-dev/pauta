@@ -1,0 +1,107 @@
+@import "tailwindcss";
+
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
+
+/* O tema é escolha explícita na tag <html>, não preferência do sistema: o app é
+   escuro por natureza e a troca precisa ser previsível. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/**
+ * Tokens do Pauta.
+ *
+ * Três decisões guiam a paleta:
+ * 1. O fundo é quase preto e as superfícies sobem em degraus pequenos — num planner
+ *    a grade de horas precisa de contraste sem virar listra.
+ * 2. Um único acento (íris). Cor com significado é reservada para prioridade e para
+ *    o marcador de "agora"; se tudo colorir, nada chama atenção.
+ * 3. Números (horas, durações, contadores) vão em mono para alinhar em coluna.
+ */
+@theme {
+  /* Superfícies, do fundo para a frente */
+  --color-canvas: oklch(0.16 0.008 275);
+  --color-surface: oklch(0.2 0.009 275);
+  --color-surface-raised: oklch(0.24 0.01 275);
+  --color-surface-overlay: oklch(0.27 0.012 275);
+
+  /* Traços */
+  --color-line: oklch(0.31 0.012 275);
+  --color-line-strong: oklch(0.42 0.015 275);
+
+  /* Texto, do mais forte ao mais apagado */
+  --color-ink: oklch(0.97 0.003 275);
+  --color-ink-muted: oklch(0.75 0.012 275);
+  --color-ink-subtle: oklch(0.58 0.014 275);
+
+  /* Acento único */
+  --color-iris: oklch(0.68 0.17 285);
+  --color-iris-strong: oklch(0.74 0.18 285);
+  --color-iris-soft: oklch(0.4 0.11 285);
+
+  /* Prioridades P1..P4 — do urgente ao neutro */
+  --color-p1: oklch(0.68 0.19 25);
+  --color-p2: oklch(0.76 0.16 65);
+  --color-p3: oklch(0.75 0.13 240);
+  --color-p4: oklch(0.6 0.014 275);
+
+  /* Estados */
+  --color-positive: oklch(0.72 0.16 155);
+  --color-warning: oklch(0.79 0.15 85);
+  --color-danger: oklch(0.65 0.2 25);
+
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+
+  --radius-card: 0.75rem;
+  --radius-control: 0.5rem;
+
+  /* Altura de uma hora na grade do planner. Vira variável porque o zoom do dia
+     (Fase 2) muda este valor e tudo o mais deve acompanhar. */
+  --spacing-hour: 3.5rem;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+
+  html {
+    background-color: var(--color-canvas);
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Foco visível é obrigatório: o app é navegado por teclado. Nunca remover. */
+  :focus-visible {
+    outline: 2px solid var(--color-iris);
+    outline-offset: 2px;
+    border-radius: var(--radius-control);
+  }
+
+  /* Números tabulares para horas e contadores não "dançarem" ao atualizar. */
+  .tabular {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Os `!important` são necessários: sem eles, qualquer utilitário de animação
+     declarado depois vence esta regra e a preferência da pessoa é ignorada.
+     É a exceção clássica ao noImportantStyles — acessibilidade acima do estilo. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      /* biome-ignore-start lint/complexity/noImportantStyles: respeitar prefers-reduced-motion exige vencer utilitários declarados depois */
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+      /* biome-ignore-end lint/complexity/noImportantStyles: fim da exceção */
+    }
+  }
+}

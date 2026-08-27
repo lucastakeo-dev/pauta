@@ -1,0 +1,215 @@
+// Prisma é o dono do schema. Toda mudança de estrutura nasce numa migration daqui.
+// Constraints que o Prisma não expressa (CHECK) entram como SQL na migration — ver
+// prisma/migrations/*/migration.sql. Princípio: regra de dado mora no banco.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+// Prisma 7: a URL de conexão não mora mais aqui — ela vive em `prisma7.config.ts`
+// (migrations) e no driver adapter em `src/config/prisma.ts` (runtime).
+datasource db {
+  provider = "postgresql"
+}
+
+enum TaskStatus {
+  inbox
+  todo
+  doing
+  done
+  canceled
+
+  @@map("task_status")
+}
+
+enum EventSource {
+  internal
+  google
+
+  @@map("event_source")
+}
+
+model User {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  name         String   @db.VarChar(120)
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @map("password_hash")
+  timezone     String   @default("America/Sao_Paulo") @db.VarChar(64)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  projects    Project[]
+  labels      Label[]
+  tasks       Task[]
+  events      Event[]
+  notes       Note[]
+  recurrences Recurrence[]
+
+  @@map("users")
+}
+
+model Project {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  name       String    @db.VarChar(120)
+  color      String    @default("#6E7BF2") @db.VarChar(7)
+  icon       String?   @db.VarChar(40)
+  position   Int       @default(0)
+  archivedAt DateTime? @map("archived_at") @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks Task[]
+
+  @@unique([userId, name])
+  @@index([userId, position])
+  @@map("projects")
+}
+
+model Label {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  name      String   @db.VarChar(60)
+  color     String   @default("#8E8E93") @db.VarChar(7)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks TaskLabel[]
+
+  @@unique([userId, name])
+  @@map("labels")
+}
+
+/// Recorrência guardada como RRULE (RFC 5545). As ocorrências futuras são geradas
+/// virtualmente na leitura; só viram linha quando a pessoa conclui ou edita a ocorrência.
+model Recurrence {
+  id       String   @id @default(uuid(7)) @db.Uuid
+  userId   String   @map("user_id") @db.Uuid
+  rrule    String
+  timezone String   @db.VarChar(64)
+  anchorAt DateTime @map("anchor_at") @db.Timestamptz(3)
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks Task[]
+
+  @@index([userId])
+  @@map("recurrences")
+}
+
+model Task {
+  id        String  @id @default(uuid(7)) @db.Uuid
+  userId    String  @map("user_id") @db.Uuid
+  projectId String? @map("project_id") @db.Uuid
+  parentId  String? @map("parent_id") @db.Uuid
+
+  title String  @db.VarChar(500)
+  notes String?
+
+  status   TaskStatus @default(inbox)
+  priority Int        @default(4)
+
+  dueAt DateTime? @map("due_at") @db.Timestamptz(3)
+
+  /// Time-block: arrastar a task para o planner preenche estes dois campos.
+  /// O bloco É a task — não existe tabela paralela para desincronizar.
+  scheduledStart DateTime? @map("scheduled_start") @db.Timestamptz(3)
+  scheduledEnd   DateTime? @map("scheduled_end") @db.Timestamptz(3)
+  estimateMin    Int?      @map("estimate_min")
+
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(3)
+
+  recurrenceId String? @map("recurrence_id") @db.Uuid
+  /// Data da ocorrência quando a task foi materializada a partir de uma recorrência.
+  occurrenceOn DateTime? @map("occurrence_on") @db.Date
+
+  position  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project    Project?    @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  parent     Task?       @relation("TaskSubtasks", fields: [parentId], references: [id], onDelete: Cascade)
+  subtasks   Task[]      @relation("TaskSubtasks")
+  recurrence Recurrence? @relation(fields: [recurrenceId], references: [id], onDelete: SetNull)
+  labels     TaskLabel[]
+
+  @@unique([recurrenceId, occurrenceOn])
+  @@index([userId, scheduledStart])
+  @@index([userId, status, dueAt])
+  @@index([userId, projectId, position])
+  @@index([parentId])
+  @@map("tasks")
+}
+
+model TaskLabel {
+  taskId  String @map("task_id") @db.Uuid
+  labelId String @map("label_id") @db.Uuid
+
+  task  Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  label Label @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, labelId])
+  @@index([labelId])
+  @@map("task_labels")
+}
+
+/// Compromisso com hora marcada. Nasce com `source`/`externalId` mesmo sem Google no v1:
+/// é o gancho que faz o sync futuro ser um import, não uma migration dolorosa.
+model Event {
+  id          String      @id @default(uuid(7)) @db.Uuid
+  userId      String      @map("user_id") @db.Uuid
+  title       String      @db.VarChar(500)
+  description String?
+  startsAt    DateTime    @map("starts_at") @db.Timestamptz(3)
+  endsAt      DateTime    @map("ends_at") @db.Timestamptz(3)
+  allDay      Boolean     @default(false) @map("all_day")
+  location    String?     @db.VarChar(500)
+  source      EventSource @default(internal)
+  externalId  String?     @map("external_id") @db.VarChar(255)
+  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, source, externalId])
+  @@index([userId, startsAt])
+  @@map("events")
+}
+
+model Note {
+  id     String @id @default(uuid(7)) @db.Uuid
+  userId String @map("user_id") @db.Uuid
+  title  String @db.VarChar(300)
+
+  /// Documento do Tiptap em JSON. Guardado como JSONB para permitir busca depois.
+  contentJson Json @default("{}") @map("content_json")
+
+  /// Preenchido só na nota diária — garante uma nota por dia via UNIQUE parcial.
+  dailyOn DateTime? @map("daily_on") @db.Date
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  linksFrom     NoteLink[] @relation("NoteLinkSource")
+  linksTo       NoteLink[] @relation("NoteLinkTarget")
+
+  @@index([userId, updatedAt])
+  @@map("notes")
+}
+
+/// Backlinks derivados dos [[links]] no save da nota. Tabela derivada:
+/// é reescrita inteira para a nota de origem a cada save.
+model NoteLink {
+  sourceId String @map("source_id") @db.Uuid
+  targetId String @map("target_id") @db.Uuid
+
+  source Note @relation("NoteLinkSource", fields: [sourceId], references: [id], onDelete: Cascade)
+  target Note @relation("NoteLinkTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@id([sourceId, targetId])
+  @@index([targetId])
+  @@map("note_links")
+}
