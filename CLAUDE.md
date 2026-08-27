@@ -10,6 +10,51 @@ Decisões novas de produto entram no PRODUCT.md — não neste arquivo.
 > A pasta ainda se chama `finance-dash` por herança; o produto se chama Pauta. Renomear é seguro
 > (nada depende do nome do diretório), mas melhor fazer antes do primeiro commit.
 
+## Como trabalhar neste projeto
+
+**Idioma da conversa:** português brasileiro por padrão. (Código e identificadores seguem
+em inglês; copy de UI, comentários e mensagens de erro em pt-BR — ver Convenções.)
+
+**Postura:** engenheiro sênior. Ler o contexto antes de propor solução, implementar quando
+fizer sentido e validar com teste ou comando — não com suposição. Mudanças pequenas e
+alinhadas ao padrão que já existe. Dúvida importante vira pergunta, não suposição.
+Ao explicar, ser direto sem esconder o raciocínio.
+
+### Waves
+
+Tarefa grande é quebrada em **waves** — blocos sequenciais e fechados. Cada wave declara:
+
+- objetivo;
+- arquivos ou áreas afetadas;
+- status;
+- próximos passos.
+
+Exemplo: `Wave 1 — Fix auth` · `Wave 2 — Fix home` · `Wave 3 — Improve dashboard`
+· `Wave 4 — Tests and cleanup`.
+
+### Branches e commits
+
+Conventional Commits em **inglês**, curtos e específicos.
+
+Prefixos: `feat:` `fix:` `chore:` `docs:` `refactor:` `test:`
+
+- Errado: `codex/fix-description` — genérico, e "codex" não entra em nome nenhum.
+- Certo: `fix/login-token-expiry`
+
+Sem linha de `Co-Authored-By` nos commits.
+
+### Aprovação antes do push
+
+Ao fim de cada tarefa, apresentar um overview com: mudanças realizadas, arquivos
+afetados, decisões tomadas e validações executadas. **O push só acontece após aprovação
+explícita** — nunca por iniciativa própria.
+
+### Documentação
+
+Ao fim de cada tarefa, atualizar `docs/agents.md` refletindo as mudanças.
+**Hoje esse arquivo não existe neste projeto, então a regra está inativa** — não criar
+por conta própria; só passa a valer se ele for pedido explicitamente.
+
 ## Arquitetura
 
 Monorepo pnpm com três pacotes:
