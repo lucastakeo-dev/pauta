@@ -171,3 +171,86 @@ export function hourLabel(hour: number): string {
 export function timeLabel(instant: Date): string {
   return instant.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 }
+
+/** Granularidade do arrastar. Blocos encaixam de 15 em 15 minutos. */
+export const SNAP_MINUTES = 15
+
+/** Duração de uma tarefa arrastada para a grade sem duração própria. */
+export const DEFAULT_BLOCK_MINUTES = 60
+
+/** Duração mínima ao redimensionar — abaixo disso o bloco fica impossível de pegar. */
+export const MIN_DURATION_MINUTES = 15
+
+/**
+ * O que viaja no arrastar. Fica aqui, em `entities`, porque as duas features precisam
+ * concordar sobre o formato sem uma importar a outra: a lista de tarefas produz, a
+ * grade consome.
+ */
+export type DragPayload =
+  /** Veio da lista: ainda não tem horário, então carrega só a duração desejada. */
+  | { kind: 'task'; taskId: string; durationMinutes: number }
+  /** Já está na grade: carrega o intervalo atual, para o movimento ser relativo. */
+  | { kind: 'block'; taskId: string; startsAt: Date; endsAt: Date }
+
+/** Arredonda para o encaixe mais próximo. */
+export function snapMinutes(minutes: number, snap: number = SNAP_MINUTES): number {
+  return Math.round(minutes / snap) * snap
+}
+
+/**
+ * Converte uma posição vertical na grade em horário, já encaixado.
+ *
+ * O resultado é limitado ao próprio dia: soltar acima do topo vira meia-noite, e não
+ * o dia anterior.
+ */
+export function timeFromOffset(offsetY: number, day: Date, hourHeight: number): Date {
+  const { start } = dayBounds(day)
+  const rawMinutes = (offsetY / hourHeight) * 60
+  const minutes = Math.min(Math.max(snapMinutes(rawMinutes), 0), HOURS_IN_DAY * 60)
+
+  return new Date(start.getTime() + minutes * MS_PER_MINUTE)
+}
+
+/**
+ * Encaixa um bloco de `durationMinutes` começando em `start`, sem deixá-lo vazar
+ * para o dia seguinte — um bloco de 1h solto às 23h30 recua para terminar à meia-noite.
+ */
+export function fitBlockInDay(
+  start: Date,
+  durationMinutes: number,
+  day: Date,
+): { start: Date; end: Date } {
+  const { start: dayStart, end: dayEnd } = dayBounds(day)
+  const duration = Math.max(durationMinutes, MIN_DURATION_MINUTES) * MS_PER_MINUTE
+
+  const maxStart = new Date(dayEnd.getTime() - duration)
+  const clamped = new Date(
+    Math.min(
+      Math.max(start.getTime(), dayStart.getTime()),
+      Math.max(maxStart.getTime(), dayStart.getTime()),
+    ),
+  )
+
+  const end = new Date(Math.min(clamped.getTime() + duration, dayEnd.getTime()))
+
+  return { start: clamped, end }
+}
+
+/** Duração de um bloco em minutos. */
+export function durationInMinutes(start: Date, end: Date): number {
+  return (end.getTime() - start.getTime()) / MS_PER_MINUTE
+}
+
+/**
+ * Novo fim ao redimensionar pela borda de baixo, encaixado e com piso de duração.
+ * Nunca passa da meia-noite.
+ */
+export function resizeEnd(start: Date, offsetY: number, day: Date, hourHeight: number): Date {
+  const { end: dayEnd } = dayBounds(day)
+  const candidate = timeFromOffset(offsetY, day, hourHeight)
+
+  const minEnd = new Date(start.getTime() + MIN_DURATION_MINUTES * MS_PER_MINUTE)
+  const target = candidate < minEnd ? minEnd : candidate
+
+  return new Date(Math.min(target.getTime(), dayEnd.getTime()))
+}

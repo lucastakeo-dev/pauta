@@ -38,6 +38,9 @@ Conventional Commits em **inglês**, curtos e específicos.
 
 Prefixos: `feat:` `fix:` `chore:` `docs:` `refactor:` `test:`
 
+**Uma branch por wave**, saindo do `main` atualizado e virando PR própria. Mantém cada
+revisão pequena; a fase inteira numa branch só faria a última PR ficar grande demais.
+
 - Errado: `codex/fix-description` — genérico, e "codex" não entra em nome nenhum.
 - Certo: `fix/login-token-expiry`
 

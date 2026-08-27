@@ -1,5 +1,7 @@
+import { useDraggable } from '@dnd-kit/core'
 import type { TaskView } from '@pauta/contracts'
 import { type KeyboardEvent, useState } from 'react'
+import { DEFAULT_BLOCK_MINUTES, type DragPayload } from '../../entities/planner/index.js'
 import {
   dueLabel,
   isDone,
@@ -16,6 +18,7 @@ const COPY = {
   concluir: 'Concluir',
   remover: 'Remover tarefa',
   repete: 'Repete',
+  arrastar: 'Arrastar para o planner',
 }
 
 type TaskItemProps = {
@@ -29,6 +32,19 @@ export function TaskItem({ task }: TaskItemProps) {
 
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(task.title)
+
+  // O payload é o contrato com a grade — definido em `entities`, para as duas features
+  // concordarem sem uma importar a outra.
+  const payload: DragPayload = {
+    kind: 'task',
+    taskId: task.id,
+    durationMinutes: task.estimateMin ?? DEFAULT_BLOCK_MINUTES,
+  }
+
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `task-${task.id}`,
+    data: payload,
+  })
 
   const done = isDone(task)
   const overdue = isOverdue(task)
@@ -57,11 +73,31 @@ export function TaskItem({ task }: TaskItemProps) {
 
   return (
     <li
+      ref={setNodeRef}
       className={cn(
         'group flex items-start gap-3 rounded-control px-3 py-2.5 transition-colors',
         'hover:bg-surface',
+        isDragging && 'opacity-40',
       )}
     >
+      {/*
+        Alça dedicada em vez de arrastar a linha inteira: assim o arrasto nunca disputa
+        o ponteiro com a caixa de marcar, o título editável e o botão de remover.
+      */}
+      <button
+        type="button"
+        aria-label={`${COPY.arrastar}: ${task.title}`}
+        className={cn(
+          'mt-0.5 shrink-0 cursor-grab rounded-[4px] px-0.5 text-ink-subtle text-xs',
+          'opacity-0 transition hover:text-ink group-hover:opacity-100 focus-visible:opacity-100',
+          'active:cursor-grabbing',
+        )}
+        {...attributes}
+        {...listeners}
+      >
+        ⠿
+      </button>
+
       <span
         aria-hidden="true"
         title={PRIORITY_LABELS[task.priority]}
