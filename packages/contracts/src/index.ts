@@ -1,5 +1,6 @@
 export * from './auth.js'
 export * from './common.js'
+export * from './event.js'
 export * from './label.js'
 export * from './project.js'
 export * from './task.js'
