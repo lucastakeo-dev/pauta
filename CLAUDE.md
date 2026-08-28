@@ -103,7 +103,9 @@ apps/web/src/
   app/       # bootstrap: providers, router, guardas de rota, tokens
   pages/     # apresentação: uma rota = uma composição, sem regra
   features/  # casos de uso: auth/ e, adiante, planner/ tasks/ console/ notes/
-  entities/  # domínio do front: tipos, chamadas de API, regras puras (sem React)
+  entities/  # domínio do front: tipos, chamadas de API, regras puras e os hooks de
+             # leitura da entidade (sem UI). Chave de cache e hook de leitura descem
+             # para cá assim que uma SEGUNDA feature precisa deles.
   shared/    # ui/ (componentes), api/ (client HTTP), lib/, hooks/, config/
 ```
 

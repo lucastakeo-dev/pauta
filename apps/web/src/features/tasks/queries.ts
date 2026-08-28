@@ -6,8 +6,8 @@ import type {
   UpdateTaskInput,
 } from '@pauta/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { listLabels } from '../../entities/label/index.js'
-import { createProject, listProjects } from '../../entities/project/index.js'
+import { useLabels } from '../../entities/label/index.js'
+import { createProject, projectKeys, useProjects } from '../../entities/project/index.js'
 import {
   createTask,
   deleteTask,
@@ -24,9 +24,6 @@ import {
  * duplicada em duas features é cache que diverge sem ninguém perceber. Qualquer
  * escrita derruba `['tasks']` inteiro, e as de projeto quando a contagem muda.
  */
-export const projectKeys = { all: ['projects'] as const }
-export const labelKeys = { all: ['labels'] as const }
-
 export function useTasks(query: Partial<ListTasksQuery>) {
   return useQuery({
     queryKey: taskKeys.list(query),
@@ -34,13 +31,8 @@ export function useTasks(query: Partial<ListTasksQuery>) {
   })
 }
 
-export function useProjects() {
-  return useQuery({ queryKey: projectKeys.all, queryFn: () => listProjects() })
-}
-
-export function useLabels() {
-  return useQuery({ queryKey: labelKeys.all, queryFn: listLabels })
-}
+// Reexportados para as telas desta feature continuarem importando de um lugar só.
+export { useLabels, useProjects }
 
 /** Depois de escrever, tarefas e contadores da barra lateral podem ter mudado. */
 function useInvalidateAll() {

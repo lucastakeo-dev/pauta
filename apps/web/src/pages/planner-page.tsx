@@ -1,6 +1,8 @@
 import type { ListTasksQuery } from '@pauta/contracts'
 import { useMemo, useState } from 'react'
 import { useSession } from '../features/auth/session-context.js'
+import { ConsoleOverlay } from '../features/console/console-overlay.js'
+import { useConsoleShortcut } from '../features/console/use-console-shortcut.js'
 import { DayGrid } from '../features/planner/day-grid.js'
 import { DayNav } from '../features/planner/day-nav.js'
 import { PlannerDndProvider } from '../features/planner/planner-dnd.js'
@@ -13,6 +15,7 @@ const COPY = {
   marca: 'Pauta',
   sair: 'Sair',
   tarefas: 'Tarefas',
+  console: 'Captura rápida (Ctrl+K)',
 }
 
 /** Espelha `--spacing-hour` e o valor usado pela grade. */
@@ -31,6 +34,7 @@ export function PlannerPage() {
   const { signOut } = useSession()
   const [filters, setFilters] = useState<TaskFilterState>({ includeDone: false })
   const [day, setDay] = useState(() => new Date())
+  const quickCapture = useConsoleShortcut()
 
   const query = useMemo<Partial<ListTasksQuery>>(
     () => ({
@@ -77,6 +81,8 @@ export function PlannerPage() {
             <DayGrid day={day} />
           </section>
         </div>
+
+        {quickCapture.open ? <ConsoleOverlay onClose={() => quickCapture.setOpen(false)} /> : null}
       </div>
     </PlannerDndProvider>
   )
