@@ -163,6 +163,14 @@
     border-color: var(--color-line);
   }
 
+  /* `[[link]]` no editor. É texto puro no conteúdo salvo — o realce é decoração. */
+  .wiki-link {
+    color: var(--color-iris);
+    background-color: color-mix(in oklab, var(--color-iris) 12%, transparent);
+    border-radius: 3px;
+    padding: 0.05em 0.15em;
+  }
+
   /* Nota vazia precisa de altura clicável, senão não há onde pôr o cursor. */
   .prose-editor p:only-child:empty::before {
     content: "";
