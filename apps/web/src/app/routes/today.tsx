@@ -1,13 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { NotesPage } from '../../pages/notes-page.js'
+import { PlannerPage } from '../../pages/planner-page.js'
 import { AppShell } from '../app-shell.js'
 import { RequireSession } from '../require-session.js'
 
-export const Route = createFileRoute('/notas')({
+export const Route = createFileRoute('/today')({
   component: () => (
     <RequireSession>
       <AppShell>
-        <NotesPage />
+        <PlannerPage />
       </AppShell>
     </RequireSession>
   ),

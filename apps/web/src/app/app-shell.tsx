@@ -13,8 +13,8 @@ const COPY = {
 }
 
 const NAV = [
-  { to: '/hoje', label: 'Hoje' },
-  { to: '/notas', label: 'Notas' },
+  { to: '/today', label: 'Hoje' },
+  { to: '/notes', label: 'Notas' },
 ] as const
 
 /**

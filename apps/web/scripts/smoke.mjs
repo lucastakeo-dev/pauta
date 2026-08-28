@@ -49,8 +49,8 @@ try {
   check('a raiz mostra a vitrine para quem não entrou', true)
 
   // 2. Área logada sem sessão manda para o login.
-  await page.goto(`${WEB}/hoje`, { waitUntil: 'networkidle' })
-  check('/hoje exige login', page.url().includes('/entrar'), page.url())
+  await page.goto(`${WEB}/today`, { waitUntil: 'networkidle' })
+  check('/today exige login', page.url().includes('/login'), page.url())
   await page.screenshot({ path: `${outDir}/01-login.png` })
 
   // 3. Validação no cliente, antes de qualquer viagem de rede.
@@ -69,7 +69,7 @@ try {
   await page.getByLabel('Senha').fill('senha-bem-segura')
   await page.getByRole('button', { name: 'Criar conta', exact: true }).click()
 
-  await page.waitForURL((url) => url.pathname === '/hoje', { timeout: 10_000 })
+  await page.waitForURL((url) => url.pathname === '/today', { timeout: 10_000 })
   await page.getByRole('heading', { name: 'Tarefas' }).waitFor({ timeout: 10_000 })
   check('cadastro entra direto no app', true, page.url())
   await page.screenshot({ path: `${outDir}/03-logado.png` })
@@ -81,19 +81,19 @@ try {
 
   // 6. Sair volta ao login, e a área logada volta a ser barrada.
   await page.getByRole('button', { name: 'Sair' }).click()
-  await page.waitForURL((url) => url.pathname.includes('/entrar'), { timeout: 10_000 })
+  await page.waitForURL((url) => url.pathname.includes('/login'), { timeout: 10_000 })
 
-  await page.goto(`${WEB}/hoje`, { waitUntil: 'networkidle' })
-  check('após sair, /hoje volta a exigir login', page.url().includes('/entrar'), page.url())
+  await page.goto(`${WEB}/today`, { waitUntil: 'networkidle' })
+  check('após sair, /today volta a exigir login', page.url().includes('/login'), page.url())
 
   // 7. Com sessão, a vitrine não faz sentido: a raiz manda para o app.
   await page.getByLabel('E-mail').fill(email)
   await page.getByLabel('Senha').fill('senha-bem-segura')
   await page.getByRole('button', { name: 'Entrar', exact: true }).click()
-  await page.waitForURL((url) => url.pathname === '/hoje', { timeout: 10_000 })
+  await page.waitForURL((url) => url.pathname === '/today', { timeout: 10_000 })
 
   await page.goto(WEB, { waitUntil: 'networkidle' })
-  await page.waitForURL((url) => url.pathname === '/hoje', { timeout: 10_000 })
+  await page.waitForURL((url) => url.pathname === '/today', { timeout: 10_000 })
   check('quem já tem sessão pula a vitrine', true, page.url())
 
   await page.screenshot({ path: `${outDir}/04-deslogado.png` })

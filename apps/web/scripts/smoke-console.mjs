@@ -46,11 +46,11 @@ try {
 
   const auth = { authorization: `Bearer ${registro.token}` }
 
-  await page.goto(`${WEB}/entrar`, { waitUntil: 'networkidle' })
+  await page.goto(`${WEB}/login`, { waitUntil: 'networkidle' })
   await page.getByLabel('E-mail').fill(email)
   await page.getByLabel('Senha').fill('senha-bem-segura')
   await page.getByRole('button', { name: 'Entrar', exact: true }).click()
-  await page.waitForURL((url) => !url.pathname.includes('/entrar'), { timeout: 10_000 })
+  await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10_000 })
 
   const dialogo = page.getByRole('dialog', { name: 'Captura rápida' })
 
