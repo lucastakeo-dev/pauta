@@ -13,5 +13,5 @@ pnpm db:migrate
 pnpm dev                                   # api :3334 + web :5176
 ```
 
-Arquitetura, comandos e convenções: **CLAUDE.md**.
-Produto e decisões: **PRODUCT.md**. Sistema visual: **DESIGN.md**.
+Documentação em [`docs/`](docs/): [arquitetura e convenções](docs/ARCHITECTURE.md),
+[produto e decisões](docs/PRODUCT.md), [sistema visual](docs/DESIGN.md).
