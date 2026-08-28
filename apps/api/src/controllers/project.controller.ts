@@ -1,4 +1,9 @@
-import type { CreateProjectInput, ReorderProjectsInput, UpdateProjectInput } from '@pauta/contracts'
+import type {
+  CreateProjectInput,
+  MoveProjectInput,
+  ReorderProjectsInput,
+  UpdateProjectInput,
+} from '@pauta/contracts'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import * as projectModel from '../models/project.model.js'
 import { renderProject, renderProjects } from '../views/task.view.js'
@@ -36,6 +41,14 @@ export async function destroy(
 ) {
   await projectModel.remove(request.userId, request.params.id)
   return reply.status(204).send()
+}
+
+export async function move(
+  request: FastifyRequest<{ Params: { id: string }; Body: MoveProjectInput }>,
+  reply: FastifyReply,
+) {
+  const project = await projectModel.move(request.userId, request.params.id, request.body)
+  return reply.status(200).send(renderProject(project))
 }
 
 export async function reorder(

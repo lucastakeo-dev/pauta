@@ -1,6 +1,7 @@
 import {
   apiErrorSchema,
   createProjectSchema,
+  moveProjectSchema,
   projectListSchema,
   projectViewSchema,
   reorderProjectsSchema,
@@ -56,6 +57,25 @@ export async function projectRoutes(app: FastifyInstance): Promise<void> {
       },
     },
     projectController.reorder,
+  )
+
+  route.post(
+    '/projects/:id/move',
+    {
+      schema: {
+        tags: ['projects'],
+        summary: 'Move o projeto para outro pai e posição',
+        params: paramsSchema,
+        body: moveProjectSchema,
+        response: {
+          200: projectViewSchema,
+          404: apiErrorSchema,
+          // Mover para dentro da própria subárvore.
+          422: apiErrorSchema,
+        },
+      },
+    },
+    projectController.move,
   )
 
   route.patch(

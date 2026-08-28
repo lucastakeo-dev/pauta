@@ -31,6 +31,8 @@ export function renderProject(project: ProjectRecord): ProjectView {
     position: project.position,
     archivedAt: iso(project.archivedAt),
     openTaskCount: project.openTaskCount,
+    parentId: project.parentId,
+    childCount: project.childCount,
   }
 }
 
