@@ -1,206 +1,99 @@
-# Pauta
+# Pauta — produto e decisões
 
-Workspace pessoal keyboard-first no formato do [routine.co](https://routine.co): **planner do dia
-com time-blocking, tarefas, captura rápida e notas** num lugar só. Uso próprio, com app mobile
-previsto para depois. **Fases 0 a 3 concluídas**; a 4 (notas) está em andamento.
+Ferramenta pessoal no formato do [routine.co](https://routine.co). O objetivo não é clonar o
+produto inteiro, e sim ter o núcleo que faz ele valer a pena: **abrir o app e ver o dia**,
+capturar qualquer coisa sem tirar as mãos do teclado, e ter tarefas e notas no mesmo lugar.
 
-Fontes da verdade: **PRODUCT.md** (produto e decisões), **DESIGN.md** (sistema visual).
-Decisões novas de produto entram no PRODUCT.md — não neste arquivo.
+## Escopo do v1
 
-> A pasta ainda se chama `finance-dash` por herança; o produto se chama Pauta. Renomear é seguro
-> (nada depende do nome do diretório), mas melhor fazer antes do primeiro commit.
+Quatro módulos, entregues em fases para que cada uma seja usável sozinha.
+**O v1 está completo** — as cinco fases abaixo foram entregues e mergeadas.
 
-## Como trabalhar neste projeto
-
-**Idioma da conversa:** português brasileiro por padrão. (Código e identificadores seguem
-em inglês; copy de UI, comentários e mensagens de erro em pt-BR — ver Convenções.)
-
-**Postura:** engenheiro sênior. Ler o contexto antes de propor solução, implementar quando
-fizer sentido e validar com teste ou comando — não com suposição. Mudanças pequenas e
-alinhadas ao padrão que já existe. Dúvida importante vira pergunta, não suposição.
-Ao explicar, ser direto sem esconder o raciocínio.
-
-### Waves
-
-Tarefa grande é quebrada em **waves** — blocos sequenciais e fechados. Cada wave declara:
-
-- objetivo;
-- arquivos ou áreas afetadas;
-- status;
-- próximos passos.
-
-Exemplo: `Wave 1 — Fix auth` · `Wave 2 — Fix home` · `Wave 3 — Improve dashboard`
-· `Wave 4 — Tests and cleanup`.
-
-### Branches e commits
-
-Conventional Commits em **inglês**, curtos e específicos.
-
-Prefixos: `feat:` `fix:` `chore:` `docs:` `refactor:` `test:`
-
-**Uma branch por wave**, saindo do `main` atualizado e virando PR própria. Mantém cada
-revisão pequena; a fase inteira numa branch só faria a última PR ficar grande demais.
-
-- Errado: `codex/fix-description` — genérico, e "codex" não entra em nome nenhum.
-- Certo: `fix/login-token-expiry`
-
-Sem linha de `Co-Authored-By` nos commits.
-
-### Aprovação antes do push
-
-Ao fim de cada tarefa, apresentar um overview com: mudanças realizadas, arquivos
-afetados, decisões tomadas e validações executadas. **O push só acontece após aprovação
-explícita** — nunca por iniciativa própria.
-
-### Documentação
-
-Ao fim de cada tarefa, atualizar `docs/agents.md` refletindo as mudanças.
-**Hoje esse arquivo não existe neste projeto, então a regra está inativa** — não criar
-por conta própria; só passa a valer se ele for pedido explicitamente.
-
-## Arquitetura
-
-Monorepo pnpm com três pacotes:
-
-```
-apps/api            # Fastify em MVC: toda a regra de negócio e o acesso a dados
-apps/web            # SPA Vite em camadas: planner, tarefas, console e notas
-packages/contracts  # Schemas Zod compartilhados — o front valida com o MESMO schema da API
-```
-
-O front **nunca** fala com o banco: tudo passa pela API. Supabase é o Postgres gerenciado
-(produção); em dev o banco é um container Postgres puro.
-
-### Backend — MVC (regras inegociáveis)
-
-```
-apps/api/src/
-  models/       # M: entidade + regra de negócio + persistência (único lugar com Prisma)
-  views/        # V: presenters — montam o JSON de saída
-  controllers/  # C: traduz HTTP, chama o model, devolve a view
-  routes/       # mapeia verbo+path -> controller, aplica auth
-  middlewares/  # autenticação JWT, handler central de erros
-  config/       # env validada com Zod no boot, cliente Prisma
-  lib/          # utilitários puros (erros de domínio, datas, recorrência)
-```
-
-- **Model gordo, controller magro.** Regra de negócio mora no model; o controller não tem `if`
-  de domínio — só status code, token e leitura da request.
-- **Só o model importa Prisma.** Tipos do Prisma não vazam de `models/`.
-- **A view decide o JSON.** Mapeamento campo a campo; nada de spread do registro do banco.
-- **Erros de domínio** (`DomainError`, mensagem pt-BR + `code` estável) tratados no handler
-  central. Erro cru do Prisma nunca chega ao cliente.
-- **Env sempre via schema Zod** — nada de `process.env` solto.
-- **Toda rota nasce com teste** Vitest usando `app.inject`.
-
-As duas primeiras regras são **verificadas pelo lint** (`biome.json`), não pela memória de quem
-escreve: importar Prisma num controller ou Fastify num model quebra o `pnpm lint`.
-
-### Frontend — camadas
-
-```
-apps/web/src/
-  app/       # bootstrap: providers, router, guardas de rota, tokens
-  pages/     # apresentação: uma rota = uma composição, sem regra
-  features/  # casos de uso: auth/ e, adiante, planner/ tasks/ console/ notes/
-  entities/  # domínio do front: tipos, chamadas de API, regras puras e os hooks de
-             # leitura da entidade (sem UI). Chave de cache e hook de leitura descem
-             # para cá assim que uma SEGUNDA feature precisa deles.
-  shared/    # ui/ (componentes), api/ (client HTTP), lib/, hooks/, config/
-```
-
-Direção de dependência, **também garantida pelo lint**:
-
-```
-app → pages → features → entities → shared
-```
-
-Nunca para cima, nunca lateral entre features. Dentro da própria feature, use caminho relativo
-(`./`); o que for comum a duas features desce para `entities` ou `shared`.
-
-## Stack
-
-| Camada | Ferramenta | Papel |
+| Fase | Entrega | Situação |
 |---|---|---|
-| Front | Vite 8 + React 19 + TS 6 strict | TanStack Router file-based; `routeTree.gen.ts` é gerado e **commitado** |
-| Estilo | Tailwind v4 (tokens em `apps/web/src/app/styles.css`) | tokens: `canvas`, `surface`, `ink`, `iris`, `p1..p4` |
-| API | Node + Fastify 5 + TypeScript | dev: `tsx watch` |
-| Validação | Zod 4 via `fastify-type-provider-zod` | schema Zod = validação + tipos, uma fonte só |
-| ORM | Prisma 7 | **dono do schema**; migrations em `apps/api/prisma/migrations` |
-| Auth | JWT próprio (`@fastify/jwt`) + argon2id | token de 30d guardado em `localStorage` |
-| Banco dev | Docker `pauta-db` (postgres:17-alpine) em `127.0.0.1:5441` | 5432/5433/5439/55432 estão ocupadas por outros projetos da máquina |
-| Banco prod | Supabase | pooler em `DATABASE_URL`, direta em `DIRECT_DATABASE_URL` (migrations exigem a direta) |
-| Lint/format | **Biome 2** (`biome.json` na raiz, único pros 3 pacotes) | 2 espaços, aspas simples, sem `;`, largura 100 |
-| Pacotes | **pnpm** workspaces | nunca npm/yarn |
+| 0 | Fundação: monorepo, banco, camadas, conta e sessão | **concluída** |
+| 1 | Tarefas: CRUD, prioridade, projetos, labels, subtasks, recorrência, inbox | **concluída** |
+| 2 | Planner do dia com time-blocking por arrastar | **concluída** |
+| 3 | Console (Cmd+K) com linguagem natural em pt-BR | **concluída** |
+| 4 | Notas: editor, nota diária, `[[links]]` e backlinks | **concluída** |
 
-**Portas:** API `3334`, web `5176`, Postgres `5441`. Escolhidas por estarem livres — 5173/5174/5175
-e 3001/4000 pertencem a outros projetos.
+Fora do v1, com o caminho já preparado: sincronização com Google Calendar, app mobile,
+e um eventual módulo de finanças.
 
-### Prisma 7 muda duas coisas
+## Decisões
 
-1. A URL de conexão **não fica no `schema.prisma`**: migrations leem `prisma7.config.ts`; o runtime
-   conecta pelo driver adapter (`@prisma/adapter-pg`) em `src/config/prisma.ts`.
-2. Não há mais engine binário — o adapter usa o driver `pg` nativo.
+**Time-block é a própria task.** `scheduled_start`/`scheduled_end` moram na tabela `tasks`;
+arrastar para o planner só preenche esses campos. A alternativa — uma tabela de blocos apontando
+para tarefas — cria dois lugares para a mesma verdade e desincroniza na primeira edição.
 
-## Comandos
+**`events` nasce com `source` e `external_id`** mesmo sem Google no v1. É o gancho que faz o sync
+futuro ser um import, e não uma migration dolorosa.
 
-```bash
-pnpm db:up                 # sobe o Postgres de dev (docker compose)
-pnpm dev                   # api :3334 + web :5176 em paralelo
-pnpm dev:api | dev:web     # um de cada vez
-pnpm lint                  # biome check (raiz cobre o monorepo inteiro)
-pnpm format                # biome check --write
-pnpm typecheck             # tsc em todos os pacotes
-pnpm test                  # vitest (a API precisa do banco de pé)
-pnpm db:migrate            # prisma migrate dev
-                           # (o client é regerado no postinstall; após mudar o schema
-                           #  à mão, rode `pnpm --filter @pauta/api db:generate`)
-pnpm db:studio             # prisma studio
+**Recorrência guarda a RRULE, não as ocorrências.** As futuras são geradas virtualmente na leitura
+e só viram linha no banco quando a pessoa conclui ou edita aquela ocorrência específica. É o padrão
+de calendário; materializar tudo encheria a tabela com milhares de linhas mortas.
 
-# na apps/web:
-pnpm smoke <dir>           # fluxo de entrada num Chrome de verdade + screenshots
-pnpm smoke:tasks <dir>     # fluxo da tela de tarefas (criar, concluir, editar, filtrar)
-```
+**API própria em vez de falar direto com o Supabase.** Custa um app a mais para manter, mas mantém
+regra de negócio num lugar só quando o mobile chegar, e deixa o PostgREST trancado.
 
-Os dois `smoke` cobrem o que `app.inject()` não alcança — foi assim que apareceu o
-preflight de CORS recusando `PATCH`, invisível para os 80 testes da API.
+**Auth próprio (JWT + argon2id), não Supabase Auth.** Como já existe uma API na frente, o Supabase
+Auth só acrescentaria uma verificação de token de terceiro sem ganho para um app de um usuário.
 
-`pnpm test` roda contra o banco `pauta_test`, criado e migrado sozinho no primeiro run. As
-constraints escritas à mão são exercitadas de verdade — por isso os testes não usam mock de banco.
+**Token em `localStorage`.** Escolha consciente: é legível por JavaScript, então um XSS o levaria
+junto. Cookie httpOnly exigiria CSRF e não serviria ao mobile depois. Está isolado em
+`shared/api/token-storage.ts` para que trocar seja mexer num arquivo só.
 
-## Convenções de código
+**Testes contra Postgres de verdade, sem mock de banco.** Em MVC o model conversa direto com o
+banco, e boa parte das regras deste projeto são constraints do Postgres. Testar com o banco fora do
+circuito daria confiança falsa justamente onde a garantia mora.
 
-- **Idiomas**: código, identificadores e tabelas em **inglês**; copy de UI, mensagens de erro ao
-  usuário, comentários e commits em **pt-BR**.
-- **Contratos compartilhados**: schema que valida input de usuário nasce em `packages/contracts` e
-  é importado pelos dois lados. Mensagens de validação em pt-BR dentro do próprio schema.
-- **Componentização (web)**: 1 seção/feature por arquivo, copy em constantes fora do JSX, estado
-  local em quem usa, exports nomeados, abstração só na 2ª duplicação.
-- Acessibilidade nasce com o componente: `aria-*`, `focus-visible`, estados
-  (hover/disabled/loading/erro/vazio), `prefers-reduced-motion`.
-- **Validação dupla**: client (UX) + constraint no banco (verdade). A tela explica, o banco garante.
-- Segredos: `.env` fora do git; `JWT_SECRET` com 32+ chars.
+## Aprendizados da Fase 1
 
-## Endpoints
+**Teste de API não substitui teste de navegador.** Os 80 testes com `app.inject` passavam
+enquanto editar tarefa estava quebrado em produção: o `inject` não passa por CORS, e o
+preflight recusava `PATCH`. O smoke em Chrome real pegou em segundos. Por isso os dois
+tipos de teste ficam — eles cobrem coisas diferentes.
 
-Públicos: `GET /health`, `POST /auth/register`, `POST /auth/login`.
-Com token: `GET /auth/me`, e os CRUDs de `/tasks`, `/projects` e `/labels`.
+**Filtro de leitura não pode decidir o que já foi materializado.** A primeira versão
+montava o conjunto de ocorrências existentes a partir da lista já filtrada; concluir uma
+ocorrência a tirava do resultado e o expansor a recriava em aberto — a tarefa concluída
+ressuscitava. O conjunto agora é buscado à parte, sem filtros.
 
-`GET /tasks` aceita `projectId`, `labelId`, `status`, `parentId`, `rootOnly`, `search`,
-`dueBefore`, `includeDone` e a janela `scheduledFrom`/`scheduledTo`. **Com a janela, as
-recorrências são expandidas**; sem ela, aparece só o molde da recorrência.
+## Aprendizados da Fase 2
 
-Uma ocorrência ainda não materializada é endereçada por `uuid@AAAA-MM-DD`. Concluir ou
-editar uma delas cria a linha de verdade (`POST /tasks/:id/toggle`, `PATCH /tasks/:id`).
+**Arrastar não é interface suficiente.** O time-blocking nasceu só com ponteiro, o que
+deixava quem navega por teclado sem forma nenhuma de agendar. O formulário de agendar
+(data, hora, duração, com campos nativos) resolveu isso — e acabou sendo também o
+caminho mais preciso para quem usa mouse e quer um horário exato.
 
-## Regra de dado mora no banco
+**A regra de camadas se pagou.** Arrastar da lista para a grade é exatamente o caso em
+que duas features precisariam se conhecer. Elas continuam sem se importar: a lista
+publica um `DragPayload` definido em `entities`, a grade consome, e um provider faz a
+ponte. O lint segurou a fronteira sem exceção nenhuma.
 
-O que o Prisma não expressa está em
-`prisma/migrations/20260827174554_constraints_de_dominio/migration.sql`:
+## Aprendizados da Fase 4
 
-- time-block precisa dos dois extremos e o fim vem depois do começo;
-- prioridade entre 1 e 4, estimativa positiva;
-- task não é subtask de si mesma; nota não linka para si mesma;
-- evento termina depois de começar;
-- **uma nota diária por dia** (UNIQUE parcial — páginas livres ficam de fora);
-- índice trigram no título da nota, para o autocomplete do `[[link]]`.
+**Teste instável foi bug de verdade.** O smoke das notas falhava em 2 de 3 execuções na
+mesma verificação. Investigar em vez de repetir revelou uma corrida na API: conteúdo e
+links eram gravados em duas operações separadas, e dois autosaves cruzados deixavam a
+nota com o texto certo e sem backlink. Agora é uma transação — e há teste de regressão
+disparando dois PATCH concorrentes.
+
+## Riscos conhecidos
+
+**O parser de datas em português é o ponto mais incerto do v1.** O `chrono-node` declara suporte
+apenas *parcial* a `pt`. O plano para a Fase 3 é usá-lo como base e escrever refiners próprios em
+`lib/` para os padrões que ele erra ("amanhã 13h", "sexta que vem", "daqui 2 semanas", "toda
+segunda"), com teste unitário por padrão — é função pura, então cobrir bem é barato. Se o esforço
+crescer demais, o plano B é um parser próprio restrito a um conjunto explícito de padrões, com a
+interpretação sempre visível na tela antes de confirmar.
+
+**Prisma ainda não declara suporte a Node 26** (a máquina roda 26.4). Funciona hoje — migrations,
+generate e runtime todos verificados — mas é um aviso a acompanhar em atualizações.
+
+## Fora de escopo, e por quê
+
+- **Integrações (Slack, Gmail, Notion)**: o Routine vive disso, mas cada uma é um projeto.
+- **IA (resumo de reunião, agentes)**: só faz sentido quando houver dado acumulado.
+- **Colaboração / multiusuário**: é ferramenta pessoal; o modelo já tem `user_id` em tudo, então
+  a porta fica aberta sem custo hoje.

@@ -130,7 +130,42 @@ try {
   const semCasa = await page.getByRole('button', { name: 'Casa', exact: true }).count()
   check('a busca filtra a lista', semCasa === 0)
 
-  await page.screenshot({ path: `${outDir}/03-final.png` })
+  // 9. Autocomplete do [[: digitar abre o menu com as notas existentes.
+  //
+  // Volta para a nota do dia: a verificação seguinte confere o conteúdo dela no
+  // servidor, e o passo anterior tinha deixado "Receitas" aberta.
+  await page.getByLabel('Buscar nota').fill('')
+  await page.getByRole('button', { name: 'Nota de hoje' }).click()
+  await page.getByRole('heading', { name: titulo }).waitFor({ timeout: 10_000 })
+  await editor.click()
+  await page.keyboard.press('End')
+  await page.keyboard.type('ligado a [[Ca')
+
+  const menu = page.getByRole('list', { name: 'Notas sugeridas' })
+  await menu.waitFor({ timeout: 10_000 })
+  check('digitar [[ abre o menu de sugestões', true)
+
+  const sugestoes = await menu.textContent()
+  check('o menu sugere a nota existente', sugestoes.includes('Casa'), sugestoes.trim())
+
+  await page.screenshot({ path: `${outDir}/04-autocomplete.png` })
+
+  // 10. Enter completa o link.
+  await page.keyboard.press('Enter')
+  await menu.waitFor({ state: 'detached', timeout: 10_000 })
+
+  const textoEditor = await editor.textContent()
+  check('Enter completa o link inteiro', textoEditor.includes('[[Casa]]'), textoEditor.trim())
+
+  // 11. O realce pinta o link no editor.
+  const realces = await page.locator('.wiki-link').count()
+  check('o link aparece realçado no editor', realces > 0, `${realces} realce(s)`)
+
+  // 12. O link completado vale de verdade: vira backlink no servidor.
+  const comLink = await aguardarNoServidor('[[Casa]]')
+  check('o link completado chega ao servidor', comLink !== null)
+
+  await page.screenshot({ path: `${outDir}/05-final.png` })
 
   check('sem erros no console', consoleErrors.length === 0, consoleErrors.slice(0, 2).join(' | '))
 } finally {
