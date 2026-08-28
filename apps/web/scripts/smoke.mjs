@@ -43,12 +43,17 @@ page.on('response', (response) => {
 mkdirSync(outDir, { recursive: true })
 
 try {
-  // 1. Visitante anônimo na raiz deve cair no login.
+  // 1. A raiz é pública: visitante anônimo vê a vitrine, não o login.
   await page.goto(WEB, { waitUntil: 'networkidle' })
-  check('raiz redireciona anônimo para /entrar', page.url().includes('/entrar'), page.url())
+  await page.getByRole('heading', { name: /Planejar o dia/ }).waitFor({ timeout: 10_000 })
+  check('a raiz mostra a vitrine para quem não entrou', true)
+
+  // 2. Área logada sem sessão manda para o login.
+  await page.goto(`${WEB}/hoje`, { waitUntil: 'networkidle' })
+  check('/hoje exige login', page.url().includes('/entrar'), page.url())
   await page.screenshot({ path: `${outDir}/01-login.png` })
 
-  // 2. Validação no cliente, antes de qualquer viagem de rede.
+  // 3. Validação no cliente, antes de qualquer viagem de rede.
   await page.getByLabel('E-mail').fill('nao-e-email')
   await page.getByLabel('Senha').fill('123')
   await page.getByRole('button', { name: 'Entrar', exact: true }).click()
@@ -56,7 +61,7 @@ try {
   check('valida e-mail inválido no cliente', erroVisivel)
   await page.screenshot({ path: `${outDir}/02-validacao.png` })
 
-  // 3. Cadastro real, batendo na API.
+  // 4. Cadastro real, batendo na API.
   const email = `smoke-${Date.now()}@exemplo.dev`
   await page.getByRole('button', { name: /Criar uma/ }).click()
   await page.getByLabel('Nome').fill('Takeo Smoke')
@@ -64,21 +69,33 @@ try {
   await page.getByLabel('Senha').fill('senha-bem-segura')
   await page.getByRole('button', { name: 'Criar conta', exact: true }).click()
 
-  await page.waitForURL((url) => !url.pathname.includes('/entrar'), { timeout: 10_000 })
+  await page.waitForURL((url) => url.pathname === '/hoje', { timeout: 10_000 })
   await page.getByRole('heading', { name: 'Tarefas' }).waitFor({ timeout: 10_000 })
-  check('cadastro entra direto na área logada', true)
+  check('cadastro entra direto no app', true, page.url())
   await page.screenshot({ path: `${outDir}/03-logado.png` })
 
-  // 4. A sessão sobrevive ao reload (token persistido + /auth/me).
+  // 5. A sessão sobrevive ao reload (token persistido + /auth/me).
   await page.reload({ waitUntil: 'networkidle' })
   const continuaLogado = await page.getByRole('heading', { name: 'Tarefas' }).isVisible()
   check('sessão sobrevive ao reload', continuaLogado, page.url())
 
-  // 5. Sair volta ao login e não deixa a sessão para trás.
+  // 6. Sair volta ao login, e a área logada volta a ser barrada.
   await page.getByRole('button', { name: 'Sair' }).click()
   await page.waitForURL((url) => url.pathname.includes('/entrar'), { timeout: 10_000 })
+
+  await page.goto(`${WEB}/hoje`, { waitUntil: 'networkidle' })
+  check('após sair, /hoje volta a exigir login', page.url().includes('/entrar'), page.url())
+
+  // 7. Com sessão, a vitrine não faz sentido: a raiz manda para o app.
+  await page.getByLabel('E-mail').fill(email)
+  await page.getByLabel('Senha').fill('senha-bem-segura')
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click()
+  await page.waitForURL((url) => url.pathname === '/hoje', { timeout: 10_000 })
+
   await page.goto(WEB, { waitUntil: 'networkidle' })
-  check('após sair, a raiz volta a exigir login', page.url().includes('/entrar'), page.url())
+  await page.waitForURL((url) => url.pathname === '/hoje', { timeout: 10_000 })
+  check('quem já tem sessão pula a vitrine', true, page.url())
+
   await page.screenshot({ path: `${outDir}/04-deslogado.png` })
 
   check(

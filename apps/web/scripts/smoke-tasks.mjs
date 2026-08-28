@@ -45,7 +45,7 @@ mkdirSync(outDir, { recursive: true })
 try {
   // Conta nova a cada execução: o teste começa sempre de um estado conhecido.
   const email = `tarefas-${Date.now()}@exemplo.dev`
-  await page.goto(WEB, { waitUntil: 'networkidle' })
+  await page.goto(`${WEB}/entrar`, { waitUntil: 'networkidle' })
   await page.getByRole('button', { name: /Criar uma/ }).click()
   await page.getByLabel('Nome').fill('Takeo')
   await page.getByLabel('E-mail').fill(email)

@@ -32,16 +32,22 @@ export function RequireSession({ children }: { children: ReactNode }) {
 }
 
 /**
- * Tela de login: com sessão válida, entra direto no app.
+ * Telas públicas (login e vitrine): com sessão válida, entra direto no app.
  *
  * É o que fecha o ciclo do cadastro — assim que o token chega, o contexto muda de
  * status e este redirecionamento leva a pessoa para dentro.
  */
-export function RedirectIfSession({ children }: { children: ReactNode }) {
+export function RedirectIfSession({
+  children,
+  to = '/hoje',
+}: {
+  children: ReactNode
+  to?: '/hoje' | '/notas'
+}) {
   const { status } = useSession()
 
   if (status === 'loading') return <Verificando />
-  if (status === 'authenticated') return <Navigate to="/" replace />
+  if (status === 'authenticated') return <Navigate to={to} replace />
 
   return <>{children}</>
 }
