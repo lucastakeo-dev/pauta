@@ -177,6 +177,25 @@ describe('links e backlinks', () => {
     expect(comum.linkedFrom.map((n: { title: string }) => n.title).sort()).toEqual(['A', 'B'])
   })
 
+  it('salvamentos concorrentes não deixam links inconsistentes', async () => {
+    // Regressão: o conteúdo e os links eram gravados em duas operações separadas. Com
+    // dois autosaves em voo, o segundo criava o link e o primeiro, chegando atrasado
+    // com texto parcial, o apagava — nota com o texto certo e sem backlink nenhum.
+    const nota = (await ana.post('/notes', { title: 'Diário' })).json()
+
+    await Promise.all([
+      ana.patch(`/notes/${nota.id}`, { contentJson: doc('rascunho sem link') }),
+      ana.patch(`/notes/${nota.id}`, { contentJson: doc('agora com [[Casa]]') }),
+    ])
+
+    const final = (await ana.get(`/notes/${nota.id}`)).json()
+    const texto = JSON.stringify(final.contentJson)
+    const temLink = final.linksTo.some((n: { title: string }) => n.title === 'Casa')
+
+    // Qual das duas venceu não importa; o que importa é o texto e os links baterem.
+    expect(texto.includes('[[Casa]]')).toBe(temLink)
+  })
+
   it('apagar a origem some com o backlink', async () => {
     const origem = (
       await ana.post('/notes', { title: 'Diário', contentJson: doc('ver [[Casa]]') })
