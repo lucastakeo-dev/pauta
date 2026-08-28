@@ -70,7 +70,7 @@ try {
     body: JSON.stringify({ title: 'Revisar contrato' }),
   }).then((r) => r.json())
 
-  await page.goto(WEB, { waitUntil: 'networkidle' })
+  await page.goto(`${WEB}/entrar`, { waitUntil: 'networkidle' })
   await page.getByLabel('E-mail').fill(email)
   await page.getByLabel('Senha').fill('senha-bem-segura')
   await page.getByRole('button', { name: 'Entrar', exact: true }).click()

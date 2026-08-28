@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @import "@fontsource-variable/inter";
+@import "@fontsource-variable/instrument-sans";
 @import "@fontsource-variable/jetbrains-mono";
 
 /* O tema é escolha explícita na tag <html>, não preferência do sistema: o app é
@@ -51,6 +52,23 @@
 
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+
+  /* Voz da vitrine: grotesca geométrica, mais apertada que a Inter do app. */
+  --font-display: "Instrument Sans Variable", "Inter Variable", ui-sans-serif, sans-serif;
+
+  /*
+   * Paleta da landing — clara, ao contrário do app.
+   *
+   * A vitrine e a ferramenta têm públicos diferentes: uma é lida uma vez, de passagem;
+   * a outra fica aberta o dia inteiro. Os tokens convivem sem conflito porque o app
+   * nunca usa estes, e a landing nunca usa os dele.
+   */
+  --color-paper: oklch(0.985 0.002 95);
+  --color-paper-sunk: oklch(0.965 0.003 95);
+  --color-graphite: oklch(0.16 0.004 285);
+  --color-graphite-soft: oklch(0.44 0.006 285);
+  --color-graphite-faint: oklch(0.72 0.006 285);
+  --color-rule: oklch(0.9 0.003 95);
 
   --radius-card: 0.75rem;
   --radius-control: 0.5rem;
@@ -161,6 +179,64 @@
 
   .prose-editor hr {
     border-color: var(--color-line);
+  }
+
+  /*
+   * Landing page.
+   *
+   * A grade de fundo é um `repeating-linear-gradient`, não imagem: escala em qualquer
+   * viewport, não pesa no carregamento e acompanha o token da régua.
+   */
+  .landing {
+    background-color: var(--color-paper);
+    color: var(--color-graphite);
+    font-family: var(--font-display);
+  }
+
+  .landing-grid {
+    background-image:
+      repeating-linear-gradient(to right, var(--color-rule) 0 1px, transparent 1px 120px),
+      repeating-linear-gradient(to bottom, var(--color-rule) 0 1px, transparent 1px 120px);
+  }
+
+  /* Display grande pede entrelinha curta e tracking negativo, senão parece solto. */
+  .landing-display {
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: -0.035em;
+    line-height: 0.95;
+  }
+
+  /* Rótulo mono com o traço antes, como na referência: —— Capacidades */
+  .landing-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+    color: var(--color-graphite-soft);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .landing-eyebrow::before {
+    content: "";
+    width: 2.25rem;
+    height: 1px;
+    background-color: var(--color-graphite-faint);
+  }
+
+  /* Seção invertida: os mesmos tokens, com os papéis trocados. */
+  .landing-inverted {
+    background-color: var(--color-graphite);
+    color: var(--color-paper);
+  }
+
+  .landing-inverted .landing-eyebrow {
+    color: var(--color-graphite-faint);
+  }
+
+  .landing-inverted .landing-eyebrow::before {
+    background-color: var(--color-graphite-soft);
   }
 
   /* `[[link]]` no editor. É texto puro no conteúdo salvo — o realce é decoração. */

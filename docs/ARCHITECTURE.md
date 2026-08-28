@@ -136,6 +136,20 @@ constraints escritas à mão são exercitadas de verdade — por isso os testes 
 - **Validação dupla**: client (UX) + constraint no banco (verdade). A tela explica, o banco garante.
 - Segredos: `.env` fora do git; `JWT_SECRET` com 32+ chars.
 
+## Rotas do front
+
+| Rota | Quem vê |
+|---|---|
+| `/` | **Pública** — a vitrine. Com sessão, redireciona para `/hoje` |
+| `/entrar` | Pública — login e cadastro |
+| `/hoje` | Planner e tarefas |
+| `/notas` | Notas |
+
+A vitrine usa **tema claro** com tokens próprios (`paper`, `graphite`, `rule`), escopados
+em `.landing`. O app segue escuro: são públicos diferentes — a vitrine é lida uma vez, de
+passagem, enquanto a ferramenta fica aberta o dia inteiro. Os dois conjuntos de tokens
+convivem porque nenhum lado usa os do outro.
+
 ## Endpoints
 
 Públicos: `GET /health`, `POST /auth/register`, `POST /auth/login`.

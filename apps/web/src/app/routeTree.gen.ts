@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EntrarRouteImport } from './routes/entrar'
+import { Route as HojeRouteImport } from './routes/hoje'
 import { Route as NotasRouteImport } from './routes/notas'
 
 const IndexRoute = IndexRouteImport.update({
@@ -23,6 +24,11 @@ const EntrarRoute = EntrarRouteImport.update({
   path: '/entrar',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HojeRoute = HojeRouteImport.update({
+  id: '/hoje',
+  path: '/hoje',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NotasRoute = NotasRouteImport.update({
   id: '/notas',
   path: '/notas',
@@ -32,30 +38,34 @@ const NotasRoute = NotasRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/entrar': typeof EntrarRoute
+  '/hoje': typeof HojeRoute
   '/notas': typeof NotasRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/entrar': typeof EntrarRoute
+  '/hoje': typeof HojeRoute
   '/notas': typeof NotasRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/entrar': typeof EntrarRoute
+  '/hoje': typeof HojeRoute
   '/notas': typeof NotasRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/entrar' | '/notas'
+  fullPaths: '/' | '/entrar' | '/hoje' | '/notas'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/entrar' | '/notas'
-  id: '__root__' | '/' | '/entrar' | '/notas'
+  to: '/' | '/entrar' | '/hoje' | '/notas'
+  id: '__root__' | '/' | '/entrar' | '/hoje' | '/notas'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   EntrarRoute: typeof EntrarRoute
+  HojeRoute: typeof HojeRoute
   NotasRoute: typeof NotasRoute
 }
 
@@ -75,6 +85,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EntrarRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/hoje': {
+      id: '/hoje'
+      path: '/hoje'
+      fullPath: '/hoje'
+      preLoaderRoute: typeof HojeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/notas': {
       id: '/notas'
       path: '/notas'
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   EntrarRoute: EntrarRoute,
+  HojeRoute: HojeRoute,
   NotasRoute: NotasRoute,
 }
 export const routeTree = rootRouteImport

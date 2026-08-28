@@ -75,7 +75,7 @@ try {
   })
 
   // Entra com a conta recém-criada.
-  await page.goto(WEB, { waitUntil: 'networkidle' })
+  await page.goto(`${WEB}/entrar`, { waitUntil: 'networkidle' })
   await page.getByLabel('E-mail').fill(email)
   await page.getByLabel('Senha').fill('senha-bem-segura')
   await page.getByRole('button', { name: 'Entrar', exact: true }).click()
