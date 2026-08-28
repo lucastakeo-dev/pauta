@@ -92,7 +92,7 @@ export function TaskItem({ task }: TaskItemProps) {
         aria-label={`${COPY.arrastar}: ${task.title}`}
         className={cn(
           'mt-0.5 shrink-0 cursor-grab rounded-[4px] px-0.5 text-ink-subtle text-xs',
-          'opacity-0 transition hover:text-ink group-hover:opacity-100 focus-visible:opacity-100',
+          'opacity-0 transition duration-150 ease-press hover:text-ink group-hover:opacity-100 focus-visible:opacity-100',
           'active:cursor-grabbing',
         )}
         {...attributes}
@@ -191,8 +191,8 @@ export function TaskItem({ task }: TaskItemProps) {
         aria-expanded={scheduling}
         aria-label={`${COPY.agendar}: ${task.title}`}
         className={cn(
-          'shrink-0 rounded-control px-2 py-1 text-xs transition',
-          'hover:bg-surface-raised hover:text-ink',
+          'shrink-0 rounded-control px-2 py-1 text-xs',
+          'transition duration-150 ease-press hover:bg-surface-raised hover:text-ink active:scale-90',
           scheduling
             ? 'text-iris opacity-100'
             : 'text-ink-subtle opacity-0 group-hover:opacity-100 focus-visible:opacity-100',
@@ -206,8 +206,8 @@ export function TaskItem({ task }: TaskItemProps) {
         onClick={() => remove.mutate(task.id)}
         aria-label={`${COPY.remover}: ${task.title}`}
         className={cn(
-          'shrink-0 rounded-control px-2 py-1 text-ink-subtle text-xs opacity-0 transition',
-          'hover:bg-surface-raised hover:text-danger',
+          'shrink-0 rounded-control px-2 py-1 text-ink-subtle text-xs opacity-0',
+          'transition duration-150 ease-press hover:bg-surface-raised hover:text-danger active:scale-90',
           'group-hover:opacity-100 focus-visible:opacity-100',
         )}
       >

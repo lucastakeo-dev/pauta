@@ -4,6 +4,12 @@ import type { CaptureDraft } from '../../entities/capture/index.js'
 import { createLabel, labelKeys, useLabels } from '../../entities/label/index.js'
 import { createProject, projectKeys, useProjects } from '../../entities/project/index.js'
 import { createTask, taskKeys } from '../../entities/task/index.js'
+import { ApiRequestError } from '../../shared/api/client.js'
+import { useToast } from '../../shared/ui/toast.js'
+
+const AVISOS = {
+  capturar: { ok: 'Tarefa criada.', erro: 'Não consegui criar a tarefa.' },
+}
 
 /** Comparação de nome tolerante a acento e caixa — "casa" acha "Casa". */
 function normalize(value: string): string {
@@ -51,6 +57,7 @@ export function useCaptureResolution(draft: CaptureDraft): {
  */
 export function useCapture() {
   const queryClient = useQueryClient()
+  const toast = useToast()
 
   return useMutation({
     mutationFn: async (draft: CaptureDraft) => {
@@ -105,6 +112,11 @@ export function useCapture() {
       void queryClient.invalidateQueries({ queryKey: taskKeys.all })
       void queryClient.invalidateQueries({ queryKey: projectKeys.all })
       void queryClient.invalidateQueries({ queryKey: labelKeys.all })
+      toast.success(AVISOS.capturar.ok)
     },
+
+    // O console fecha ao enviar. Sem este aviso, uma falha aconteceria fora da vista.
+    onError: (cause) =>
+      toast.error(cause instanceof ApiRequestError ? cause.message : AVISOS.capturar.erro),
   })
 }

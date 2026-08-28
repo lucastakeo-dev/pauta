@@ -2,6 +2,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { type PointerEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { blockGeometry, type PlannerItem, resizeEnd } from '../../entities/planner/index.js'
 import { taskKeys, updateTask } from '../../entities/task/index.js'
+import { ApiRequestError } from '../../shared/api/client.js'
+import { useToast } from '../../shared/ui/toast.js'
+
+const AVISOS = {
+  duracao: { ok: 'Horário atualizado.', erro: 'Não consegui atualizar o horário.' },
+}
 
 type UseResizeBlockOptions = {
   item: PlannerItem
@@ -22,6 +28,7 @@ type UseResizeBlockOptions = {
  */
 export function useResizeBlock({ item, day, hourHeight, enabled }: UseResizeBlockOptions) {
   const queryClient = useQueryClient()
+  const toast = useToast()
   const [previewEnd, setPreviewEnd] = useState<Date | null>(null)
   const gridTopRef = useRef(0)
 
@@ -31,6 +38,12 @@ export function useResizeBlock({ item, day, hourHeight, enabled }: UseResizeBloc
         scheduledStart: item.startsAt.toISOString(),
         scheduledEnd: end.toISOString(),
       }),
+
+    onSuccess: () => toast.success(AVISOS.duracao.ok),
+
+    onError: (cause) =>
+      toast.error(cause instanceof ApiRequestError ? cause.message : AVISOS.duracao.erro),
+
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: taskKeys.all })
     },

@@ -33,7 +33,8 @@ export function Checkbox({ checked, onChange, label, className }: CheckboxProps)
       <span
         aria-hidden="true"
         className={cn(
-          'flex size-[18px] items-center justify-center rounded-[6px] border transition-colors',
+          'flex size-[18px] items-center justify-center rounded-[6px] border',
+          'transition-[colors,transform] duration-150 ease-press group-active:scale-90',
           'peer-focus-visible:outline-2 peer-focus-visible:outline-iris peer-focus-visible:outline-offset-2',
           checked
             ? 'border-iris bg-iris text-canvas'
@@ -45,7 +46,9 @@ export function Checkbox({ checked, onChange, label, className }: CheckboxProps)
           <svg
             aria-hidden="true"
             viewBox="0 0 12 12"
-            className="size-3"
+            // O risco é desenhado em vez de aparecer pronto: concluir é a ação mais
+            // repetida do app, e ver o traço acontecer é o que a torna satisfatória.
+            className="size-3 animate-in zoom-in-50 duration-150 ease-entrance"
             fill="none"
             stroke="currentColor"
           >

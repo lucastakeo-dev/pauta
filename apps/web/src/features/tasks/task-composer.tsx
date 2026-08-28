@@ -1,12 +1,9 @@
 import { type FormEvent, useRef, useState } from 'react'
 import { parsePriority } from '../../entities/task/index.js'
-import { ApiRequestError } from '../../shared/api/client.js'
-import { cn } from '../../shared/lib/cn.js'
 import { useCreateTask } from './queries.js'
 
 const COPY = {
   placeholder: 'Nova tarefa… (P1 a P4 para prioridade)',
-  erro: 'Não consegui salvar a tarefa.',
 }
 
 type TaskComposerProps = {
@@ -23,7 +20,6 @@ export function TaskComposer({ projectId }: TaskComposerProps) {
   const create = useCreateTask()
   const inputRef = useRef<HTMLInputElement>(null)
   const [value, setValue] = useState('')
-  const [error, setError] = useState<string | null>(null)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -31,8 +27,8 @@ export function TaskComposer({ projectId }: TaskComposerProps) {
     const { title, priority } = parsePriority(value)
     if (!title) return
 
-    setError(null)
-    // Limpa antes da resposta: quem digita rápido já quer registrar a próxima.
+    // Limpa antes da resposta: quem digita rápido já quer registrar a próxima. Enquanto
+    // isso, a lista mostra a tarefa a caminho — ela não some da tela.
     setValue('')
 
     try {
@@ -43,9 +39,10 @@ export function TaskComposer({ projectId }: TaskComposerProps) {
         labelIds: [],
         ...(projectId ? { projectId } : {}),
       })
-    } catch (cause) {
+    } catch {
+      // A mensagem vai no aviso, junto com as das outras ações. O que cabe ao campo é
+      // devolver o que foi digitado, para a pessoa tentar de novo sem redigitar.
       setValue(title)
-      setError(cause instanceof ApiRequestError ? cause.message : COPY.erro)
     } finally {
       inputRef.current?.focus()
     }
@@ -59,20 +56,12 @@ export function TaskComposer({ projectId }: TaskComposerProps) {
         onChange={(event) => setValue(event.target.value)}
         placeholder={COPY.placeholder}
         aria-label="Nova tarefa"
-        aria-invalid={error ? true : undefined}
-        className={cn(
-          'h-11 w-full rounded-control border bg-surface px-3.5 text-ink text-sm',
+        className={[
+          'h-11 w-full rounded-control border border-line bg-surface px-3.5 text-ink text-sm',
           'placeholder:text-ink-subtle',
           'transition-colors focus:border-iris',
-          error ? 'border-danger' : 'border-line',
-        )}
+        ].join(' ')}
       />
-
-      {error ? (
-        <p role="alert" className="text-danger text-xs">
-          {error}
-        </p>
-      ) : null}
     </form>
   )
 }

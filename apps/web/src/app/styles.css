@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/*
+ * Utilitários de entrada/saída (`animate-in`, `fade-in-0`, `zoom-in-95`).
+ *
+ * O shadcn gera componentes já usando essas classes. Sem este import elas existem no
+ * JSX e não fazem nada — o diálogo aparecia instantaneamente, sem transição.
+ */
+@import "tw-animate-css";
+
 @import "@fontsource-variable/inter";
 @import "@fontsource-variable/instrument-sans";
 @import "@fontsource-variable/jetbrains-mono";
@@ -72,6 +80,52 @@
 
   --radius-card: 0.75rem;
   --radius-control: 0.5rem;
+
+  /*
+   * Movimento.
+   *
+   * Duas curvas, não mais: uma para o que entra na tela e outra para resposta ao
+   * toque. Movimento aqui serve para explicar de onde algo veio ou confirmar que o
+   * clique registrou — nunca para enfeitar. Por isso as durações são curtas: acima de
+   * ~200ms um app que fica aberto o dia inteiro começa a parecer lento.
+   *
+   * Quem pediu `prefers-reduced-motion` zera tudo isso no fim do arquivo.
+   */
+  --ease-entrance: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-press: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /*
+   * Ponte para o shadcn.
+   *
+   * Os componentes dele falam em `background`, `foreground`, `border`, `ring`. Em vez
+   * de aceitar a paleta padrão — o que criaria uma segunda fonte de verdade para cor,
+   * e dobraria o trabalho da troca de tema já planejada — os nomes dele apontam para
+   * os nossos tokens.
+   *
+   * Aqui valem os do app (escuro). Dentro de `.landing` os mesmos nomes são
+   * redefinidos para o claro, então o mesmo componente veste as duas superfícies sem
+   * saber em qual está.
+   */
+  --color-background: var(--color-canvas);
+  --color-foreground: var(--color-ink);
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-ink);
+  --color-popover: var(--color-surface-overlay);
+  --color-popover-foreground: var(--color-ink);
+  --color-primary: var(--color-iris);
+  --color-primary-foreground: var(--color-canvas);
+  --color-secondary: var(--color-surface-raised);
+  --color-secondary-foreground: var(--color-ink);
+  --color-muted: var(--color-surface-raised);
+  --color-muted-foreground: var(--color-ink-subtle);
+  --color-accent: var(--color-surface-raised);
+  --color-accent-foreground: var(--color-ink);
+  --color-destructive: var(--color-danger);
+  --color-destructive-foreground: var(--color-canvas);
+  --color-border: var(--color-line);
+  --color-input: var(--color-line);
+  --color-ring: var(--color-iris);
+  --radius: var(--radius-card);
 
   /* Altura de uma hora na grade do planner. Vira variável porque o zoom do dia
      (Fase 2) muda este valor e tudo o mais deve acompanhar. */
@@ -195,6 +249,22 @@
     background-color: var(--color-paper);
     color: var(--color-graphite);
     font-family: var(--font-display);
+
+    /* Os mesmos nomes do shadcn, agora apontando para a paleta clara. */
+    --color-background: var(--color-paper);
+    --color-foreground: var(--color-graphite);
+    --color-card: var(--color-paper);
+    --color-card-foreground: var(--color-graphite);
+    --color-popover: var(--color-paper);
+    --color-popover-foreground: var(--color-graphite);
+    --color-primary: var(--color-graphite);
+    --color-primary-foreground: var(--color-paper);
+    --color-muted-foreground: var(--color-graphite-soft);
+    --color-accent: var(--color-paper-sunk);
+    --color-accent-foreground: var(--color-graphite);
+    --color-border: var(--color-rule);
+    --color-input: var(--color-rule);
+    --color-ring: var(--color-graphite);
   }
 
   .landing-grid {

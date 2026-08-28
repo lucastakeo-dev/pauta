@@ -1,10 +1,12 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { SessionProvider } from '../features/auth/session-context.js'
+import { ToastProvider } from '../shared/ui/toast.js'
 
 /**
- * Estado de servidor fica no React Query; estado de sessão, no SessionProvider.
- * Nenhum estado global além destes — o resto mora em quem usa.
+ * Estado de servidor fica no React Query; estado de sessão, no SessionProvider; avisos
+ * de falha, no ToastProvider. Nenhum estado global além destes — o resto mora em quem
+ * usa.
  */
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,7 +23,9 @@ const queryClient = new QueryClient({
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
-      <SessionProvider>{children}</SessionProvider>
+      <ToastProvider>
+        <SessionProvider>{children}</SessionProvider>
+      </ToastProvider>
     </QueryClientProvider>
   )
 }
