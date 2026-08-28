@@ -182,7 +182,11 @@
   }
 
   /*
-   * Landing page.
+   * Superfície pública — a vitrine e a tela de entrada.
+   *
+   * Clara, ao contrário do app: quem passa por aqui está chegando, não trabalhando.
+   * A troca para o escuro acontece só depois do login, quando a superfície deixa de
+   * ser vitrine e vira ferramenta.
    *
    * A grade de fundo é um `repeating-linear-gradient`, não imagem: escala em qualquer
    * viewport, não pesa no carregamento e acompanha o token da régua.

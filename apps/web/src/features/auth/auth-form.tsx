@@ -1,21 +1,25 @@
 import { loginSchema, registerSchema } from '@pauta/contracts'
 import { type FormEvent, useState } from 'react'
 import { ApiRequestError } from '../../shared/api/client.js'
-import { Button } from '../../shared/ui/button.js'
-import { Field } from '../../shared/ui/field.js'
+import { cn } from '../../shared/lib/cn.js'
+import { AuthField } from './auth-field.js'
 import { useSession } from './session-context.js'
 
 /** Copy fora do JSX: a tela fica legível e o texto, fácil de revisar. */
 const COPY = {
   entrar: {
-    titulo: 'Entrar',
+    titulo1: 'Bom te ver',
+    titulo2: 'de novo.',
     acao: 'Entrar',
-    alternativa: 'Ainda não tem conta? Criar uma',
+    pergunta: 'Ainda não tem conta?',
+    alternativa: 'Criar uma',
   },
   criar: {
-    titulo: 'Criar conta',
+    titulo1: 'Comece a',
+    titulo2: 'organizar o dia.',
     acao: 'Criar conta',
-    alternativa: 'Já tem conta? Entrar',
+    pergunta: 'Já tem conta?',
+    alternativa: 'Entrar',
   },
 } as const
 
@@ -89,45 +93,81 @@ export function AuthForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex w-full max-w-sm flex-col gap-4" noValidate>
-      <h1 className="font-semibold text-2xl text-ink">{copy.titulo}</h1>
+    <div className="flex w-full flex-col gap-10">
+      <h1 className="landing-display text-[clamp(2.25rem,5vw,3.25rem)]">
+        {copy.titulo1}
+        <br />
+        <span className="text-graphite-faint">{copy.titulo2}</span>
+      </h1>
 
-      {mode === 'criar' ? (
-        <Field label="Nome" name="name" autoComplete="name" required error={fieldErrors.name} />
-      ) : null}
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
+        {mode === 'criar' ? (
+          <AuthField
+            label="Nome"
+            name="name"
+            autoComplete="name"
+            required
+            error={fieldErrors.name}
+          />
+        ) : null}
 
-      <Field
-        label="E-mail"
-        name="email"
-        type="email"
-        autoComplete="email"
-        required
-        error={fieldErrors.email}
-      />
+        <AuthField
+          label="E-mail"
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          error={fieldErrors.email}
+        />
 
-      <Field
-        label="Senha"
-        name="password"
-        type="password"
-        autoComplete={mode === 'entrar' ? 'current-password' : 'new-password'}
-        required
-        error={fieldErrors.password}
-        hint={mode === 'criar' ? 'Pelo menos 8 caracteres.' : undefined}
-      />
+        <AuthField
+          label="Senha"
+          name="password"
+          type="password"
+          autoComplete={mode === 'entrar' ? 'current-password' : 'new-password'}
+          required
+          error={fieldErrors.password}
+          hint={mode === 'criar' ? 'Pelo menos 8 caracteres.' : undefined}
+        />
 
-      {formError ? (
-        <p role="alert" className="rounded-control bg-danger/10 px-3 py-2 text-danger text-sm">
-          {formError}
-        </p>
-      ) : null}
+        {formError ? (
+          <p role="alert" className="rounded-xl bg-danger/10 px-4 py-3 text-danger text-sm">
+            {formError}
+          </p>
+        ) : null}
 
-      <Button type="submit" loading={submitting} className="mt-2">
-        {copy.acao}
-      </Button>
+        <button
+          type="submit"
+          disabled={submitting}
+          aria-busy={submitting}
+          className={cn(
+            'mt-2 inline-flex h-12 items-center justify-center gap-2 rounded-full',
+            'bg-graphite font-medium text-[15px] text-paper',
+            'transition-opacity hover:opacity-85',
+            'disabled:cursor-not-allowed disabled:opacity-50',
+          )}
+        >
+          {submitting ? (
+            <span
+              aria-hidden="true"
+              className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+            />
+          ) : null}
+          {copy.acao}
+          {submitting ? null : <span aria-hidden="true">→</span>}
+        </button>
+      </form>
 
-      <Button type="button" variant="ghost" onClick={switchMode}>
-        {copy.alternativa}
-      </Button>
-    </form>
+      <p className="text-graphite-soft text-sm">
+        {copy.pergunta}{' '}
+        <button
+          type="button"
+          onClick={switchMode}
+          className="font-medium text-graphite underline underline-offset-4 transition-opacity hover:opacity-70"
+        >
+          {copy.alternativa}
+        </button>
+      </p>
+    </div>
   )
 }
