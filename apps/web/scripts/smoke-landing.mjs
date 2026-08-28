@@ -73,7 +73,7 @@ try {
 
   // 6. O CTA leva ao login.
   await page.getByRole('link', { name: 'Entrar', exact: true }).first().click()
-  await page.waitForURL((url) => url.pathname === '/login', { timeout: 10_000 })
+  await page.waitForURL((url) => url.pathname === '/signin', { timeout: 10_000 })
   check('o CTA leva ao login', true)
 
   // 7. Sem rolagem horizontal — o erro mais comum em página de display grande.

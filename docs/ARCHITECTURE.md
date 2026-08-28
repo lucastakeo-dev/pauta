@@ -141,7 +141,8 @@ constraints escritas à mão são exercitadas de verdade — por isso os testes 
 | Rota | Quem vê |
 |---|---|
 | `/` | **Pública** — a vitrine. Com sessão, redireciona para `/today` |
-| `/login` | Pública — login e cadastro |
+| `/signin` | Pública — entrar |
+| `/signup` | Pública — criar conta |
 | `/today` | Planner e tarefas |
 | `/notes` | Notas |
 

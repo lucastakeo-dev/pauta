@@ -26,7 +26,7 @@ export function RequireSession({ children }: { children: ReactNode }) {
   const { status } = useSession()
 
   if (status === 'loading') return <Verificando />
-  if (status === 'anonymous') return <Navigate to="/login" replace />
+  if (status === 'anonymous') return <Navigate to="/signin" replace />
 
   return <>{children}</>
 }

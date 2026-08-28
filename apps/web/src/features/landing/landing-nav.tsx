@@ -58,7 +58,7 @@ export function LandingNav() {
           </a>
 
           <Link
-            to="/login"
+            to="/signin"
             className="rounded-full bg-graphite px-5 py-2 font-medium text-paper text-sm transition-opacity hover:opacity-85"
           >
             {COPY.entrar}

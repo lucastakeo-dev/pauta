@@ -45,13 +45,14 @@ mkdirSync(outDir, { recursive: true })
 try {
   // Conta nova a cada execução: o teste começa sempre de um estado conhecido.
   const email = `tarefas-${Date.now()}@exemplo.dev`
-  await page.goto(`${WEB}/login`, { waitUntil: 'networkidle' })
-  await page.getByRole('button', { name: /Criar uma/ }).click()
+  await page.goto(`${WEB}/signin`, { waitUntil: 'networkidle' })
+  await page.getByRole('link', { name: 'Criar uma' }).click()
+  await page.waitForURL((url) => url.pathname === '/signup', { timeout: 10_000 })
   await page.getByLabel('Nome').fill('Takeo')
   await page.getByLabel('E-mail').fill(email)
   await page.getByLabel('Senha').fill('senha-bem-segura')
   await page.getByRole('button', { name: 'Criar conta', exact: true }).click()
-  await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10_000 })
+  await page.waitForURL((url) => !url.pathname.includes('/signin'), { timeout: 10_000 })
 
   // 1. Conta nova começa sem tarefa, e o vazio explica o que fazer.
   await page.getByText('Nada por aqui.').waitFor({ timeout: 10_000 })

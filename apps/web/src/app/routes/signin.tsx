@@ -1,11 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { LoginPage } from '../../pages/login-page.js'
+import { AuthPage } from '../../pages/auth-page.js'
 import { RedirectIfSession } from '../require-session.js'
 
-export const Route = createFileRoute('/login')({
+export const Route = createFileRoute('/signin')({
   component: () => (
     <RedirectIfSession>
-      <LoginPage />
+      <AuthPage mode="signin" />
     </RedirectIfSession>
   ),
 })
