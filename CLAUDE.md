@@ -153,6 +153,8 @@ pnpm format                # biome check --write
 pnpm typecheck             # tsc em todos os pacotes
 pnpm test                  # vitest (a API precisa do banco de pé)
 pnpm db:migrate            # prisma migrate dev
+                           # (o client é regerado no postinstall; após mudar o schema
+                           #  à mão, rode `pnpm --filter @pauta/api db:generate`)
 pnpm db:studio             # prisma studio
 
 # na apps/web:
