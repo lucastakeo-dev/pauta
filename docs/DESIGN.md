@@ -133,3 +133,27 @@ Duas exceções, ambas porque existe lugar melhor para a mensagem:
   para o nome, não para o rodapé da tela.
 - **Autosave da nota** tem indicador próprio no editor. Não é ação pedida, é consequência
   de digitar.
+
+## Moldura: uma barra lateral, sem topo
+
+As telas logadas têm só a barra à esquerda. Havia também uma faixa no topo com marca,
+navegação e sair; ela custava uma linha inteira de altura para dizer o que a barra já
+podia dizer — e num planner, onde a grade de horas quer altura, competia com o conteúdo.
+
+O formato segue o [Linear](https://linear.app): identidade no topo (o nome é o botão do
+menu da conta), captura rápida logo abaixo com o atalho à mostra, navegação, e por
+último o trecho que muda conforme a tela.
+
+**O trecho que muda vem da página, por portal.** A barra é do `app/`, mas seu conteúdo
+de baixo é da tela — filtros de projeto em Hoje, lista de páginas em Notas — e a página
+não pode importar de `app/`. Então ela renderiza o trecho onde ele nasce, junto do estado
+que o alimenta, e o `SidebarSlot` o entrega dentro da barra. O portal preserva o contexto
+do React, então nada precisa ser içado para a rota.
+
+Seções são recolhíveis (`SidebarGroup`), porque projetos e etiquetas crescem sem limite:
+quem tem vinte projetos não deveria rolar por eles para chegar nas etiquetas. O título
+inteiro é o alvo do clique — a seta sozinha é pequena demais para mirar.
+
+**Pendente:** a barra tem largura fixa e fica sempre visível. Abaixo de ~768px ela come
+espaço demais, e como agora é a única navegação, não dá para simplesmente escondê-la.
+A branch `fix/reachable-panels-on-small-screens` trata das telas pequenas.

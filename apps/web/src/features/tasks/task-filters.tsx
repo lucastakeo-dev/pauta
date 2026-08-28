@@ -1,4 +1,5 @@
 import { cn } from '../../shared/lib/cn.js'
+import { SidebarGroup } from '../../shared/ui/sidebar-group.js'
 import { NewProjectDialog } from './new-project-dialog.js'
 import { useLabels, useProjects } from './queries.js'
 
@@ -27,8 +28,8 @@ export function TaskFilters({ value, onChange }: TaskFiltersProps) {
   const { data: labels } = useLabels()
 
   return (
-    <nav className="flex w-56 shrink-0 flex-col gap-6" aria-label="Filtros">
-      <FilterGroup title={COPY.projetos} action={<NewProjectDialog />}>
+    <nav className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto" aria-label="Filtros">
+      <SidebarGroup title={COPY.projetos} action={<NewProjectDialog />}>
         <FilterButton
           active={value.projectId === undefined}
           onClick={() => onChange({ ...value, projectId: undefined })}
@@ -52,9 +53,9 @@ export function TaskFilters({ value, onChange }: TaskFiltersProps) {
             count={project.openTaskCount}
           />
         ))}
-      </FilterGroup>
+      </SidebarGroup>
 
-      <FilterGroup title={COPY.etiquetas}>
+      <SidebarGroup title={COPY.etiquetas}>
         {labels?.length === 0 ? <Empty>{COPY.semEtiquetas}</Empty> : null}
 
         {labels?.map((label) => (
@@ -68,7 +69,7 @@ export function TaskFilters({ value, onChange }: TaskFiltersProps) {
             color={label.color}
           />
         ))}
-      </FilterGroup>
+      </SidebarGroup>
 
       <label className="flex cursor-pointer items-center gap-2 px-3 text-ink-subtle text-xs">
         <input
@@ -80,26 +81,6 @@ export function TaskFilters({ value, onChange }: TaskFiltersProps) {
         {COPY.mostrarConcluidas}
       </label>
     </nav>
-  )
-}
-
-function FilterGroup({
-  title,
-  action,
-  children,
-}: {
-  title: string
-  action?: React.ReactNode
-  children: React.ReactNode
-}) {
-  return (
-    <section className="flex flex-col gap-0.5">
-      <div className="flex items-center justify-between px-3 pb-1">
-        <h2 className="font-medium text-ink-subtle text-xs uppercase tracking-wider">{title}</h2>
-        {action}
-      </div>
-      {children}
-    </section>
   )
 }
 

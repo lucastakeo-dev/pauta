@@ -81,7 +81,9 @@ try {
   check('sessão sobrevive ao reload', continuaLogado, page.url())
 
   // 6. Sair volta ao login, e a área logada volta a ser barrada.
-  await page.getByRole('button', { name: 'Sair' }).click()
+  //    Sair mora no menu da conta, na barra lateral — não mais solto numa faixa no topo.
+  await page.getByRole('button', { name: 'Conta' }).click()
+  await page.getByRole('menuitem', { name: 'Sair' }).click()
   await page.waitForURL((url) => url.pathname.includes('/signin'), { timeout: 10_000 })
 
   await page.goto(`${WEB}/today`, { waitUntil: 'networkidle' })
