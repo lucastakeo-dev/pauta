@@ -32,8 +32,11 @@ export function Button({
       aria-busy={loading}
       className={cn(
         'inline-flex h-10 items-center justify-center gap-2 rounded-control px-4',
-        'font-medium text-sm transition-colors',
-        'disabled:cursor-not-allowed disabled:opacity-50',
+        'font-medium text-sm',
+        // O recuo no `active` é a confirmação de que o clique registrou — o único
+        // retorno imediato que existe antes da resposta do servidor chegar.
+        'transition-[colors,transform] duration-150 ease-press active:scale-[0.97]',
+        'disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100',
         VARIANTS[variant],
         className,
       )}

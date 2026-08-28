@@ -85,3 +85,22 @@ atualizável pelo CLI. O mesmo bloco é redefinido dentro de `.landing`, onde a 
 Quando um componente do shadcn pede uma variante que não temos (o diálogo pede
 `outline` no botão), a variante nasce no **nosso** componente. Editar o arquivo gerado
 é o último recurso.
+
+## Movimento
+
+Duas curvas em `@theme`, e nada além disso:
+
+| Token | Onde | Por quê |
+|---|---|---|
+| `--ease-entrance` | diálogo, avisos, marca da caixa | algo que chega de fora precisa dizer de onde veio |
+| `--ease-press` | botões, filtros, caixa de marcar | confirma que o clique registrou antes de o servidor responder |
+
+Durações ficam entre 150ms e 200ms. Acima disso, um app que fica aberto o dia inteiro
+começa a parecer lento — a animação passa a ser espera, não explicação.
+
+Os utilitários `animate-in`, `fade-in-0` e `zoom-in-95` vêm do `tw-animate-css`. Ele é
+dependência obrigatória, não enfeite: o shadcn gera componentes já usando essas classes,
+então sem o pacote elas ficam no JSX sem efeito nenhum — foi exatamente o que aconteceu
+com o primeiro diálogo, que abria sem transição.
+
+Tudo isso é zerado por `prefers-reduced-motion: reduce`, no fim do `styles.css`.

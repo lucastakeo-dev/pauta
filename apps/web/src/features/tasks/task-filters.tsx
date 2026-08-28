@@ -122,8 +122,9 @@ function FilterButton({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        'flex items-center gap-2 rounded-control px-3 py-1.5 text-left text-sm transition-colors',
-        active ? 'bg-surface-raised text-ink' : 'text-ink-muted hover:bg-surface',
+        'flex items-center gap-2 rounded-control px-3 py-1.5 text-left text-sm',
+        'transition-[colors,transform] duration-150 ease-press active:scale-[0.98]',
+        active ? 'bg-surface-raised text-ink' : 'text-ink-muted hover:bg-surface hover:text-ink',
       )}
     >
       {color ? (

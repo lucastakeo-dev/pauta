@@ -88,7 +88,11 @@ export function NewProjectDialog() {
     >
       <DialogTrigger
         aria-label={COPY.abrir}
-        className="rounded-control px-1 text-ink-subtle text-sm transition-colors hover:text-ink"
+        className={cn(
+          'rounded-control px-1.5 text-ink-subtle text-sm leading-none',
+          'transition-[colors,transform] duration-150 ease-press',
+          'hover:text-ink active:scale-90',
+        )}
       >
         +
       </DialogTrigger>

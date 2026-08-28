@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/*
+ * Utilitários de entrada/saída (`animate-in`, `fade-in-0`, `zoom-in-95`).
+ *
+ * O shadcn gera componentes já usando essas classes. Sem este import elas existem no
+ * JSX e não fazem nada — o diálogo aparecia instantaneamente, sem transição.
+ */
+@import "tw-animate-css";
+
 @import "@fontsource-variable/inter";
 @import "@fontsource-variable/instrument-sans";
 @import "@fontsource-variable/jetbrains-mono";
@@ -72,6 +80,19 @@
 
   --radius-card: 0.75rem;
   --radius-control: 0.5rem;
+
+  /*
+   * Movimento.
+   *
+   * Duas curvas, não mais: uma para o que entra na tela e outra para resposta ao
+   * toque. Movimento aqui serve para explicar de onde algo veio ou confirmar que o
+   * clique registrou — nunca para enfeitar. Por isso as durações são curtas: acima de
+   * ~200ms um app que fica aberto o dia inteiro começa a parecer lento.
+   *
+   * Quem pediu `prefers-reduced-motion` zera tudo isso no fim do arquivo.
+   */
+  --ease-entrance: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-press: cubic-bezier(0.4, 0, 0.2, 1);
 
   /*
    * Ponte para o shadcn.

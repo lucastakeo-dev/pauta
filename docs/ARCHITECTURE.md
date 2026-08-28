@@ -114,12 +114,23 @@ pnpm db:migrate            # prisma migrate dev
 pnpm db:studio             # prisma studio
 
 # na apps/web:
-pnpm smoke <dir>           # fluxo de entrada num Chrome de verdade + screenshots
-pnpm smoke:tasks <dir>     # fluxo da tela de tarefas (criar, concluir, editar, filtrar)
+pnpm smoke <dir>           # entrada e guarda de rota, num Chrome de verdade
+pnpm smoke:tasks <dir>     # tela de tarefas (criar, concluir, editar, filtrar, projeto)
+pnpm smoke:write <dir>     # escritas otimistas: atrasa e derruba requisições de propósito
+pnpm smoke:planner <dir>   # grade do dia
+pnpm smoke:drag <dir>      # arrastar tarefa para o planner
+pnpm smoke:polish <dir>    # foco, teclado e estados vazios
+pnpm smoke:console <dir>   # captura rápida (Ctrl+K)
+pnpm smoke:notes <dir>     # editor, nota diária e backlinks
+pnpm smoke:landing <dir>   # vitrine
 ```
 
-Os dois `smoke` cobrem o que `app.inject()` não alcança — foi assim que apareceu o
-preflight de CORS recusando `PATCH`, invisível para os 80 testes da API.
+Os `smoke` cobrem o que `app.inject()` não alcança, e é de onde vieram os piores bugs do
+projeto: o preflight de CORS recusando `PATCH` (invisível para os testes da API), a tarefa
+recorrente que ressuscitava ao ser concluída e a corrida do autosave que apagava backlinks.
+
+`smoke:write` é o único que mede *quando* a tela reage, e não o que a API responde: ele
+atrasa as respostas em 1,5s e falha se a interface esperar por elas.
 
 `pnpm test` roda contra o banco `pauta_test`, criado e migrado sozinho no primeiro run. As
 constraints escritas à mão são exercitadas de verdade — por isso os testes não usam mock de banco.
@@ -127,7 +138,8 @@ constraints escritas à mão são exercitadas de verdade — por isso os testes 
 ## Convenções de código
 
 - **Idiomas**: código, identificadores e tabelas em **inglês**; copy de UI, mensagens de erro ao
-  usuário, comentários e commits em **pt-BR**.
+  usuário e comentários em **pt-BR**. **Commits e branches são em inglês** — ver as regras
+  no `CLAUDE.md`.
 - **Contratos compartilhados**: schema que valida input de usuário nasce em `packages/contracts` e
   é importado pelos dois lados. Mensagens de validação em pt-BR dentro do próprio schema.
 - **Componentização (web)**: 1 seção/feature por arquivo, copy em constantes fora do JSX, estado
