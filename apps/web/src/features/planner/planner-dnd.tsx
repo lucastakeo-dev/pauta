@@ -17,6 +17,12 @@ import {
   timeFromOffset,
 } from '../../entities/planner/index.js'
 import { taskKeys, updateTask } from '../../entities/task/index.js'
+import { ApiRequestError } from '../../shared/api/client.js'
+import { useToast } from '../../shared/ui/toast.js'
+
+const AVISOS = {
+  agendar: { ok: 'Tarefa agendada.', erro: 'Não consegui agendar a tarefa.' },
+}
 
 /** Id do alvo de soltura — a área de conteúdo da grade. */
 export const GRID_DROPPABLE_ID = 'planner-grid'
@@ -42,10 +48,18 @@ type PlannerDndProviderProps = {
  */
 export function PlannerDndProvider({ day, hourHeight, children }: PlannerDndProviderProps) {
   const queryClient = useQueryClient()
+  const toast = useToast()
 
   const schedule = useMutation({
     mutationFn: ({ id, start, end }: { id: string; start: Date; end: Date }) =>
       updateTask(id, { scheduledStart: start.toISOString(), scheduledEnd: end.toISOString() }),
+
+    onSuccess: () => toast.success(AVISOS.agendar.ok),
+
+    // Sem isto, um arrasto que falha desfaz o bloco na revalidação e não explica nada.
+    onError: (cause) =>
+      toast.error(cause instanceof ApiRequestError ? cause.message : AVISOS.agendar.erro),
+
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: taskKeys.all })
       void queryClient.invalidateQueries({ queryKey: eventKeys.all })

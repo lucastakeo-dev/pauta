@@ -104,3 +104,32 @@ então sem o pacote elas ficam no JSX sem efeito nenhum — foi exatamente o que
 com o primeiro diálogo, que abria sem transição.
 
 Tudo isso é zerado por `prefers-reduced-motion: reduce`, no fim do `styles.css`.
+
+## Retorno das ações
+
+**Toda escrita responde num Toast** — criar, editar, excluir, concluir, agendar,
+capturar — e não só as que falham. Se a pessoa mandou fazer algo, ela recebe a resposta
+no mesmo lugar, sem procurar na tela o que mudou.
+
+É isso que torna a escrita otimista honesta: a tela aplica o efeito antes da resposta
+chegar, então sem confirmação "aplicado" e "salvo" ficariam indistinguíveis.
+
+| Tom | Papel ARIA | Some em | Quando |
+|---|---|---|---|
+| Confirmação | `status` (polido) | 3,5s | a ação deu certo |
+| Falha | `alert` (assertivo) | 6s | a ação falhou e foi desfeita |
+
+São dois papéis porque a urgência difere: a confirmação espera a próxima pausa da
+leitura; a falha corrige algo que a pessoa acabou de ver acontecer, e esperar chegaria
+tarde. Nenhuma das duas leva `aria-label` — esses papéis não aceitam nome, e a mensagem
+já é o conteúdo.
+
+Mensagens iguais seguidas viram uma só com contador (`Tarefa concluída. ×3`). Sem isso,
+a regra do "sempre Toast" tornaria a ação mais repetida do app numa pilha de avisos.
+
+Duas exceções, ambas porque existe lugar melhor para a mensagem:
+
+- **Erro de formulário** fica ao lado do campo. Nome de projeto repetido precisa apontar
+  para o nome, não para o rodapé da tela.
+- **Autosave da nota** tem indicador próprio no editor. Não é ação pedida, é consequência
+  de digitar.

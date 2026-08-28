@@ -19,10 +19,17 @@ import {
 import { ApiRequestError } from '../../shared/api/client.js'
 import { useToast } from '../../shared/ui/toast.js'
 
-const ERROS = {
-  editar: 'Não consegui salvar a alteração.',
-  excluir: 'Não consegui excluir a tarefa.',
-  concluir: 'Não consegui atualizar a tarefa.',
+/**
+ * Retorno de cada ação. Sucesso e falha ficam lado a lado de propósito: é o par que
+ * define o que a pessoa vê, e separá-los faria um mudar sem o outro.
+ */
+const AVISOS = {
+  criar: { ok: 'Tarefa criada.', erro: 'Não consegui criar a tarefa.' },
+  editar: { ok: 'Alteração salva.', erro: 'Não consegui salvar a alteração.' },
+  excluir: { ok: 'Tarefa excluída.', erro: 'Não consegui excluir a tarefa.' },
+  concluir: { ok: 'Tarefa concluída.', erro: 'Não consegui atualizar a tarefa.' },
+  reabrir: { ok: 'Tarefa reaberta.', erro: 'Não consegui atualizar a tarefa.' },
+  projeto: { ok: 'Projeto criado.', erro: 'Não consegui criar o projeto.' },
 }
 
 /** Chave da criação, para a lista saber quais tarefas ainda estão a caminho. */
@@ -88,12 +95,16 @@ function useOptimisticTaskWrite() {
 
 export function useCreateProject() {
   const queryClient = useQueryClient()
+  const toast = useToast()
 
   return useMutation({
     mutationFn: (input: CreateProjectInput) => createProject(input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: projectKeys.all })
+      toast.success(AVISOS.projeto.ok)
     },
+    // A falha não vira aviso aqui: o diálogo a mostra ao lado do campo, que é onde a
+    // pessoa vai corrigir. Nome repetido precisa apontar para o nome.
   })
 }
 
@@ -105,13 +116,18 @@ export function useCreateProject() {
  */
 export function useCreateTask() {
   const invalidate = useInvalidateAll()
+  const toast = useToast()
 
   return useMutation({
     mutationKey: CREATE_TASK_KEY,
     mutationFn: (input: CreateTaskInput) => createTask(input),
-    onSuccess: invalidate,
-    // Sem aviso flutuante aqui: quem cria é o compositor, e ele faz melhor — devolve o
-    // texto ao campo e mostra o erro embaixo dele, no lugar onde a pessoa vai corrigir.
+
+    onSuccess: () => {
+      invalidate()
+      toast.success(AVISOS.criar.ok)
+    },
+
+    onError: (cause) => toast.error(mensagem(cause, AVISOS.criar.erro)),
   })
 }
 
@@ -172,9 +188,11 @@ export function useUpdateTask() {
       )
     },
 
+    onSuccess: () => toast.success(AVISOS.editar.ok),
+
     onError: (cause, _variables, context) => {
       context?.restore()
-      toast.error(mensagem(cause, ERROS.editar))
+      toast.error(mensagem(cause, AVISOS.editar.erro))
     },
 
     onSettled: invalidate,
@@ -191,9 +209,11 @@ export function useDeleteTask() {
 
     onMutate: (id) => optimistic((tasks) => tasks.filter((task) => task.id !== id)),
 
+    onSuccess: () => toast.success(AVISOS.excluir.ok),
+
     onError: (cause, _id, context) => {
       context?.restore()
-      toast.error(mensagem(cause, ERROS.excluir))
+      toast.error(mensagem(cause, AVISOS.excluir.erro))
     },
 
     onSettled: invalidate,
@@ -229,9 +249,11 @@ export function useToggleTask() {
         ),
       ),
 
+    onSuccess: (_data, { done }) => toast.success(done ? AVISOS.concluir.ok : AVISOS.reabrir.ok),
+
     onError: (cause, _variables, context) => {
       context?.restore()
-      toast.error(mensagem(cause, ERROS.concluir))
+      toast.error(mensagem(cause, AVISOS.concluir.erro))
     },
 
     onSettled: invalidate,
