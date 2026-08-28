@@ -1,5 +1,5 @@
 import { Link, useRouterState } from '@tanstack/react-router'
-import { CalendarDays, ChevronDown, FileText, LogOut, Search } from 'lucide-react'
+import { CalendarDays, ChevronDown, FileText, FolderTree, LogOut, Search } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useSession } from '../features/auth/session-context.js'
 import { ConsoleOverlay } from '../features/console/console-overlay.js'
@@ -24,6 +24,7 @@ const COPY = {
 
 const NAV = [
   { to: '/today', label: 'Hoje', icon: CalendarDays },
+  { to: '/projects', label: 'Projetos', icon: FolderTree },
   { to: '/notes', label: 'Notas', icon: FileText },
 ] as const
 
@@ -69,7 +70,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           <nav aria-label={COPY.navegacao} className="flex flex-col gap-0.5">
             {NAV.map((item) => {
-              const active = pathname === item.to
+              // `startsWith` e não igualdade: a página de um projeto também é "Projetos".
+              const active = pathname === item.to || pathname.startsWith(`${item.to}/`)
               const Icon = item.icon
 
               return (

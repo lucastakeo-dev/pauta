@@ -1,13 +1,9 @@
 import { cn } from '../../shared/lib/cn.js'
 import { SidebarGroup } from '../../shared/ui/sidebar-group.js'
-import { NewProjectDialog } from './new-project-dialog.js'
-import { useLabels, useProjects } from './queries.js'
+import { useLabels } from './queries.js'
 
 const COPY = {
-  todas: 'Todas',
-  projetos: 'Projetos',
   etiquetas: 'Etiquetas',
-  semProjetos: 'Nenhum projeto ainda.',
   semEtiquetas: 'Nenhuma etiqueta ainda.',
   mostrarConcluidas: 'Mostrar concluídas',
 }
@@ -24,37 +20,10 @@ type TaskFiltersProps = {
 }
 
 export function TaskFilters({ value, onChange }: TaskFiltersProps) {
-  const { data: projects } = useProjects()
   const { data: labels } = useLabels()
 
   return (
     <nav className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto" aria-label="Filtros">
-      <SidebarGroup title={COPY.projetos} action={<NewProjectDialog />}>
-        <FilterButton
-          active={value.projectId === undefined}
-          onClick={() => onChange({ ...value, projectId: undefined })}
-          label={COPY.todas}
-        />
-
-        {projects?.length === 0 ? <Empty>{COPY.semProjetos}</Empty> : null}
-
-        {projects?.map((project) => (
-          <FilterButton
-            key={project.id}
-            active={value.projectId === project.id}
-            onClick={() =>
-              onChange({
-                ...value,
-                projectId: value.projectId === project.id ? undefined : project.id,
-              })
-            }
-            label={project.name}
-            color={project.color}
-            count={project.openTaskCount}
-          />
-        ))}
-      </SidebarGroup>
-
       <SidebarGroup title={COPY.etiquetas}>
         {labels?.length === 0 ? <Empty>{COPY.semEtiquetas}</Empty> : null}
 

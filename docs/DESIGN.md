@@ -157,3 +157,30 @@ inteiro é o alvo do clique — a seta sozinha é pequena demais para mirar.
 **Pendente:** a barra tem largura fixa e fica sempre visível. Abaixo de ~768px ela come
 espaço demais, e como agora é a única navegação, não dá para simplesmente escondê-la.
 A branch `fix/reachable-panels-on-small-screens` trata das telas pequenas.
+
+## Projetos são uma árvore
+
+Pasta é um projeto com filhos — não há entidade separada. A hierarquia aparece em três
+lugares, e cada um faz uma coisa diferente com o clique:
+
+| Onde | O clique no nome |
+|---|---|
+| Barra, em **Hoje** | filtra a lista ao lado |
+| Barra, nas demais telas | abre a página do projeto |
+| Índice `/projects` | abre a página do projeto |
+
+A seta de recolher é botão à parte, nunca parte da linha: recolher a pasta e abrir o
+projeto são ações diferentes, e juntá-las faria uma roubar o clique da outra. Quem não
+tem filhos ganha um espaço vazio do mesmo tamanho, para os nomes seguirem alinhados.
+
+**Recolhido, o contador passa a somar a subárvore.** Sem isso, esconder os filhos
+esconderia junto o trabalho pendente deles — a pasta pareceria vazia tendo doze tarefas
+dentro.
+
+No modo filtro existe uma linha **"Todas"** acima da árvore. Ela não é enfeite: sem ela,
+largar o filtro dependeria de descobrir que clicar de novo no projeto ativo o solta.
+
+A página do projeto tem **Visão geral** e **Tarefas**. A visão geral responde "como está
+isto" sem ler a lista inteira — quanto falta aqui, quanto falta abaixo, e em quais
+subprojetos. Cabeçalho e conteúdo são alinhados à esquerda, não centralizados: sem uma
+coluna à direita, centralizar deixaria a trilha e o título desalinhados do que vem abaixo.

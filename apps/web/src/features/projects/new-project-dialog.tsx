@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, type ReactNode, useState } from 'react'
 import { ApiRequestError } from '../../shared/api/client.js'
 import { cn } from '../../shared/lib/cn.js'
 import { Button } from '../../shared/ui/button.js'
@@ -15,6 +15,7 @@ import { useCreateProject } from './queries.js'
 
 const COPY = {
   abrir: 'Novo projeto',
+  abrirDentro: 'Novo subprojeto',
   titulo: 'Novo projeto',
   descricao: 'Projetos agrupam tarefas. O nome aparece na barra lateral.',
   nome: 'Nome',
@@ -46,7 +47,14 @@ const CORES = [
  * problemas: fechava no `blur`, então clicar em qualquer lugar perdia o que foi
  * digitado, e não cabia mais nada além do nome — escolher cor era impossível.
  */
-export function NewProjectDialog() {
+type NewProjectDialogProps = {
+  /** Cria dentro deste projeto. Ausente cria na raiz. */
+  parentId?: string | undefined
+  /** Gatilho alternativo — a página de projetos usa um botão, a barra usa o `+`. */
+  trigger?: ReactNode
+}
+
+export function NewProjectDialog({ parentId, trigger }: NewProjectDialogProps) {
   const create = useCreateProject()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
@@ -68,7 +76,7 @@ export function NewProjectDialog() {
     setError(null)
 
     try {
-      await create.mutateAsync({ name: trimmed, color })
+      await create.mutateAsync({ name: trimmed, color, ...(parentId ? { parentId } : {}) })
       reset()
       setOpen(false)
     } catch (cause) {
@@ -86,20 +94,24 @@ export function NewProjectDialog() {
         if (!next) reset()
       }}
     >
-      <DialogTrigger
-        aria-label={COPY.abrir}
-        className={cn(
-          'rounded-control px-1.5 text-ink-subtle text-sm leading-none',
-          'transition-[colors,transform] duration-150 ease-press',
-          'hover:text-ink active:scale-90',
-        )}
-      >
-        +
-      </DialogTrigger>
+      {trigger ? (
+        <DialogTrigger asChild>{trigger}</DialogTrigger>
+      ) : (
+        <DialogTrigger
+          aria-label={parentId ? COPY.abrirDentro : COPY.abrir}
+          className={cn(
+            'rounded-control px-1.5 text-ink-subtle text-sm leading-none',
+            'transition-[colors,transform] duration-150 ease-press',
+            'hover:text-ink active:scale-90',
+          )}
+        >
+          +
+        </DialogTrigger>
+      )}
 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{COPY.titulo}</DialogTitle>
+          <DialogTitle>{parentId ? COPY.abrirDentro : COPY.titulo}</DialogTitle>
           <DialogDescription>{COPY.descricao}</DialogDescription>
         </DialogHeader>
 

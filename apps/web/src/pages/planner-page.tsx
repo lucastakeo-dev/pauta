@@ -3,13 +3,17 @@ import { useMemo, useState } from 'react'
 import { DayGrid } from '../features/planner/day-grid.js'
 import { DayNav } from '../features/planner/day-nav.js'
 import { PlannerDndProvider } from '../features/planner/planner-dnd.js'
+import { NewProjectDialog } from '../features/projects/new-project-dialog.js'
+import { ProjectTree } from '../features/projects/project-tree.js'
 import { TaskComposer } from '../features/tasks/task-composer.js'
 import { type TaskFilterState, TaskFilters } from '../features/tasks/task-filters.js'
 import { TaskList } from '../features/tasks/task-list.js'
+import { SidebarGroup } from '../shared/ui/sidebar-group.js'
 import { SidebarSlot } from '../shared/ui/sidebar-slot.js'
 
 const COPY = {
   tarefas: 'Tarefas',
+  projetos: 'Projetos',
 }
 
 /** Espelha `--spacing-hour` e o valor usado pela grade. */
@@ -44,6 +48,23 @@ export function PlannerPage() {
   return (
     <PlannerDndProvider day={day} hourHeight={HOUR_HEIGHT}>
       <SidebarSlot>
+        {/*
+          Aqui a árvore filtra em vez de navegar: quem está no planner quer estreitar a
+          lista ao lado, não trocar de tela. Clicar de novo no mesmo projeto solta o filtro.
+        */}
+        <SidebarGroup title={COPY.projetos} action={<NewProjectDialog />}>
+          <ProjectTree
+            selectedId={filters.projectId}
+            onSelect={(id) =>
+              setFilters((atual) => ({
+                ...atual,
+                // `null` vem de "Todas"; clicar no projeto já ativo também solta o filtro.
+                projectId: id === null || atual.projectId === id ? undefined : id,
+              }))
+            }
+          />
+        </SidebarGroup>
+
         <TaskFilters value={filters} onChange={setFilters} />
       </SidebarSlot>
 

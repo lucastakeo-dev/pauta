@@ -18,7 +18,8 @@
     "smoke:console": "node scripts/smoke-console.mjs",
     "smoke:notes": "node scripts/smoke-notes.mjs",
     "smoke:landing": "node scripts/smoke-landing.mjs",
-    "smoke:write": "node scripts/smoke-write.mjs"
+    "smoke:write": "node scripts/smoke-write.mjs",
+    "smoke:projects": "node scripts/smoke-projects.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
