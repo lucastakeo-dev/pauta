@@ -3,6 +3,12 @@ import { prisma } from '../config/prisma.js'
 import { ConflictError, NotFoundError } from '../lib/errors.js'
 import { extractLinkedTitles, normalizeTitle } from '../lib/note-links.js'
 
+/** Cliente de dentro de uma transação — mesma API do Prisma, sem os métodos de topo. */
+type TransactionClient = Omit<
+  typeof prisma,
+  '$connect' | '$disconnect' | '$on' | '$transaction' | '$extends'
+>
+
 /**
  * Model de nota.
  *
@@ -123,7 +129,7 @@ export async function create(userId: string, input: CreateNoteInput): Promise<No
     select: { id: true },
   })
 
-  await syncLinks(userId, created.id, input.contentJson ?? {})
+  await prisma.$transaction((tx) => syncLinks(tx, userId, created.id, input.contentJson ?? {}))
 
   return findById(userId, created.id)
 }
@@ -150,12 +156,20 @@ export async function update(
   }
 
   if (input.contentJson !== undefined) {
-    await prisma.note.update({
-      where: { id },
-      data: { contentJson: input.contentJson as object },
-    })
+    // Conteúdo e links numa transação só.
+    //
+    // Em duas operações separadas, dois salvamentos concorrentes podiam se cruzar: o
+    // segundo gravava o texto completo e criava o link, e o primeiro, chegando atrasado
+    // com o texto parcial, apagava o link recém-criado. A nota ficava com o conteúdo
+    // certo e sem backlink nenhum — inconsistência silenciosa.
+    await prisma.$transaction(async (tx) => {
+      await tx.note.update({
+        where: { id },
+        data: { contentJson: input.contentJson as object },
+      })
 
-    await syncLinks(userId, id, input.contentJson)
+      await syncLinks(tx, userId, id, input.contentJson)
+    })
   }
 
   return findById(userId, id)
@@ -219,15 +233,20 @@ export async function findOrCreateDaily(userId: string, date: string): Promise<N
  * `[[link]]`: escrever primeiro, preencher depois. O UNIQUE do `title_key` garante que
  * citar "[[casa]]" e "[[Casa]]" aponte para a mesma página.
  */
-async function syncLinks(userId: string, sourceId: string, content: unknown): Promise<void> {
+async function syncLinks(
+  tx: TransactionClient,
+  userId: string,
+  sourceId: string,
+  content: unknown,
+): Promise<void> {
   const titles = extractLinkedTitles(content)
 
-  await prisma.noteLink.deleteMany({ where: { sourceId } })
+  await tx.noteLink.deleteMany({ where: { sourceId } })
 
   if (titles.length === 0) return
 
   const keys = titles.map(normalizeTitle)
-  const found = await prisma.note.findMany({
+  const found = await tx.note.findMany({
     where: { userId, titleKey: { in: keys } },
     select: { id: true, titleKey: true },
   })
@@ -243,7 +262,7 @@ async function syncLinks(userId: string, sourceId: string, content: unknown): Pr
     let targetId = byKey.get(key)
 
     if (!targetId) {
-      const created = await prisma.note.create({
+      const created = await tx.note.create({
         data: { userId, title, titleKey: key, contentJson: {} },
         select: { id: true },
       })
@@ -259,7 +278,7 @@ async function syncLinks(userId: string, sourceId: string, content: unknown): Pr
 
   if (targetIds.length === 0) return
 
-  await prisma.noteLink.createMany({
+  await tx.noteLink.createMany({
     data: targetIds.map((targetId) => ({ sourceId, targetId })),
     skipDuplicates: true,
   })

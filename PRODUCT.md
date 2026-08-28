@@ -13,7 +13,7 @@ Quatro módulos, entregues em fases para que cada uma seja usável sozinha.
 | 0 | Fundação: monorepo, banco, camadas, conta e sessão | **concluída** |
 | 1 | Tarefas: CRUD, prioridade, projetos, labels, subtasks, recorrência, inbox | **concluída** |
 | 2 | Planner do dia com time-blocking por arrastar | **concluída** |
-| 3 | Console (Cmd+K) com linguagem natural em pt-BR | a fazer |
+| 3 | Console (Cmd+K) com linguagem natural em pt-BR | **concluída** |
 | 4 | Notas: editor, nota diária, `[[links]]` e backlinks | a fazer |
 
 Fora do v1, com o caminho já preparado: sincronização com Google Calendar, app mobile,
@@ -69,6 +69,14 @@ caminho mais preciso para quem usa mouse e quer um horário exato.
 que duas features precisariam se conhecer. Elas continuam sem se importar: a lista
 publica um `DragPayload` definido em `entities`, a grade consome, e um provider faz a
 ponte. O lint segurou a fronteira sem exceção nenhuma.
+
+## Aprendizados da Fase 4
+
+**Teste instável foi bug de verdade.** O smoke das notas falhava em 2 de 3 execuções na
+mesma verificação. Investigar em vez de repetir revelou uma corrida na API: conteúdo e
+links eram gravados em duas operações separadas, e dois autosaves cruzados deixavam a
+nota com o texto certo e sem backlink. Agora é uma transação — e há teste de regressão
+disparando dois PATCH concorrentes.
 
 ## Riscos conhecidos
 
