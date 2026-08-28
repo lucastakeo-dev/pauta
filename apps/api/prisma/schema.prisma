@@ -183,6 +183,11 @@ model Note {
   userId String @map("user_id") @db.Uuid
   title  String @db.VarChar(300)
 
+  /// Título sem acento e em minúsculas — é por ele que o `[[link]]` encontra a nota.
+  /// Guardado em coluna própria para virar UNIQUE de verdade: `[[casa]]` e `[[Casa]]`
+  /// precisam ser a mesma página, senão cada variação de digitação criaria uma nova.
+  titleKey String @map("title_key") @db.VarChar(300)
+
   /// Documento do Tiptap em JSON. Guardado como JSONB para permitir busca depois.
   contentJson Json @default("{}") @map("content_json")
 
@@ -196,6 +201,7 @@ model Note {
   linksFrom     NoteLink[] @relation("NoteLinkSource")
   linksTo       NoteLink[] @relation("NoteLinkTarget")
 
+  @@unique([userId, titleKey])
   @@index([userId, updatedAt])
   @@map("notes")
 }
