@@ -69,11 +69,11 @@ try {
     return null
   }
 
-  await page.goto(`${WEB}/login`, { waitUntil: 'networkidle' })
+  await page.goto(`${WEB}/signin`, { waitUntil: 'networkidle' })
   await page.getByLabel('E-mail').fill(email)
   await page.getByLabel('Senha').fill('senha-bem-segura')
   await page.getByRole('button', { name: 'Entrar', exact: true }).click()
-  await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10_000 })
+  await page.waitForURL((url) => !url.pathname.includes('/signin'), { timeout: 10_000 })
 
   // 1. Navegar para Notas pelo cabeçalho.
   await page.getByRole('link', { name: 'Notas' }).click()

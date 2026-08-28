@@ -1,4 +1,5 @@
 import { loginSchema, registerSchema } from '@pauta/contracts'
+import { Link } from '@tanstack/react-router'
 import { type FormEvent, useState } from 'react'
 import { ApiRequestError } from '../../shared/api/client.js'
 import { cn } from '../../shared/lib/cn.js'
@@ -7,38 +8,40 @@ import { useSession } from './session-context.js'
 
 /** Copy fora do JSX: a tela fica legível e o texto, fácil de revisar. */
 const COPY = {
-  entrar: {
+  signin: {
     titulo1: 'Bom te ver',
     titulo2: 'de novo.',
     acao: 'Entrar',
     pergunta: 'Ainda não tem conta?',
     alternativa: 'Criar uma',
+    outraRota: '/signup',
   },
-  criar: {
+  signup: {
     titulo1: 'Comece a',
     titulo2: 'organizar o dia.',
     acao: 'Criar conta',
     pergunta: 'Já tem conta?',
     alternativa: 'Entrar',
+    outraRota: '/signin',
   },
 } as const
 
-type Mode = keyof typeof COPY
+export type AuthMode = keyof typeof COPY
 
-export function AuthForm() {
+/**
+ * Formulário de entrada e de cadastro.
+ *
+ * O modo vem da rota, não de estado interno: assim cada um tem URL própria, dá para
+ * mandar alguém direto para o cadastro, e o botão "voltar" do navegador faz o que se
+ * espera. A alternância entre os dois é um `<Link>`, não um `setState`.
+ */
+export function AuthForm({ mode }: { mode: AuthMode }) {
   const { signIn, signUp } = useSession()
-  const [mode, setMode] = useState<Mode>('entrar')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [formError, setFormError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   const copy = COPY[mode]
-
-  function switchMode() {
-    setMode((current) => (current === 'entrar' ? 'criar' : 'entrar'))
-    setFieldErrors({})
-    setFormError(null)
-  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -49,7 +52,7 @@ export function AuthForm() {
 
     // Valida no cliente com o MESMO schema da API: o erro aparece antes da viagem
     // de rede, mas quem garante continua sendo o servidor.
-    const schema = mode === 'entrar' ? loginSchema : registerSchema
+    const schema = mode === 'signin' ? loginSchema : registerSchema
     const parsed = schema.safeParse(data)
 
     if (!parsed.success) {
@@ -67,7 +70,7 @@ export function AuthForm() {
     setSubmitting(true)
 
     try {
-      if (mode === 'entrar') {
+      if (mode === 'signin') {
         await signIn(parsed.data as never)
       } else {
         await signUp(parsed.data as never)
@@ -101,7 +104,7 @@ export function AuthForm() {
       </h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
-        {mode === 'criar' ? (
+        {mode === 'signup' ? (
           <AuthField
             label="Nome"
             name="name"
@@ -124,10 +127,10 @@ export function AuthForm() {
           label="Senha"
           name="password"
           type="password"
-          autoComplete={mode === 'entrar' ? 'current-password' : 'new-password'}
+          autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
           required
           error={fieldErrors.password}
-          hint={mode === 'criar' ? 'Pelo menos 8 caracteres.' : undefined}
+          hint={mode === 'signup' ? 'Pelo menos 8 caracteres.' : undefined}
         />
 
         {formError ? (
@@ -160,13 +163,12 @@ export function AuthForm() {
 
       <p className="text-graphite-soft text-sm">
         {copy.pergunta}{' '}
-        <button
-          type="button"
-          onClick={switchMode}
+        <Link
+          to={copy.outraRota}
           className="font-medium text-graphite underline underline-offset-4 transition-opacity hover:opacity-70"
         >
           {copy.alternativa}
-        </button>
+        </Link>
       </p>
     </div>
   )

@@ -50,7 +50,7 @@ try {
 
   // 2. Área logada sem sessão manda para o login.
   await page.goto(`${WEB}/today`, { waitUntil: 'networkidle' })
-  check('/today exige login', page.url().includes('/login'), page.url())
+  check('/today exige login', page.url().includes('/signin'), page.url())
   await page.screenshot({ path: `${outDir}/01-login.png` })
 
   // 3. Validação no cliente, antes de qualquer viagem de rede.
@@ -63,7 +63,8 @@ try {
 
   // 4. Cadastro real, batendo na API.
   const email = `smoke-${Date.now()}@exemplo.dev`
-  await page.getByRole('button', { name: /Criar uma/ }).click()
+  await page.getByRole('link', { name: 'Criar uma' }).click()
+  await page.waitForURL((url) => url.pathname === '/signup', { timeout: 10_000 })
   await page.getByLabel('Nome').fill('Takeo Smoke')
   await page.getByLabel('E-mail').fill(email)
   await page.getByLabel('Senha').fill('senha-bem-segura')
@@ -81,10 +82,10 @@ try {
 
   // 6. Sair volta ao login, e a área logada volta a ser barrada.
   await page.getByRole('button', { name: 'Sair' }).click()
-  await page.waitForURL((url) => url.pathname.includes('/login'), { timeout: 10_000 })
+  await page.waitForURL((url) => url.pathname.includes('/signin'), { timeout: 10_000 })
 
   await page.goto(`${WEB}/today`, { waitUntil: 'networkidle' })
-  check('após sair, /today volta a exigir login', page.url().includes('/login'), page.url())
+  check('após sair, /today volta a exigir login', page.url().includes('/signin'), page.url())
 
   // 7. Com sessão, a vitrine não faz sentido: a raiz manda para o app.
   await page.getByLabel('E-mail').fill(email)

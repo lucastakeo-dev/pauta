@@ -37,7 +37,7 @@ export function Hero() {
 
           <div className="flex shrink-0 items-center gap-3">
             <Link
-              to="/login"
+              to="/signin"
               className="inline-flex items-center gap-2 rounded-full bg-graphite px-7 py-3.5 font-medium text-paper transition-opacity hover:opacity-85"
             >
               {COPY.entrar}

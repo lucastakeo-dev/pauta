@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { AuthForm } from '../features/auth/auth-form.js'
+import { AuthForm, type AuthMode } from '../features/auth/auth-form.js'
 
 const COPY = {
   marca: 'Pauta',
@@ -16,13 +16,15 @@ const NUMEROS = [
 ] as const
 
 /**
- * Entrada do app, no tema claro da vitrine.
+ * Entrada do app — serve `/signin` e `/signup`, no tema claro da vitrine.
  *
  * Quem chega aqui vem da landing: manter o escuro do app faria a transição parecer
  * outro produto. A troca de tema acontece só ao entrar de fato, quando a superfície
  * deixa de ser vitrine e passa a ser ferramenta.
+ *
+ * O modo é prop, não estado: quem decide é a rota.
  */
-export function LoginPage() {
+export function AuthPage({ mode }: { mode: AuthMode }) {
   return (
     <div className="landing flex min-h-dvh flex-col">
       <header className="flex shrink-0 items-center justify-between px-6 py-6 sm:px-10">
@@ -45,7 +47,7 @@ export function LoginPage() {
       <main className="grid flex-1 lg:grid-cols-2">
         <div className="flex items-center justify-center px-6 py-12 sm:px-10">
           <div className="w-full max-w-sm">
-            <AuthForm />
+            <AuthForm mode={mode} />
           </div>
         </div>
 

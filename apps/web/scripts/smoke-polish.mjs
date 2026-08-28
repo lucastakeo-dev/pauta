@@ -70,11 +70,11 @@ try {
     body: JSON.stringify({ title: 'Revisar contrato' }),
   }).then((r) => r.json())
 
-  await page.goto(`${WEB}/login`, { waitUntil: 'networkidle' })
+  await page.goto(`${WEB}/signin`, { waitUntil: 'networkidle' })
   await page.getByLabel('E-mail').fill(email)
   await page.getByLabel('Senha').fill('senha-bem-segura')
   await page.getByRole('button', { name: 'Entrar', exact: true }).click()
-  await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10_000 })
+  await page.waitForURL((url) => !url.pathname.includes('/signin'), { timeout: 10_000 })
 
   const grade = page.getByRole('region', { name: 'Planner do dia' })
   await grade.getByText('Reunião A').waitFor({ timeout: 10_000 })
