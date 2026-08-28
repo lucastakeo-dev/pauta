@@ -140,10 +140,10 @@ constraints escritas à mão são exercitadas de verdade — por isso os testes 
 
 | Rota | Quem vê |
 |---|---|
-| `/` | **Pública** — a vitrine. Com sessão, redireciona para `/hoje` |
-| `/entrar` | Pública — login e cadastro |
-| `/hoje` | Planner e tarefas |
-| `/notas` | Notas |
+| `/` | **Pública** — a vitrine. Com sessão, redireciona para `/today` |
+| `/login` | Pública — login e cadastro |
+| `/today` | Planner e tarefas |
+| `/notes` | Notas |
 
 A vitrine usa **tema claro** com tokens próprios (`paper`, `graphite`, `rule`), escopados
 em `.landing`. O app segue escuro: são públicos diferentes — a vitrine é lida uma vez, de

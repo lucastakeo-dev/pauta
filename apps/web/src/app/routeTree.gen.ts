@@ -10,63 +10,63 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as EntrarRouteImport } from './routes/entrar'
-import { Route as HojeRouteImport } from './routes/hoje'
-import { Route as NotasRouteImport } from './routes/notas'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as NotesRouteImport } from './routes/notes'
+import { Route as TodayRouteImport } from './routes/today'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EntrarRoute = EntrarRouteImport.update({
-  id: '/entrar',
-  path: '/entrar',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const HojeRoute = HojeRouteImport.update({
-  id: '/hoje',
-  path: '/hoje',
+const NotesRoute = NotesRouteImport.update({
+  id: '/notes',
+  path: '/notes',
   getParentRoute: () => rootRouteImport,
 } as any)
-const NotasRoute = NotasRouteImport.update({
-  id: '/notas',
-  path: '/notas',
+const TodayRoute = TodayRouteImport.update({
+  id: '/today',
+  path: '/today',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/entrar': typeof EntrarRoute
-  '/hoje': typeof HojeRoute
-  '/notas': typeof NotasRoute
+  '/login': typeof LoginRoute
+  '/notes': typeof NotesRoute
+  '/today': typeof TodayRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/entrar': typeof EntrarRoute
-  '/hoje': typeof HojeRoute
-  '/notas': typeof NotasRoute
+  '/login': typeof LoginRoute
+  '/notes': typeof NotesRoute
+  '/today': typeof TodayRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/entrar': typeof EntrarRoute
-  '/hoje': typeof HojeRoute
-  '/notas': typeof NotasRoute
+  '/login': typeof LoginRoute
+  '/notes': typeof NotesRoute
+  '/today': typeof TodayRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/entrar' | '/hoje' | '/notas'
+  fullPaths: '/' | '/login' | '/notes' | '/today'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/entrar' | '/hoje' | '/notas'
-  id: '__root__' | '/' | '/entrar' | '/hoje' | '/notas'
+  to: '/' | '/login' | '/notes' | '/today'
+  id: '__root__' | '/' | '/login' | '/notes' | '/today'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  EntrarRoute: typeof EntrarRoute
-  HojeRoute: typeof HojeRoute
-  NotasRoute: typeof NotasRoute
+  LoginRoute: typeof LoginRoute
+  NotesRoute: typeof NotesRoute
+  TodayRoute: typeof TodayRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -78,25 +78,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/entrar': {
-      id: '/entrar'
-      path: '/entrar'
-      fullPath: '/entrar'
-      preLoaderRoute: typeof EntrarRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/hoje': {
-      id: '/hoje'
-      path: '/hoje'
-      fullPath: '/hoje'
-      preLoaderRoute: typeof HojeRouteImport
+    '/notes': {
+      id: '/notes'
+      path: '/notes'
+      fullPath: '/notes'
+      preLoaderRoute: typeof NotesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/notas': {
-      id: '/notas'
-      path: '/notas'
-      fullPath: '/notas'
-      preLoaderRoute: typeof NotasRouteImport
+    '/today': {
+      id: '/today'
+      path: '/today'
+      fullPath: '/today'
+      preLoaderRoute: typeof TodayRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -104,9 +104,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  EntrarRoute: EntrarRoute,
-  HojeRoute: HojeRoute,
-  NotasRoute: NotasRoute,
+  LoginRoute: LoginRoute,
+  NotesRoute: NotesRoute,
+  TodayRoute: TodayRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -60,7 +60,7 @@ export function StackSection() {
 
           <div className="flex flex-wrap items-center gap-3">
             <Link
-              to="/entrar"
+              to="/login"
               className="inline-flex items-center gap-2 rounded-full bg-paper px-7 py-3.5 font-medium text-graphite transition-opacity hover:opacity-85"
             >
               {COPY.entrar}

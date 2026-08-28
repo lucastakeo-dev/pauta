@@ -8,7 +8,7 @@ import { RedirectIfSession } from '../require-session.js'
  */
 export const Route = createFileRoute('/')({
   component: () => (
-    <RedirectIfSession to="/hoje">
+    <RedirectIfSession to="/today">
       <LandingPage />
     </RedirectIfSession>
   ),

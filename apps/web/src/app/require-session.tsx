@@ -26,7 +26,7 @@ export function RequireSession({ children }: { children: ReactNode }) {
   const { status } = useSession()
 
   if (status === 'loading') return <Verificando />
-  if (status === 'anonymous') return <Navigate to="/entrar" replace />
+  if (status === 'anonymous') return <Navigate to="/login" replace />
 
   return <>{children}</>
 }
@@ -39,10 +39,10 @@ export function RequireSession({ children }: { children: ReactNode }) {
  */
 export function RedirectIfSession({
   children,
-  to = '/hoje',
+  to = '/today',
 }: {
   children: ReactNode
-  to?: '/hoje' | '/notas'
+  to?: '/today' | '/notes'
 }) {
   const { status } = useSession()
 
