@@ -171,7 +171,19 @@ lugares, e cada um faz uma coisa diferente com o clique:
 
 A seta de recolher é botão à parte, nunca parte da linha: recolher a pasta e abrir o
 projeto são ações diferentes, e juntá-las faria uma roubar o clique da outra. Quem não
-tem filhos ganha um espaço vazio do mesmo tamanho, para os nomes seguirem alinhados.
+tem filhos ganha um espaço vazio **da mesma medida exata** — na primeira versão o botão
+media diferente do espaçador, e cada linha começava num lugar.
+
+**O recuo vem do aninhamento, não de um cálculo por profundidade**, e cada nível desenha
+uma linha-guia vertical. É ela que faz a árvore ser lida como árvore: sem o traço, três
+níveis de recuo viram só texto deslocado.
+
+Sob o mouse, a ponta da linha troca o contador pelo `+` de criar dentro. Os dois disputam
+o mesmo canto, e mostrar ambos empurraria o nome para fora numa barra estreita.
+
+**O que foi recolhido continua recolhido** entre telas e recarregamentos
+(`localStorage`). A árvore é remontada a cada navegação; sem isso, tudo voltaria aberto
+toda vez — e a barra é a mesma em todas as telas, então o incômodo seria constante.
 
 **Recolhido, o contador passa a somar a subárvore.** Sem isso, esconder os filhos
 esconderia junto o trabalho pendente deles — a pasta pareceria vazia tendo doze tarefas

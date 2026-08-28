@@ -1,8 +1,8 @@
 import { Link } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
-import { useState } from 'react'
 import { buildProjectTree, type ProjectNode } from '../../entities/project/index.js'
 import { cn } from '../../shared/lib/cn.js'
+import { usePersistentSet } from '../../shared/lib/persistent-set.js'
 import { NewProjectDialog } from './new-project-dialog.js'
 import { useProjects } from './queries.js'
 
@@ -14,8 +14,20 @@ const COPY = {
   abrir: 'Abrir projeto',
 }
 
-/** Recuo por nível. Suficiente para ler a hierarquia sem empurrar o nome para fora. */
-const RECUO_PX = 12
+/** O que a pessoa recolheu. Guardado por navegador — é preferência, não dado. */
+const CHAVE_RECOLHIDOS = 'pauta.projects.collapsed'
+
+/*
+  Uma classe só para as três formas que a linha assume — botão de filtro, link de
+  navegação e o "Todas". Elas precisam ser indistinguíveis na tela; separar o estilo por
+  elemento é como se chega em três linhas que quase combinam.
+*/
+const linhaBase = cn(
+  'flex h-7 w-full min-w-0 items-center gap-1.5 rounded-[5px] pr-1.5 text-left text-[13px]',
+  'transition-colors duration-100',
+)
+const linhaAtiva = 'bg-surface-raised font-medium text-ink'
+const linhaInativa = 'text-ink-muted hover:bg-surface hover:text-ink'
 
 type ProjectTreeProps = {
   /** Projeto em foco, para marcar a linha. */
@@ -31,25 +43,16 @@ type ProjectTreeProps = {
 
 export function ProjectTree({ selectedId, onSelect }: ProjectTreeProps) {
   const { data: projects } = useProjects()
-  const [recolhidos, setRecolhidos] = useState<ReadonlySet<string>>(() => new Set())
+  const [recolhidos, alternar] = usePersistentSet(CHAVE_RECOLHIDOS)
 
   const arvore = buildProjectTree(projects ?? [])
 
-  function alternar(id: string) {
-    setRecolhidos((atuais) => {
-      const proximo = new Set(atuais)
-      if (proximo.has(id)) proximo.delete(id)
-      else proximo.add(id)
-      return proximo
-    })
-  }
-
   if (projects && projects.length === 0) {
-    return <p className="px-2 py-1 text-ink-subtle text-xs">{COPY.vazio}</p>
+    return <p className="px-2 py-1.5 text-ink-subtle text-xs">{COPY.vazio}</p>
   }
 
   return (
-    <ul className="flex flex-col gap-0.5">
+    <ul className="flex flex-col">
       {/*
         Só no modo filtro. Sem esta linha, largar o filtro dependeria de descobrir que
         clicar de novo no projeto ativo o solta — e ninguém descobre isso sozinho.
@@ -61,13 +64,7 @@ export function ProjectTree({ selectedId, onSelect }: ProjectTreeProps) {
             type="button"
             onClick={() => onSelect(null)}
             aria-pressed={!selectedId}
-            className={cn(
-              'flex w-full items-center gap-2 rounded-control py-1.5 pr-2 pl-6 text-left text-sm',
-              'transition-[colors,transform] duration-150 ease-press active:scale-[0.98]',
-              selectedId
-                ? 'text-ink-muted hover:bg-surface hover:text-ink'
-                : 'bg-surface-raised text-ink',
-            )}
+            className={cn(linhaBase, 'pl-[26px]', selectedId ? linhaInativa : linhaAtiva)}
           >
             {COPY.todas}
           </button>
@@ -99,7 +96,7 @@ function Node({
   recolhidos: ReadonlySet<string>
   onToggle: (id: string) => void
   selectedId: string | undefined
-  onSelect: ((id: string) => void) | undefined
+  onSelect: ((id: string | null) => void) | undefined
 }) {
   const temFilhos = node.children.length > 0
   const aberto = temFilhos && !recolhidos.has(node.id)
@@ -116,28 +113,28 @@ function Node({
     <>
       <span
         aria-hidden="true"
-        className="size-2 shrink-0 rounded-[3px]"
+        className={cn('size-1.5 shrink-0 rounded-full transition-opacity', !ativo && 'opacity-70')}
         style={{ backgroundColor: node.color }}
       />
       <span className="min-w-0 flex-1 truncate">{node.name}</span>
-      {contador > 0 ? <span className="tabular text-ink-subtle text-xs">{contador}</span> : null}
-    </>
-  )
 
-  const classes = cn(
-    'flex flex-1 items-center gap-2 rounded-control py-1.5 pr-2 text-left text-sm',
-    'transition-[colors,transform] duration-150 ease-press active:scale-[0.98]',
-    ativo ? 'bg-surface-raised text-ink' : 'text-ink-muted hover:bg-surface hover:text-ink',
+      {contador > 0 ? (
+        // Some no hover: o `+` ocupa esta mesma ponta, e os dois juntos empurrariam o
+        // nome para fora numa linha estreita.
+        <span className="tabular shrink-0 text-[11px] text-ink-subtle group-hover:invisible">
+          {contador}
+        </span>
+      ) : null}
+    </>
   )
 
   return (
     <li>
-      <div className="group flex items-center" style={{ paddingLeft: node.depth * RECUO_PX }}>
+      <div className="group relative flex items-center">
         {/*
-          A seta é botão à parte, e não parte da linha: recolher a pasta e abrir o
-          projeto são ações diferentes, e juntá-las faria uma roubar o clique da outra.
-          Quem não tem filhos ganha um espaço vazio do mesmo tamanho, para os nomes
-          continuarem alinhados.
+          Caixa de largura fixa para a seta. O espaçador de quem não tem filhos usa a
+          mesma medida — é isso que mantém todos os nomes de um nível na mesma coluna.
+          Antes o botão media diferente do espaçador, e cada linha começava num lugar.
         */}
         {temFilhos ? (
           <button
@@ -145,7 +142,7 @@ function Node({
             onClick={() => onToggle(node.id)}
             aria-expanded={aberto}
             aria-label={`${aberto ? COPY.recolher : COPY.expandir}: ${node.name}`}
-            className="shrink-0 rounded-[4px] p-0.5 text-ink-subtle transition-colors hover:text-ink"
+            className="flex size-[18px] shrink-0 items-center justify-center rounded-[4px] text-ink-subtle transition-colors hover:bg-surface-raised hover:text-ink"
           >
             <ChevronRight
               aria-hidden="true"
@@ -156,7 +153,7 @@ function Node({
             />
           </button>
         ) : (
-          <span aria-hidden="true" className="size-4 shrink-0" />
+          <span aria-hidden="true" className="size-[18px] shrink-0" />
         )}
 
         {onSelect ? (
@@ -164,7 +161,7 @@ function Node({
             type="button"
             onClick={() => onSelect(node.id)}
             aria-pressed={ativo}
-            className={classes}
+            className={cn(linhaBase, ativo ? linhaAtiva : linhaInativa)}
           >
             {conteudo}
           </button>
@@ -173,23 +170,29 @@ function Node({
             to="/projects/$projectId"
             params={{ projectId: node.id }}
             aria-label={`${COPY.abrir}: ${node.name}`}
-            className={classes}
+            className={cn(linhaBase, ativo ? linhaAtiva : linhaInativa)}
           >
             {conteudo}
           </Link>
         )}
 
         {/*
-          Some até o mouse chegar: com uma dúzia de projetos, um `+` fixo por linha
-          vira uma coluna de ruído ao lado dos nomes.
+          Some até o mouse chegar: com uma dúzia de projetos, um `+` fixo por linha vira
+          uma coluna de ruído ao lado dos nomes. Fica sobreposto à ponta da linha, e não
+          ao lado dela, para aparecer sem reposicionar o nome.
         */}
-        <span className="opacity-0 transition-opacity duration-150 focus-within:opacity-100 group-hover:opacity-100">
+        <span className="absolute right-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
           <NewProjectDialog parentId={node.id} />
         </span>
       </div>
 
       {aberto ? (
-        <ul className="flex flex-col gap-0.5">
+        /*
+          O recuo vem do aninhamento, não de um cálculo por profundidade — e a borda
+          desenha a linha-guia que liga os irmãos. É ela que faz a árvore ser lida como
+          árvore: sem o traço, três níveis de recuo viram só texto deslocado.
+        */
+        <ul className="ml-[9px] flex flex-col border-line/70 border-l pl-[9px]">
           {node.children.map((filho) => (
             <Node
               key={filho.id}

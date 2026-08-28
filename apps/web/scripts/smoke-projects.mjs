@@ -69,15 +69,31 @@ try {
   await linhaNeto.waitFor({ timeout: 10_000 })
   check('a árvore mostra os três níveis na barra', true)
 
-  // O recuo é o que comunica a hierarquia: sem ele a árvore vira lista.
-  const recuoPai = await barra
-    .getByRole('link', { name: /Abrir projeto: Trabalho/ })
-    .evaluate((el) => el.parentElement.style.paddingLeft)
-  const recuoNeto = await linhaNeto.evaluate((el) => el.parentElement.style.paddingLeft)
+  // Mede onde o nome cai na tela, não a técnica usada para recuar: o que precisa ser
+  // verdade é que a pessoa vê os níveis alinhados entre si e escalonados entre níveis.
+  const x = async (nome) => {
+    const caixa = await barra
+      .getByRole('link', { name: new RegExp(`Abrir projeto: ${nome}$`) })
+      .boundingBox()
+    return Math.round(caixa.x)
+  }
+
+  const [raizA, raizB, filho, neto] = await Promise.all([
+    x('Trabalho'),
+    x('Pessoal'),
+    x('Plataforma'),
+    x('Fase 1'),
+  ])
+
+  check(
+    'irmãos do mesmo nível começam na mesma coluna',
+    raizA === raizB,
+    `Trabalho ${raizA}px, Pessoal ${raizB}px`,
+  )
   check(
     'cada nível recua mais que o anterior',
-    Number.parseInt(recuoNeto, 10) > Number.parseInt(recuoPai, 10),
-    `${recuoPai} → ${recuoNeto}`,
+    neto > filho && filho > raizA,
+    `${raizA} → ${filho} → ${neto}`,
   )
   await page.screenshot({ path: `${outDir}/01-arvore.png` })
 
@@ -88,12 +104,35 @@ try {
   check('recolher esconde a subárvore', true)
 
   const linhaPai = barra.getByRole('link', { name: /Abrir projeto: Trabalho/ })
+
+  // O clique deixa o ponteiro sobre a linha, e com ela sob o mouse o contador dá lugar
+  // ao `+`. Afastar antes de ler é o que separa "não apareceu" de "está escondido".
+  await page.mouse.move(0, 0)
   const textoRecolhido = await linhaPai.innerText()
   check(
     'recolhido, o contador soma a subárvore',
     textoRecolhido.includes('1'),
     JSON.stringify(textoRecolhido.replace(/\n/g, ' ')),
   )
+
+  // E o inverso: sob o mouse, a ponta da linha passa a ser do botão de criar dentro.
+  await linhaPai.hover()
+  const criarDentro = barra.getByRole('button', { name: 'Novo subprojeto' }).first()
+  check('sob o mouse, a linha oferece criar um subprojeto', await criarDentro.isVisible())
+  await page.mouse.move(0, 0)
+
+  // Recolhido continua recolhido depois de trocar de tela e de recarregar: a árvore é
+  // remontada a cada navegação, e sem persistir isso tudo voltaria aberto.
+  await page.getByRole('link', { name: 'Hoje' }).click()
+  await page.waitForURL((url) => url.pathname === '/today', { timeout: 10_000 })
+  await page.getByRole('link', { name: 'Projetos' }).click()
+  await page.waitForURL((url) => url.pathname.startsWith('/projects'), { timeout: 10_000 })
+  await barra.getByRole('button', { name: /Expandir: Trabalho/ }).waitFor({ timeout: 5000 })
+  check('o que foi recolhido segue recolhido ao trocar de tela', true)
+
+  await page.reload({ waitUntil: 'networkidle' })
+  await barra.getByRole('button', { name: /Expandir: Trabalho/ }).waitFor({ timeout: 10_000 })
+  check('e continua recolhido depois de recarregar', true)
 
   await barra.getByRole('button', { name: /Expandir: Trabalho/ }).click()
   await linhaNeto.waitFor({ timeout: 5000 })
