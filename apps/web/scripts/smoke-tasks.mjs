@@ -34,9 +34,15 @@ const browser = await chromium.launch({
 
 const page = await browser.newPage({ viewport: { width: 1280, height: 900 } })
 
+// O teste de nome repetido provoca um 409 de propósito. O navegador loga toda resposta
+// 4xx no console, então esse ruído precisa ser separado de erro de verdade — senão a
+// checagem final vira um alarme que sempre toca e para de ser lida.
+let esperando409 = false
 const consoleErrors = []
 page.on('console', (message) => {
-  if (message.type() === 'error') consoleErrors.push(message.text())
+  if (message.type() !== 'error') return
+  if (esperando409 && message.text().includes('409')) return
+  consoleErrors.push(message.text())
 })
 page.on('pageerror', (error) => consoleErrors.push(String(error)))
 
@@ -107,12 +113,40 @@ try {
   await tarefa(page, 'Comprar café especial').waitFor({ timeout: 10_000 })
   check('edição inline salva o novo título', true)
 
-  // 7. Projeto novo aparece na barra lateral e filtra.
-  await page.getByRole('button', { name: 'Novo projeto' }).click()
-  await page.getByLabel('Novo projeto').fill('Casa')
-  await page.getByLabel('Novo projeto').press('Enter')
+  // 7. Projeto novo nasce num diálogo, com nome e cor.
+  const gatilhoProjeto = page.getByRole('button', { name: 'Novo projeto' })
+  await gatilhoProjeto.click()
+  const dialogo = page.getByRole('dialog', { name: 'Novo projeto' })
+  await dialogo.waitFor({ timeout: 10_000 })
+
+  // O Radix leva o foco sozinho: quem abriu já pode digitar.
+  const focoNoCampo = await dialogo
+    .getByLabel('Nome')
+    .evaluate((campo) => campo === document.activeElement)
+  check('diálogo abre com o foco no nome', focoNoCampo)
+
+  await dialogo.getByLabel('Nome').fill('Casa')
+  await dialogo.getByRole('radio', { name: 'Verde' }).click()
+  await dialogo.getByRole('button', { name: 'Criar' }).click()
+  await dialogo.waitFor({ state: 'detached', timeout: 10_000 })
   await page.getByRole('button', { name: /^Casa/ }).waitFor({ timeout: 10_000 })
   check('projeto criado aparece na barra lateral', true)
+
+  // Nome repetido é erro de negócio: o diálogo segura a pessoa dentro dele.
+  esperando409 = true
+  await gatilhoProjeto.click()
+  await dialogo.waitFor({ timeout: 10_000 })
+  await dialogo.getByLabel('Nome').fill('Casa')
+  await dialogo.getByRole('button', { name: 'Criar' }).click()
+  await dialogo.getByText(/já existe/i).waitFor({ timeout: 10_000 })
+  check('nome repetido mantém o diálogo aberto com o erro', true)
+
+  esperando409 = false
+
+  await page.keyboard.press('Escape')
+  await dialogo.waitFor({ state: 'detached', timeout: 10_000 })
+  const focoVoltou = await gatilhoProjeto.evaluate((botao) => botao === document.activeElement)
+  check('Esc fecha e devolve o foco ao gatilho', focoVoltou)
 
   await page.getByRole('button', { name: /^Casa/ }).click()
   await composer.fill('Trocar lâmpada')

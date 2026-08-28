@@ -1,12 +1,11 @@
-import { type FormEvent, useState } from 'react'
 import { cn } from '../../shared/lib/cn.js'
-import { useCreateProject, useLabels, useProjects } from './queries.js'
+import { NewProjectDialog } from './new-project-dialog.js'
+import { useLabels, useProjects } from './queries.js'
 
 const COPY = {
   todas: 'Todas',
   projetos: 'Projetos',
   etiquetas: 'Etiquetas',
-  novoProjeto: 'Novo projeto',
   semProjetos: 'Nenhum projeto ainda.',
   semEtiquetas: 'Nenhuma etiqueta ainda.',
   mostrarConcluidas: 'Mostrar concluídas',
@@ -29,7 +28,7 @@ export function TaskFilters({ value, onChange }: TaskFiltersProps) {
 
   return (
     <nav className="flex w-56 shrink-0 flex-col gap-6" aria-label="Filtros">
-      <FilterGroup title={COPY.projetos} action={<NewProjectButton />}>
+      <FilterGroup title={COPY.projetos} action={<NewProjectDialog />}>
         <FilterButton
           active={value.projectId === undefined}
           onClick={() => onChange({ ...value, projectId: undefined })}
@@ -146,53 +145,4 @@ function FilterButton({
 
 function Empty({ children }: { children: React.ReactNode }) {
   return <p className="px-3 py-1 text-ink-subtle text-xs">{children}</p>
-}
-
-/** Criação inline: abre um campo no lugar do botão, sem tirar a pessoa da tela. */
-function NewProjectButton() {
-  const create = useCreateProject()
-  const [open, setOpen] = useState(false)
-  const [name, setName] = useState('')
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-
-    const trimmed = name.trim()
-    setName('')
-    setOpen(false)
-
-    if (!trimmed) return
-
-    // O hook invalida a lista de projetos no sucesso; nome repetido volta 409 e o
-    // campo simplesmente fecha sem criar nada.
-    await create.mutateAsync({ name: trimmed, color: '#6E7BF2' }).catch(() => null)
-  }
-
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label={COPY.novoProjeto}
-        className="rounded-control px-1 text-ink-subtle text-sm hover:text-ink"
-      >
-        +
-      </button>
-    )
-  }
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <input
-        // biome-ignore lint/a11y/noAutofocus: o campo só aparece após o clique, então o foco é a intenção
-        autoFocus
-        value={name}
-        onChange={(event) => setName(event.target.value)}
-        onBlur={() => setOpen(false)}
-        aria-label={COPY.novoProjeto}
-        placeholder="Nome"
-        className="h-6 w-24 rounded-[4px] border border-line bg-surface px-1.5 text-ink text-xs outline-none focus:border-iris"
-      />
-    </form>
-  )
 }

@@ -60,3 +60,28 @@ O estado vazio é conteúdo, não sobra: diz o que fazer em seguida.
 Erro de formulário é amarrado ao campo por `aria-describedby` + `aria-invalid`, e anunciado com
 `role="alert"` — é o que faz o leitor de tela ler o erro junto do campo, e por isso mora no
 componente `Field`, não em cada tela.
+
+## Primitivos do shadcn
+
+Componentes de comportamento complicado — diálogo, popover, menu — vêm do shadcn
+(`npx shadcn@latest add <nome>`), que os deposita em `shared/ui/`. Eles entram por causa
+do que é caro fazer à mão e fácil fazer errado: trava de foco, `aria-*` correto,
+devolver o foco a quem abriu, fechar no Esc.
+
+**Eles não trazem paleta.** O shadcn espera variáveis como `--color-background` e
+`--color-border`. Em vez de aceitar as cores dele, o `@theme` do `styles.css` aponta
+esses nomes para os nossos tokens:
+
+```css
+--color-background: var(--color-canvas);
+--color-foreground: var(--color-ink);
+--color-border: var(--color-line);
+```
+
+Assim o componente gerado fica igual ao resto do app sem ser editado — e continua
+atualizável pelo CLI. O mesmo bloco é redefinido dentro de `.landing`, onde a superfície
+é clara.
+
+Quando um componente do shadcn pede uma variante que não temos (o diálogo pede
+`outline` no botão), a variante nasce no **nosso** componente. Editar o arquivo gerado
+é o último recurso.

@@ -2,7 +2,7 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import { cn } from '../lib/cn.js'
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: 'primary' | 'ghost'
+  variant?: 'primary' | 'ghost' | 'outline'
   loading?: boolean
   children: ReactNode
 }
@@ -10,6 +10,9 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 const VARIANTS = {
   primary: 'bg-iris text-canvas hover:bg-iris-strong disabled:hover:bg-iris',
   ghost: 'bg-transparent text-ink-muted hover:bg-surface-raised hover:text-ink',
+  // Existe porque os componentes do shadcn a pedem — mantê-la aqui evita editar o
+  // componente gerado, o que facilita atualizá-lo no futuro.
+  outline: 'border border-line-strong bg-transparent text-ink hover:bg-surface-raised',
 } as const
 
 export function Button({

@@ -79,6 +79,7 @@ Nunca para cima, nunca lateral entre features. Dentro da própria feature, use c
 |---|---|---|
 | Front | Vite 8 + React 19 + TS 6 strict | TanStack Router file-based; `routeTree.gen.ts` é gerado e **commitado** |
 | Estilo | Tailwind v4 (tokens em `apps/web/src/app/styles.css`) | tokens: `canvas`, `surface`, `ink`, `iris`, `p1..p4` |
+| Primitivos | shadcn (new-york) sobre `radix-ui` | gerados em `shared/ui/` — ver `components.json` |
 | API | Node + Fastify 5 + TypeScript | dev: `tsx watch` |
 | Validação | Zod 4 via `fastify-type-provider-zod` | schema Zod = validação + tipos, uma fonte só |
 | ORM | Prisma 7 | **dono do schema**; migrations em `apps/api/prisma/migrations` |
