@@ -46,29 +46,30 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <SidebarSlotProvider>
       <div className="flex h-dvh overflow-hidden">
-        <aside className="flex w-60 shrink-0 flex-col gap-4 overflow-y-auto border-line border-r bg-surface/40 px-3 py-4">
-          <ContaMenu name={user?.name ?? COPY.marca} onSignOut={signOut} />
-
+        <aside className="flex w-[232px] shrink-0 flex-col gap-4 overflow-y-auto border-line border-r bg-surface/40 px-2 py-3">
           {/*
-            A captura é a ação mais usada do app e a única que não é navegação — por isso
-            fica acima da lista, com o atalho à mostra: o botão existe para ensinar o
-            atalho a quem ainda não o conhece.
+            Identidade e captura dividem a primeira linha, como na referência. A captura
+            é a única ação não-navegacional da barra; como ícone ela para de competir
+            com os destinos logo abaixo, e o atalho vive no `title`.
           */}
-          <button
-            type="button"
-            onClick={() => quickCapture.setOpen(true)}
-            className={cn(
-              'flex items-center gap-2 rounded-control px-2 py-1.5 text-ink-muted text-sm',
-              'transition-[colors,transform] duration-150 ease-press',
-              'hover:bg-surface-raised hover:text-ink active:scale-[0.98]',
-            )}
-          >
-            <Search aria-hidden="true" className="size-4 shrink-0" />
-            <span className="flex-1 text-left">{COPY.console}</span>
-            <kbd className="tabular text-ink-subtle text-xs">{COPY.atalho}</kbd>
-          </button>
+          <div className="flex items-center gap-1">
+            <ContaMenu name={user?.name ?? COPY.marca} onSignOut={signOut} />
 
-          <nav aria-label={COPY.navegacao} className="flex flex-col gap-0.5">
+            <button
+              type="button"
+              onClick={() => quickCapture.setOpen(true)}
+              aria-label={COPY.console}
+              title={`${COPY.console} (${COPY.atalho})`}
+              className={cn(
+                'flex size-7 shrink-0 items-center justify-center rounded-[5px] text-ink-subtle',
+                'transition-colors hover:bg-surface-raised hover:text-ink',
+              )}
+            >
+              <Search aria-hidden="true" className="size-4" />
+            </button>
+          </div>
+
+          <nav aria-label={COPY.navegacao} className="flex flex-col gap-px">
             {NAV.map((item) => {
               // `startsWith` e não igualdade: a página de um projeto também é "Projetos".
               const active = pathname === item.to || pathname.startsWith(`${item.to}/`)
@@ -80,10 +81,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                   to={item.to}
                   aria-current={active ? 'page' : undefined}
                   className={cn(
-                    'flex items-center gap-2 rounded-control px-2 py-1.5 text-sm',
-                    'transition-[colors,transform] duration-150 ease-press active:scale-[0.98]',
+                    'flex h-7 items-center gap-2 rounded-[5px] px-2 text-[13px]',
+                    'transition-colors duration-100',
                     active
-                      ? 'bg-surface-raised text-ink'
+                      ? 'bg-surface-raised font-medium text-ink'
                       : 'text-ink-muted hover:bg-surface hover:text-ink',
                   )}
                 >
@@ -120,7 +121,7 @@ function ContaMenu({ name, onSignOut }: { name: string; onSignOut: () => void })
       <DropdownMenuTrigger
         aria-label={COPY.conta}
         className={cn(
-          'flex items-center gap-2 rounded-control px-2 py-1.5 text-left',
+          'flex h-7 min-w-0 flex-1 items-center gap-2 rounded-[5px] px-1.5 text-left',
           'transition-colors hover:bg-surface-raised',
         )}
       >
@@ -131,8 +132,8 @@ function ContaMenu({ name, onSignOut }: { name: string; onSignOut: () => void })
           {inicial}
         </span>
 
-        <span className="min-w-0 flex-1 truncate font-medium text-ink text-sm">{name}</span>
-        <ChevronDown aria-hidden="true" className="size-3.5 shrink-0 text-ink-subtle" />
+        <span className="min-w-0 truncate font-medium text-ink text-[13px]">{name}</span>
+        <ChevronDown aria-hidden="true" className="size-3 shrink-0 text-ink-subtle" />
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="start" className="w-52">

@@ -73,7 +73,7 @@ try {
   // verdade é que a pessoa vê os níveis alinhados entre si e escalonados entre níveis.
   const x = async (nome) => {
     const caixa = await barra
-      .getByRole('link', { name: new RegExp(`Abrir projeto: ${nome}$`) })
+      .getByRole('link', { name: new RegExp(`^Abrir projeto: ${nome}(,|$)`) })
       .boundingBox()
     return Math.round(caixa.x)
   }
@@ -108,12 +108,10 @@ try {
   // O clique deixa o ponteiro sobre a linha, e com ela sob o mouse o contador dá lugar
   // ao `+`. Afastar antes de ler é o que separa "não apareceu" de "está escondido".
   await page.mouse.move(0, 0)
-  const textoRecolhido = await linhaPai.innerText()
-  check(
-    'recolhido, o contador soma a subárvore',
-    textoRecolhido.includes('1'),
-    JSON.stringify(textoRecolhido.replace(/\n/g, ' ')),
-  )
+  // Lido do rótulo, e não do texto: é onde o número está associado ao projeto, e é o
+  // que alguém com leitor de tela realmente ouve.
+  const rotuloRecolhido = await linhaPai.getAttribute('aria-label')
+  check('recolhido, o contador soma a subárvore', rotuloRecolhido.includes('1'), rotuloRecolhido)
 
   // E o inverso: sob o mouse, a ponta da linha passa a ser do botão de criar dentro.
   await linhaPai.hover()

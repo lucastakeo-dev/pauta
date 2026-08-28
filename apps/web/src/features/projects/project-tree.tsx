@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ChevronRight } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import { buildProjectTree, type ProjectNode } from '../../entities/project/index.js'
 import { cn } from '../../shared/lib/cn.js'
 import { usePersistentSet } from '../../shared/lib/persistent-set.js'
@@ -12,22 +12,25 @@ const COPY = {
   expandir: 'Expandir',
   recolher: 'Recolher',
   abrir: 'Abrir projeto',
+  emAberto: 'em aberto',
 }
 
 /** O que a pessoa recolheu. Guardado por navegador — é preferência, não dado. */
 const CHAVE_RECOLHIDOS = 'pauta.projects.collapsed'
 
 /*
-  Uma classe só para as três formas que a linha assume — botão de filtro, link de
-  navegação e o "Todas". Elas precisam ser indistinguíveis na tela; separar o estilo por
-  elemento é como se chega em três linhas que quase combinam.
+  A moldura da linha — altura, cantos e fundo — mora no contêiner, não no link.
+  Precisa ser assim: a seta de recolher é um botão irmão do link, e um botão dentro de
+  um link é HTML inválido. Com o fundo no contêiner, os dois convivem e a linha inteira
+  continua acendendo junta.
 */
-const linhaBase = cn(
-  'flex h-7 w-full min-w-0 items-center gap-1.5 rounded-[5px] pr-1.5 text-left text-[13px]',
-  'transition-colors duration-100',
-)
-const linhaAtiva = 'bg-surface-raised font-medium text-ink'
-const linhaInativa = 'text-ink-muted hover:bg-surface hover:text-ink'
+const linha = 'flex h-7 items-center gap-1 rounded-[5px] px-2 transition-colors duration-100'
+const linhaAtiva = 'bg-surface-raised'
+const linhaInativa = 'hover:bg-surface'
+
+const rotulo = 'flex min-w-0 items-center gap-2 text-left text-[13px] transition-colors'
+const rotuloAtivo = 'font-medium text-ink'
+const rotuloInativo = 'text-ink-muted group-hover:text-ink'
 
 type ProjectTreeProps = {
   /** Projeto em foco, para marcar a linha. */
@@ -59,12 +62,12 @@ export function ProjectTree({ selectedId, onSelect }: ProjectTreeProps) {
         No modo navegação ela não faria sentido: o índice já é a visão de tudo.
       */}
       {onSelect ? (
-        <li>
+        <li className={cn('group', linha, selectedId ? linhaInativa : linhaAtiva)}>
           <button
             type="button"
             onClick={() => onSelect(null)}
             aria-pressed={!selectedId}
-            className={cn(linhaBase, 'pl-[26px]', selectedId ? linhaInativa : linhaAtiva)}
+            className={cn(rotulo, 'flex-1', selectedId ? rotuloInativo : rotuloAtivo)}
           >
             {COPY.todas}
           </button>
@@ -109,90 +112,97 @@ function Node({
   */
   const contador = aberto ? node.openTaskCount : node.totalOpenTaskCount
 
-  const conteudo = (
+  /*
+    O número é do projeto, mas na tela ele fica na ponta da linha, fora do link — a
+    seta de recolher precisa ser irmã do link, não filha. Então ele entra no rótulo:
+    sem isto, o leitor de tela anuncia "Trabalho" e, adiante, um "5" sem dono.
+  */
+  const descricao = contador > 0 ? `${node.name}, ${contador} ${COPY.emAberto}` : node.name
+
+  const nome = (
     <>
       <span
         aria-hidden="true"
         className={cn('size-1.5 shrink-0 rounded-full transition-opacity', !ativo && 'opacity-70')}
         style={{ backgroundColor: node.color }}
       />
-      <span className="min-w-0 flex-1 truncate">{node.name}</span>
-
-      {contador > 0 ? (
-        // Some no hover: o `+` ocupa esta mesma ponta, e os dois juntos empurrariam o
-        // nome para fora numa linha estreita.
-        <span className="tabular shrink-0 text-[11px] text-ink-subtle group-hover:invisible">
-          {contador}
-        </span>
-      ) : null}
+      <span className="truncate">{node.name}</span>
     </>
   )
 
   return (
     <li>
-      <div className="group relative flex items-center">
-        {/*
-          Caixa de largura fixa para a seta. O espaçador de quem não tem filhos usa a
-          mesma medida — é isso que mantém todos os nomes de um nível na mesma coluna.
-          Antes o botão media diferente do espaçador, e cada linha começava num lugar.
-        */}
+      <div className={cn('group relative', linha, ativo ? linhaAtiva : linhaInativa)}>
+        {onSelect ? (
+          <button
+            type="button"
+            onClick={() => onSelect(node.id)}
+            aria-pressed={ativo}
+            aria-label={descricao}
+            className={cn(rotulo, ativo ? rotuloAtivo : rotuloInativo)}
+          >
+            {nome}
+          </button>
+        ) : (
+          <Link
+            to="/projects/$projectId"
+            params={{ projectId: node.id }}
+            aria-label={`${COPY.abrir}: ${descricao}`}
+            className={cn(rotulo, ativo ? rotuloAtivo : rotuloInativo)}
+          >
+            {nome}
+          </Link>
+        )}
+
+        {/* Depois do nome, como no "work ⌄" da referência — e não numa coluna própria
+            antes dele, que obrigava toda linha sem filhos a carregar um vão vazio. */}
         {temFilhos ? (
           <button
             type="button"
             onClick={() => onToggle(node.id)}
             aria-expanded={aberto}
             aria-label={`${aberto ? COPY.recolher : COPY.expandir}: ${node.name}`}
-            className="flex size-[18px] shrink-0 items-center justify-center rounded-[4px] text-ink-subtle transition-colors hover:bg-surface-raised hover:text-ink"
+            className="shrink-0 rounded-[3px] p-0.5 text-ink-subtle transition-colors hover:text-ink"
           >
-            <ChevronRight
+            <ChevronDown
               aria-hidden="true"
               className={cn(
                 'size-3 transition-transform duration-150 ease-press',
-                aberto && 'rotate-90',
+                !aberto && '-rotate-90',
               )}
             />
           </button>
-        ) : (
-          <span aria-hidden="true" className="size-[18px] shrink-0" />
-        )}
+        ) : null}
 
-        {onSelect ? (
-          <button
-            type="button"
-            onClick={() => onSelect(node.id)}
-            aria-pressed={ativo}
-            className={cn(linhaBase, ativo ? linhaAtiva : linhaInativa)}
+        <span className="flex-1" />
+
+        {contador > 0 ? (
+          // Some no hover: o `+` ocupa esta mesma ponta, e os dois juntos empurrariam o
+          // nome para fora numa barra estreita.
+          <span
+            // Já anunciado no rótulo do link; repetir aqui faria o leitor dizer duas vezes.
+            aria-hidden="true"
+            className="tabular shrink-0 text-[11px] text-ink-subtle group-hover:invisible"
           >
-            {conteudo}
-          </button>
-        ) : (
-          <Link
-            to="/projects/$projectId"
-            params={{ projectId: node.id }}
-            aria-label={`${COPY.abrir}: ${node.name}`}
-            className={cn(linhaBase, ativo ? linhaAtiva : linhaInativa)}
-          >
-            {conteudo}
-          </Link>
-        )}
+            {contador}
+          </span>
+        ) : null}
 
         {/*
           Some até o mouse chegar: com uma dúzia de projetos, um `+` fixo por linha vira
-          uma coluna de ruído ao lado dos nomes. Fica sobreposto à ponta da linha, e não
-          ao lado dela, para aparecer sem reposicionar o nome.
+          uma coluna de ruído ao lado dos nomes.
         */}
-        <span className="absolute right-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+        <span className="absolute right-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
           <NewProjectDialog parentId={node.id} />
         </span>
       </div>
 
       {aberto ? (
         /*
-          O recuo vem do aninhamento, não de um cálculo por profundidade — e a borda
-          desenha a linha-guia que liga os irmãos. É ela que faz a árvore ser lida como
-          árvore: sem o traço, três níveis de recuo viram só texto deslocado.
+          Só recuo, sem traço ligando os irmãos. A linha-guia que eu tinha desenhado não
+          existe na referência — e com dois ou três níveis pesa mais do que ajuda.
         */
-        <ul className="ml-[9px] flex flex-col border-line/70 border-l pl-[9px]">
+        <ul className="ml-[18px] flex flex-col">
           {node.children.map((filho) => (
             <Node
               key={filho.id}

@@ -174,9 +174,17 @@ projeto são ações diferentes, e juntá-las faria uma roubar o clique da outra
 tem filhos ganha um espaço vazio **da mesma medida exata** — na primeira versão o botão
 media diferente do espaçador, e cada linha começava num lugar.
 
-**O recuo vem do aninhamento, não de um cálculo por profundidade**, e cada nível desenha
-uma linha-guia vertical. É ela que faz a árvore ser lida como árvore: sem o traço, três
-níveis de recuo viram só texto deslocado.
+**O recuo vem do aninhamento, não de um cálculo por profundidade**, e é só recuo: sem
+traço ligando os irmãos. Cheguei a desenhar linhas-guia e tirei — elas não existem na
+referência, e com dois ou três níveis pesam mais do que ajudam.
+
+**A seta fica depois do nome** (`Trabalho ⌄`), como no `work ⌄` do Linear, e não numa
+coluna antes dele — aquela coluna obrigava toda linha sem filhos a carregar um vão vazio.
+Ela é irmã do link, nunca filha: botão dentro de link é HTML inválido e quebra o teclado.
+Por isso o fundo da linha mora no contêiner, para os dois acenderem juntos.
+
+**O contador entra no rótulo acessível** (`Trabalho, 5 em aberto`). Fora do link ele
+ficaria um número solto, que o leitor de tela anuncia sem dizer de quê.
 
 Sob o mouse, a ponta da linha troca o contador pelo `+` de criar dentro. Os dois disputam
 o mesmo canto, e mostrar ambos empurraria o nome para fora numa barra estreita.
@@ -196,3 +204,10 @@ A página do projeto tem **Visão geral** e **Tarefas**. A visão geral responde
 isto" sem ler a lista inteira — quanto falta aqui, quanto falta abaixo, e em quais
 subprojetos. Cabeçalho e conteúdo são alinhados à esquerda, não centralizados: sem uma
 coluna à direita, centralizar deixaria a trilha e o título desalinhados do que vem abaixo.
+
+Títulos de seção são em **caixa normal com a seta depois do texto** (`Projetos ⌄`), e não
+em versalete espaçado com a seta antes. Versalete grita para algo que é rótulo de
+organização, não conteúdo; e a seta depois faz o par ser lido como um controle só.
+
+Identidade e captura rápida dividem a primeira linha da barra. A captura é a única ação
+não-navegacional ali; como ícone, ela para de competir com os destinos logo abaixo.
