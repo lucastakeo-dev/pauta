@@ -1,13 +1,7 @@
-import type {
-  CreateProjectInput,
-  CreateTaskInput,
-  ListTasksQuery,
-  TaskView,
-  UpdateTaskInput,
-} from '@pauta/contracts'
+import type { CreateTaskInput, ListTasksQuery, TaskView, UpdateTaskInput } from '@pauta/contracts'
 import { useMutation, useMutationState, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLabels } from '../../entities/label/index.js'
-import { createProject, projectKeys, useProjects } from '../../entities/project/index.js'
+import { projectKeys, useProjects } from '../../entities/project/index.js'
 import {
   createTask,
   deleteTask,
@@ -29,7 +23,6 @@ const AVISOS = {
   excluir: { ok: 'Tarefa excluída.', erro: 'Não consegui excluir a tarefa.' },
   concluir: { ok: 'Tarefa concluída.', erro: 'Não consegui atualizar a tarefa.' },
   reabrir: { ok: 'Tarefa reaberta.', erro: 'Não consegui atualizar a tarefa.' },
-  projeto: { ok: 'Projeto criado.', erro: 'Não consegui criar o projeto.' },
 }
 
 /** Chave da criação, para a lista saber quais tarefas ainda estão a caminho. */
@@ -91,21 +84,6 @@ function useOptimisticTaskWrite() {
       },
     }
   }
-}
-
-export function useCreateProject() {
-  const queryClient = useQueryClient()
-  const toast = useToast()
-
-  return useMutation({
-    mutationFn: (input: CreateProjectInput) => createProject(input),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: projectKeys.all })
-      toast.success(AVISOS.projeto.ok)
-    },
-    // A falha não vira aviso aqui: o diálogo a mostra ao lado do campo, que é onde a
-    // pessoa vai corrigir. Nome repetido precisa apontar para o nome.
-  })
 }
 
 /**

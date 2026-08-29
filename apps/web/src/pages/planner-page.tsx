@@ -3,12 +3,17 @@ import { useMemo, useState } from 'react'
 import { DayGrid } from '../features/planner/day-grid.js'
 import { DayNav } from '../features/planner/day-nav.js'
 import { PlannerDndProvider } from '../features/planner/planner-dnd.js'
+import { NewProjectDialog } from '../features/projects/new-project-dialog.js'
+import { ProjectTree } from '../features/projects/project-tree.js'
 import { TaskComposer } from '../features/tasks/task-composer.js'
 import { type TaskFilterState, TaskFilters } from '../features/tasks/task-filters.js'
 import { TaskList } from '../features/tasks/task-list.js'
+import { SidebarGroup } from '../shared/ui/sidebar-group.js'
+import { SidebarSlot } from '../shared/ui/sidebar-slot.js'
 
 const COPY = {
   tarefas: 'Tarefas',
+  projetos: 'Projetos',
 }
 
 /** Espelha `--spacing-hour` e o valor usado pela grade. */
@@ -21,8 +26,10 @@ const HOUR_HEIGHT = 56
  * a ponte do arrastar é o `PlannerDndProvider`, que envolve as duas. A lista publica um
  * `DragPayload`; a grade o consome. Nenhuma importa a outra.
  *
- * A moldura (marca, navegação, captura rápida) mora no `AppShell`, em `app/` — ela é a
- * mesma nas telas logadas, e o console precisa valer em todas.
+ * A moldura (identidade, navegação, captura rápida) mora no `AppShell`, em `app/` — ela
+ * é a mesma nas telas logadas, e o console precisa valer em todas. Os filtros são desta
+ * tela, e por isso nascem aqui, junto do estado que os alimenta: o `SidebarSlot` só os
+ * entrega dentro daquela barra.
  */
 export function PlannerPage() {
   const [filters, setFilters] = useState<TaskFilterState>({ includeDone: false })
@@ -40,16 +47,33 @@ export function PlannerPage() {
 
   return (
     <PlannerDndProvider day={day} hourHeight={HOUR_HEIGHT}>
-      <div className="flex min-h-0 flex-1">
-        <aside className="hidden shrink-0 overflow-y-auto border-line border-r px-4 py-6 lg:block">
-          <TaskFilters value={filters} onChange={setFilters} />
-        </aside>
+      <SidebarSlot>
+        {/*
+          Aqui a árvore filtra em vez de navegar: quem está no planner quer estreitar a
+          lista ao lado, não trocar de tela. Clicar de novo no mesmo projeto solta o filtro.
+        */}
+        <SidebarGroup title={COPY.projetos} action={<NewProjectDialog />}>
+          <ProjectTree
+            selectedId={filters.projectId}
+            onSelect={(id) =>
+              setFilters((atual) => ({
+                ...atual,
+                // `null` vem de "Todas"; clicar no projeto já ativo também solta o filtro.
+                projectId: id === null || atual.projectId === id ? undefined : id,
+              }))
+            }
+          />
+        </SidebarGroup>
 
+        <TaskFilters value={filters} onChange={setFilters} />
+      </SidebarSlot>
+
+      <div className="flex min-h-0 min-w-0 flex-1">
         {/*
           A lista tem largura máxima e fica centralizada: linha de texto muito larga
           cansa de ler, e numa tela grande a coluna ficava quase toda vazia.
         */}
-        <main className="flex min-w-0 flex-1 flex-col overflow-y-auto px-6 py-6">
+        <main className="flex min-w-0 flex-1 flex-col overflow-y-auto px-8 pt-8 pb-6">
           <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
             <h1 className="font-semibold text-ink text-lg">{COPY.tarefas}</h1>
 
@@ -61,7 +85,7 @@ export function PlannerPage() {
         {/* A grade não rola com a página: ela tem a própria rolagem, ancorada no dia útil. */}
         <section
           aria-label="Planner do dia"
-          className="hidden w-[22rem] shrink-0 flex-col border-line border-l px-4 py-6 md:flex xl:w-[28rem] 2xl:w-[32rem]"
+          className="hidden w-[22rem] shrink-0 flex-col border-line border-l px-4 pt-8 pb-6 md:flex xl:w-[28rem] 2xl:w-[32rem]"
         >
           <DayNav day={day} onChange={setDay} />
           <DayGrid day={day} />

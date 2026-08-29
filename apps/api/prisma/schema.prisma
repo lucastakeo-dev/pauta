@@ -55,16 +55,25 @@ model Project {
   name       String    @db.VarChar(120)
   color      String    @default("#6E7BF2") @db.VarChar(7)
   icon       String?   @db.VarChar(40)
+
+  /// Projeto que contém este. `null` = raiz da árvore. Uma "pasta" é só um projeto
+  /// com filhos — não existe entidade separada para isso.
+  parentId String? @map("parent_id") @db.Uuid
+
+  /// Ordem entre irmãos, dentro do mesmo pai.
   position   Int       @default(0)
   archivedAt DateTime? @map("archived_at") @db.Timestamptz(3)
   createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tasks Task[]
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent   Project?  @relation("ProjectTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children Project[] @relation("ProjectTree")
+  tasks    Task[]
 
   @@unique([userId, name])
   @@index([userId, position])
+  @@index([userId, parentId, position])
   @@map("projects")
 }
 

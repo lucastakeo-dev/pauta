@@ -161,7 +161,7 @@ try {
   // 8. "Todas" volta a mostrar tudo, e o contador do projeto aparece.
   await page.getByRole('button', { name: 'Todas' }).click()
   await tarefa(page, 'Comprar café especial').waitFor({ timeout: 10_000 })
-  const contador = await page.getByRole('button', { name: /^Casa/ }).textContent()
+  const contador = await page.getByRole('button', { name: /^Casa/ }).getAttribute('aria-label')
   check('projeto mostra a contagem de tarefas em aberto', contador?.includes('1'), contador ?? '')
 
   // 9. Remover.

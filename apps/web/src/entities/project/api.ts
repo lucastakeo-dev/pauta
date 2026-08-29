@@ -1,4 +1,9 @@
-import type { CreateProjectInput, ProjectView, UpdateProjectInput } from '@pauta/contracts'
+import type {
+  CreateProjectInput,
+  MoveProjectInput,
+  ProjectView,
+  UpdateProjectInput,
+} from '@pauta/contracts'
 import { apiRequest } from '../../shared/api/client.js'
 
 export function listProjects(includeArchived = false): Promise<ProjectView[]> {
@@ -15,4 +20,8 @@ export function updateProject(id: string, input: UpdateProjectInput): Promise<Pr
 
 export function deleteProject(id: string): Promise<void> {
   return apiRequest<void>(`/projects/${id}`, { method: 'DELETE' })
+}
+
+export function moveProject(id: string, input: MoveProjectInput): Promise<ProjectView> {
+  return apiRequest<ProjectView>(`/projects/${id}/move`, { method: 'POST', body: input })
 }

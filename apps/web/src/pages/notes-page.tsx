@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useDailyNote, useNote } from '../entities/note/index.js'
 import { NoteEditor } from '../features/notes/note-editor.js'
 import { NoteSidebar } from '../features/notes/note-sidebar.js'
+import { SidebarSlot } from '../shared/ui/sidebar-slot.js'
 
 const COPY = {
   carregando: 'Abrindo…',
@@ -29,16 +30,16 @@ export function NotesPage() {
   const note = useNote(activeId)
 
   return (
-    <div className="flex min-h-0 flex-1">
-      <aside className="hidden shrink-0 overflow-y-auto border-line border-r px-4 py-6 lg:block">
+    <div className="flex min-h-0 min-w-0 flex-1">
+      <SidebarSlot>
         <NoteSidebar
           selectedId={activeId}
           dailyId={daily.data?.id ?? null}
           onSelect={setSelectedId}
         />
-      </aside>
+      </SidebarSlot>
 
-      <main className="flex min-w-0 flex-1 flex-col overflow-y-auto px-6 py-6">
+      <main className="flex min-w-0 flex-1 flex-col overflow-y-auto px-8 pt-8 pb-6">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
           {note.isPending ? (
             <p role="status" aria-live="polite" className="text-ink-subtle text-sm">

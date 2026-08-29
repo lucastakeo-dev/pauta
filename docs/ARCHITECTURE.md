@@ -176,6 +176,13 @@ recorrências são expandidas**; sem ela, aparece só o molde da recorrência.
 Uma ocorrência ainda não materializada é endereçada por `uuid@AAAA-MM-DD`. Concluir ou
 editar uma delas cria a linha de verdade (`POST /tasks/:id/toggle`, `PATCH /tasks/:id`).
 
+**Projetos são uma árvore.** `POST /projects` aceita `parentId`, e `GET /projects`
+devolve `parentId` e `childCount` ordenados por pai — o cliente monta a árvore numa
+passada. Mover tem rota própria, `POST /projects/:id/move`, porque precisa recusar mover
+um projeto para dentro da própria subárvore (`422 project_cycle`): isso desligaria a
+subárvore da raiz, e ela sumiria da barra lateral sem ter sido apagada. Apagar um pai
+promove os filhos à raiz, nunca cascateia.
+
 ## Regra de dado mora no banco
 
 O que o Prisma não expressa está em

@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react'
 import { useNotes } from '../../entities/note/index.js'
 import { cn } from '../../shared/lib/cn.js'
+import { SidebarGroup } from '../../shared/ui/sidebar-group.js'
 import { useCreateNote } from './queries.js'
 
 const COPY = {
@@ -43,7 +44,7 @@ export function NoteSidebar({ selectedId, dailyId, onSelect }: NoteSidebarProps)
   const paginas = notes?.filter((note) => note.id !== dailyId) ?? []
 
   return (
-    <nav aria-label="Notas" className="flex w-60 shrink-0 flex-col gap-4">
+    <nav aria-label="Notas" className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
       <input
         value={search}
         onChange={(event) => setSearch(event.target.value)}
@@ -68,24 +69,25 @@ export function NoteSidebar({ selectedId, dailyId, onSelect }: NoteSidebarProps)
         </button>
       ) : null}
 
-      <section className="flex min-h-0 flex-1 flex-col gap-0.5">
-        <div className="flex items-center justify-between px-3 pb-1">
-          <h2 className="font-medium text-ink-subtle text-xs uppercase tracking-wider">
-            {COPY.paginas}
-          </h2>
-
-          {creating ? null : (
+      <SidebarGroup
+        title={COPY.paginas}
+        action={
+          creating ? null : (
             <button
               type="button"
               onClick={() => setCreating(true)}
               aria-label={COPY.nova}
-              className="rounded-control px-1 text-ink-subtle text-sm hover:text-ink"
+              className={cn(
+                'rounded-control px-1.5 text-ink-subtle text-sm leading-none',
+                'transition-[colors,transform] duration-150 ease-press',
+                'hover:text-ink active:scale-90',
+              )}
             >
               +
             </button>
-          )}
-        </div>
-
+          )
+        }
+      >
         {creating ? (
           <form onSubmit={handleCreate} className="px-2 pb-1">
             <input
@@ -125,7 +127,7 @@ export function NoteSidebar({ selectedId, dailyId, onSelect }: NoteSidebarProps)
             </button>
           ))}
         </div>
-      </section>
+      </SidebarGroup>
     </nav>
   )
 }

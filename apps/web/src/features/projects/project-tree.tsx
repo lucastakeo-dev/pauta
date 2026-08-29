@@ -1,0 +1,220 @@
+import { Link } from '@tanstack/react-router'
+import { ChevronDown } from 'lucide-react'
+import { buildProjectTree, type ProjectNode } from '../../entities/project/index.js'
+import { cn } from '../../shared/lib/cn.js'
+import { usePersistentSet } from '../../shared/lib/persistent-set.js'
+import { NewProjectDialog } from './new-project-dialog.js'
+import { useProjects } from './queries.js'
+
+const COPY = {
+  todas: 'Todas',
+  vazio: 'Nenhum projeto ainda.',
+  expandir: 'Expandir',
+  recolher: 'Recolher',
+  abrir: 'Abrir projeto',
+  emAberto: 'em aberto',
+}
+
+/** O que a pessoa recolheu. Guardado por navegador — é preferência, não dado. */
+const CHAVE_RECOLHIDOS = 'pauta.projects.collapsed'
+
+/*
+  A moldura da linha — altura, cantos e fundo — mora no contêiner, não no link.
+  Precisa ser assim: a seta de recolher é um botão irmão do link, e um botão dentro de
+  um link é HTML inválido. Com o fundo no contêiner, os dois convivem e a linha inteira
+  continua acendendo junta.
+*/
+const linha = 'flex h-7 items-center gap-1 rounded-[5px] px-2 transition-colors duration-100'
+const linhaAtiva = 'bg-surface-raised'
+const linhaInativa = 'hover:bg-surface'
+
+const rotulo = 'flex min-w-0 items-center gap-2 text-left text-[13px] transition-colors'
+const rotuloAtivo = 'font-medium text-ink'
+const rotuloInativo = 'text-ink-muted group-hover:text-ink'
+
+type ProjectTreeProps = {
+  /** Projeto em foco, para marcar a linha. */
+  selectedId?: string | undefined
+  /**
+   * O que o clique no nome faz. Sem isto a linha vira um link para a página do projeto —
+   * é a diferença entre a barra do planner, que filtra, e a das outras telas, que navega.
+   *
+   * Recebe `null` quando a pessoa escolhe "Todas".
+   */
+  onSelect?: ((id: string | null) => void) | undefined
+}
+
+export function ProjectTree({ selectedId, onSelect }: ProjectTreeProps) {
+  const { data: projects } = useProjects()
+  const [recolhidos, alternar] = usePersistentSet(CHAVE_RECOLHIDOS)
+
+  const arvore = buildProjectTree(projects ?? [])
+
+  if (projects && projects.length === 0) {
+    return <p className="px-2 py-1.5 text-ink-subtle text-xs">{COPY.vazio}</p>
+  }
+
+  return (
+    <ul className="flex flex-col">
+      {/*
+        Só no modo filtro. Sem esta linha, largar o filtro dependeria de descobrir que
+        clicar de novo no projeto ativo o solta — e ninguém descobre isso sozinho.
+        No modo navegação ela não faria sentido: o índice já é a visão de tudo.
+      */}
+      {onSelect ? (
+        <li className={cn('group', linha, selectedId ? linhaInativa : linhaAtiva)}>
+          <button
+            type="button"
+            onClick={() => onSelect(null)}
+            aria-pressed={!selectedId}
+            className={cn(rotulo, 'flex-1', selectedId ? rotuloInativo : rotuloAtivo)}
+          >
+            {COPY.todas}
+          </button>
+        </li>
+      ) : null}
+
+      {arvore.map((node) => (
+        <Node
+          key={node.id}
+          node={node}
+          recolhidos={recolhidos}
+          onToggle={alternar}
+          selectedId={selectedId}
+          onSelect={onSelect}
+        />
+      ))}
+    </ul>
+  )
+}
+
+function Node({
+  node,
+  recolhidos,
+  onToggle,
+  selectedId,
+  onSelect,
+}: {
+  node: ProjectNode
+  recolhidos: ReadonlySet<string>
+  onToggle: (id: string) => void
+  selectedId: string | undefined
+  onSelect: ((id: string | null) => void) | undefined
+}) {
+  const temFilhos = node.children.length > 0
+  const aberto = temFilhos && !recolhidos.has(node.id)
+  const ativo = selectedId === node.id
+
+  /*
+    Recolhido, o contador passa a somar a subárvore. Sem isso, esconder os filhos
+    esconderia junto o trabalho pendente deles — a pasta pareceria vazia tendo doze
+    tarefas dentro.
+  */
+  const contador = aberto ? node.openTaskCount : node.totalOpenTaskCount
+
+  /*
+    O número é do projeto, mas na tela ele fica na ponta da linha, fora do link — a
+    seta de recolher precisa ser irmã do link, não filha. Então ele entra no rótulo:
+    sem isto, o leitor de tela anuncia "Trabalho" e, adiante, um "5" sem dono.
+  */
+  const descricao = contador > 0 ? `${node.name}, ${contador} ${COPY.emAberto}` : node.name
+
+  const nome = (
+    <>
+      <span
+        aria-hidden="true"
+        className={cn('size-1.5 shrink-0 rounded-full transition-opacity', !ativo && 'opacity-70')}
+        style={{ backgroundColor: node.color }}
+      />
+      <span className="truncate">{node.name}</span>
+    </>
+  )
+
+  return (
+    <li>
+      <div className={cn('group relative', linha, ativo ? linhaAtiva : linhaInativa)}>
+        {onSelect ? (
+          <button
+            type="button"
+            onClick={() => onSelect(node.id)}
+            aria-pressed={ativo}
+            aria-label={descricao}
+            className={cn(rotulo, ativo ? rotuloAtivo : rotuloInativo)}
+          >
+            {nome}
+          </button>
+        ) : (
+          <Link
+            to="/projects/$projectId"
+            params={{ projectId: node.id }}
+            aria-label={`${COPY.abrir}: ${descricao}`}
+            className={cn(rotulo, ativo ? rotuloAtivo : rotuloInativo)}
+          >
+            {nome}
+          </Link>
+        )}
+
+        {/* Depois do nome, como no "work ⌄" da referência — e não numa coluna própria
+            antes dele, que obrigava toda linha sem filhos a carregar um vão vazio. */}
+        {temFilhos ? (
+          <button
+            type="button"
+            onClick={() => onToggle(node.id)}
+            aria-expanded={aberto}
+            aria-label={`${aberto ? COPY.recolher : COPY.expandir}: ${node.name}`}
+            className="shrink-0 rounded-[3px] p-0.5 text-ink-subtle transition-colors hover:text-ink"
+          >
+            <ChevronDown
+              aria-hidden="true"
+              className={cn(
+                'size-3 transition-transform duration-150 ease-press',
+                !aberto && '-rotate-90',
+              )}
+            />
+          </button>
+        ) : null}
+
+        <span className="flex-1" />
+
+        {contador > 0 ? (
+          // Some no hover: o `+` ocupa esta mesma ponta, e os dois juntos empurrariam o
+          // nome para fora numa barra estreita.
+          <span
+            // Já anunciado no rótulo do link; repetir aqui faria o leitor dizer duas vezes.
+            aria-hidden="true"
+            className="tabular shrink-0 text-[11px] text-ink-subtle group-hover:invisible"
+          >
+            {contador}
+          </span>
+        ) : null}
+
+        {/*
+          Some até o mouse chegar: com uma dúzia de projetos, um `+` fixo por linha vira
+          uma coluna de ruído ao lado dos nomes.
+        */}
+        <span className="absolute right-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+          <NewProjectDialog parentId={node.id} />
+        </span>
+      </div>
+
+      {aberto ? (
+        /*
+          Só recuo, sem traço ligando os irmãos. A linha-guia que eu tinha desenhado não
+          existe na referência — e com dois ou três níveis pesa mais do que ajuda.
+        */
+        <ul className="ml-[18px] flex flex-col">
+          {node.children.map((filho) => (
+            <Node
+              key={filho.id}
+              node={filho}
+              recolhidos={recolhidos}
+              onToggle={onToggle}
+              selectedId={selectedId}
+              onSelect={onSelect}
+            />
+          ))}
+        </ul>
+      ) : null}
+    </li>
+  )
+}
