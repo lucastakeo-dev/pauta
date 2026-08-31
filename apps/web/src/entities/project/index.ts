@@ -9,6 +9,7 @@ export { projectKeys } from './keys.js'
 export { useProjects } from './queries.js'
 export {
   buildProjectTree,
+  containsProject,
   flattenProjectTree,
   type ProjectNode,
   projectPath,

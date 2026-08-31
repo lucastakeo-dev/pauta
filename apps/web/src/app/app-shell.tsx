@@ -4,10 +4,12 @@ import {
   FileText,
   FolderTree,
   LogOut,
+  Moon,
   PanelLeftClose,
   PanelLeftOpen,
   Search,
   Sparkles,
+  Sun,
 } from 'lucide-react'
 import type { ComponentProps, ReactNode } from 'react'
 import { useSession } from '../features/auth/session-context.js'
@@ -15,6 +17,7 @@ import { ConsoleOverlay } from '../features/console/console-overlay.js'
 import { useConsoleShortcut } from '../features/console/use-console-shortcut.js'
 import { cn } from '../shared/lib/cn.js'
 import { usePersistentFlag } from '../shared/lib/persistent.js'
+import { type Theme, useTheme } from '../shared/lib/theme.js'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,6 +38,8 @@ const COPY = {
   secoes: 'Seções',
   recolher: 'Recolher o menu',
   expandir: 'Expandir o menu',
+  temaClaro: 'Tema claro',
+  temaEscuro: 'Tema escuro',
 }
 
 /** Painel aberto ou recolhido. Preferência de quem olha, não dado de servidor. */
@@ -62,6 +67,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const quickCapture = useConsoleShortcut()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const [aberto, alternarMenu] = usePersistentFlag(CHAVE_MENU, true)
+  const [theme, setTheme] = useTheme()
 
   // `startsWith` e não igualdade: a página de um projeto também é "Projetos".
   const ehAtivo = (to: string) => pathname === to || pathname.startsWith(`${to}/`)
@@ -110,17 +116,13 @@ export function AppShell({ children }: { children: ReactNode }) {
 
             <span className="flex-1" />
 
-            <BotaoTrilho
-              onClick={alternarMenu}
-              aria-expanded={aberto}
-              rotulo={aberto ? COPY.recolher : COPY.expandir}
-            >
-              {aberto ? (
-                <PanelLeftClose aria-hidden="true" className="size-[18px]" />
-              ) : (
+            {/* Recolher mora no cabeçalho do painel, junto do que ele recolhe. Aqui
+                fica só o inverso, e só quando não há painel para carregá-lo. */}
+            {aberto ? null : (
+              <BotaoTrilho onClick={alternarMenu} aria-expanded={false} rotulo={COPY.expandir}>
                 <PanelLeftOpen aria-hidden="true" className="size-[18px]" />
-              )}
-            </BotaoTrilho>
+              </BotaoTrilho>
+            )}
 
             <BotaoTrilho
               onClick={() => quickCapture.setOpen(true)}
@@ -129,7 +131,12 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Search aria-hidden="true" className="size-[18px]" />
             </BotaoTrilho>
 
-            <ContaMenu name={user?.name ?? COPY.marca} onSignOut={signOut} />
+            <ContaMenu
+              name={user?.name ?? COPY.marca}
+              theme={theme}
+              onTheme={setTheme}
+              onSignOut={signOut}
+            />
           </div>
 
           {aberto ? (
@@ -140,9 +147,25 @@ export function AppShell({ children }: { children: ReactNode }) {
                 Enquanto ele espelhava o trilho, clicar no calendário levava às mesmas
                 três opções de novo, e a coluna inteira não dizia nada sobre o calendário.
               */}
-              <header className="flex h-11 shrink-0 items-center gap-2 border-line border-b px-3">
+              <header className="flex h-11 shrink-0 items-center gap-2 border-line border-b pr-2 pl-3">
                 <secao.icon aria-hidden="true" className="size-4 shrink-0 text-ink-muted" />
-                <h2 className="min-w-0 truncate font-semibold text-ink text-sm">{secao.label}</h2>
+                <h2 className="min-w-0 flex-1 truncate font-semibold text-ink text-sm">
+                  {secao.label}
+                </h2>
+
+                <button
+                  type="button"
+                  onClick={alternarMenu}
+                  aria-expanded={true}
+                  aria-label={COPY.recolher}
+                  title={COPY.recolher}
+                  className={cn(
+                    'flex size-7 shrink-0 items-center justify-center rounded-[8px]',
+                    'text-ink-subtle transition-colors hover:bg-surface-raised hover:text-ink',
+                  )}
+                >
+                  <PanelLeftClose aria-hidden="true" className="size-4" />
+                </button>
               </header>
 
               {/* O que a seção atual quer na barra. Vazio é um estado normal. */}
@@ -213,8 +236,19 @@ function BotaoTrilho({
  * Sair mora dentro do menu em vez de solto na barra porque é ação rara e destrutiva o
  * bastante para não merecer ficar a um clique de distância o tempo todo.
  */
-function ContaMenu({ name, onSignOut }: { name: string; onSignOut: () => void }) {
+function ContaMenu({
+  name,
+  theme,
+  onTheme,
+  onSignOut,
+}: {
+  name: string
+  theme: Theme
+  onTheme: (theme: Theme) => void
+  onSignOut: () => void
+}) {
   const inicial = name.trim().slice(0, 2).toUpperCase()
+  const claro = theme === 'light'
 
   return (
     <DropdownMenu>
@@ -231,6 +265,19 @@ function ContaMenu({ name, onSignOut }: { name: string; onSignOut: () => void })
 
       <DropdownMenuContent side="right" align="end" className="w-52">
         <DropdownMenuLabel className="truncate">{name}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+
+        {/* Um item só, nomeando o destino e não o estado: "Tema claro" leva ao claro.
+            Dois rádios custariam uma linha a mais para dizer o mesmo em dois cliques. */}
+        <DropdownMenuItem onSelect={() => onTheme(claro ? 'dark' : 'light')}>
+          {claro ? (
+            <Moon aria-hidden="true" className="size-4" />
+          ) : (
+            <Sun aria-hidden="true" className="size-4" />
+          )}
+          {claro ? COPY.temaEscuro : COPY.temaClaro}
+        </DropdownMenuItem>
+
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={onSignOut}>
           <LogOut aria-hidden="true" className="size-4" />

@@ -202,6 +202,48 @@ try {
   const bolinhas = await barra.locator('span[style*="background-color"]').count()
   check('a barra não tem mais bolinha colorida', bolinhas === 0, `${bolinhas} encontradas`)
 
+  // 5b. O selecionado ganha a barra de acento, e o caminho até ele ganha peso.
+  await barra.getByRole('link', { name: /Abrir projeto: Fase 1/ }).click()
+  await page.getByRole('heading', { name: 'Fase 1' }).waitFor({ timeout: 10_000 })
+  await page.mouse.move(0, 0)
+
+  const linhaDe = (nome) =>
+    barra.getByRole('link', { name: new RegExp(`^Abrir projeto: ${nome}(,|$)`) })
+
+  // A barra é um `::before`: é o desenho, não um elemento, então se lê no estilo.
+  const barraDoSelecionado = await linhaDe('Fase 1').evaluate((el) => {
+    const linha = el.closest('div')
+    const antes = getComputedStyle(linha, '::before')
+    return { largura: antes.width, cor: antes.backgroundColor }
+  })
+  check(
+    'o item selecionado ganha a barra de acento',
+    barraDoSelecionado.largura === '3px',
+    JSON.stringify(barraDoSelecionado),
+  )
+
+  const pesos = await Promise.all(
+    ['Trabalho', 'Plataforma', 'Pessoal'].map((nome) =>
+      linhaDe(nome).evaluate((el) => getComputedStyle(el).fontWeight),
+    ),
+  )
+  check(
+    'as pastas do caminho ficam em destaque, as de fora não',
+    pesos[0] === '500' && pesos[1] === '500' && pesos[2] === '400',
+    `Trabalho ${pesos[0]}, Plataforma ${pesos[1]}, Pessoal ${pesos[2]}`,
+  )
+
+  // A linha-guia liga os irmãos: é uma borda da lista, não um enfeite por linha.
+  const guia = await barra
+    .locator('ul ul')
+    .first()
+    .evaluate((el) => getComputedStyle(el).borderLeftWidth)
+  check('a subárvore tem linha-guia', guia === '1px', guia)
+  await page.screenshot({ path: `${outDir}/05-selecao.png` })
+
+  await menu.getByRole('link', { name: 'Projetos' }).click()
+  await page.waitForURL((url) => url.pathname === '/projects', { timeout: 10_000 })
+
   // 6. Trocar o ícone pelo lápis que aparece sob o mouse.
   await barra.getByRole('link', { name: /Abrir projeto: Trabalho/ }).hover()
   await barra.getByRole('button', { name: /Editar projeto: Trabalho/ }).click()

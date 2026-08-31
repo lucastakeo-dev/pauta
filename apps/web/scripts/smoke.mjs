@@ -122,16 +122,56 @@ try {
   await painel.waitFor({ timeout: 5000 })
   check('expandir traz o menu de volta', true)
 
-  // 7. Sair volta ao login, e a área logada volta a ser barrada.
+  // 7. O tema claro, e a memória dele.
+  const temaDe = () => page.evaluate(() => document.documentElement.className)
+  const fundoDoPainel = () =>
+    page.evaluate(
+      () => getComputedStyle(document.querySelector('aside').children[1]).backgroundColor,
+    )
+
+  check('o app abre no escuro', (await temaDe()) === 'dark', await temaDe())
+  const fundoEscuro = await fundoDoPainel()
+
+  await page.getByRole('button', { name: 'Conta', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Tema claro' }).click()
+  await page.waitForFunction(() => document.documentElement.classList.contains('light'), {
+    timeout: 5000,
+  })
+
+  const fundoClaro = await fundoDoPainel()
+  check(
+    'trocar o tema repinta o painel',
+    fundoClaro !== fundoEscuro,
+    `${fundoEscuro} → ${fundoClaro}`,
+  )
+
+  // `color-scheme` acompanha o tema — é ele que pinta barra de rolagem e campos nativos.
+  const esquema = await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)
+  check('color-scheme acompanha o tema', esquema === 'light', esquema)
+
+  // O script embutido no index.html aplica antes do primeiro pixel: depois do reload a
+  // classe já tem de estar lá, sem passar pelo escuro.
+  await page.reload({ waitUntil: 'networkidle' })
+  check('o tema escolhido sobrevive ao recarregar', (await temaDe()) === 'light', await temaDe())
+  await page.screenshot({ path: `${outDir}/05-claro.png` })
+
+  await page.getByRole('button', { name: 'Conta', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Tema escuro' }).click()
+  await page.waitForFunction(() => document.documentElement.classList.contains('dark'), {
+    timeout: 5000,
+  })
+  check('dá para voltar ao escuro', true)
+
+  // 8. Sair volta ao login, e a área logada volta a ser barrada.
   //    Sair mora no menu da conta, na barra lateral — não mais solto numa faixa no topo.
-  await page.getByRole('button', { name: 'Conta' }).click()
+  await page.getByRole('button', { name: 'Conta', exact: true }).click()
   await page.getByRole('menuitem', { name: 'Sair' }).click()
   await page.waitForURL((url) => url.pathname.includes('/signin'), { timeout: 10_000 })
 
   await page.goto(`${WEB}/today`, { waitUntil: 'networkidle' })
   check('após sair, /today volta a exigir login', page.url().includes('/signin'), page.url())
 
-  // 8. Com sessão, a vitrine não faz sentido: a raiz manda para o app.
+  // 9. Com sessão, a vitrine não faz sentido: a raiz manda para o app.
   await page.getByLabel('E-mail').fill(email)
   await page.getByLabel('Senha').fill('senha-bem-segura')
   await page.getByRole('button', { name: 'Entrar', exact: true }).click()

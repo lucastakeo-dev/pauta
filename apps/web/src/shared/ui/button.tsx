@@ -8,7 +8,7 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 }
 
 const VARIANTS = {
-  primary: 'bg-iris text-canvas hover:bg-iris-strong disabled:hover:bg-iris',
+  primary: 'bg-iris text-canvas hover:bg-iris-strong',
   ghost: 'bg-transparent text-ink-muted hover:bg-surface-raised hover:text-ink',
   // Existe porque os componentes do shadcn a pedem — mantê-la aqui evita editar o
   // componente gerado, o que facilita atualizá-lo no futuro.
@@ -36,7 +36,11 @@ export function Button({
         // O recuo no `active` é a confirmação de que o clique registrou — o único
         // retorno imediato que existe antes da resposta do servidor chegar.
         'transition-[colors,transform] duration-150 ease-press active:scale-[0.97]',
-        'disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100',
+        // Desabilitado sai da paleta de ação em vez de só desbotar: no tema claro, o
+        // acento a 50% com texto quase branco por cima ficava ilegível e ainda parecia
+        // clicável. Cinza sobre cinza diz "não agora" nos dois temas.
+        'disabled:cursor-not-allowed disabled:active:scale-100',
+        'disabled:bg-surface-raised disabled:text-ink-subtle disabled:hover:bg-surface-raised',
         VARIANTS[variant],
         className,
       )}

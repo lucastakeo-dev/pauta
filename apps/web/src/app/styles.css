@@ -12,9 +12,10 @@
 @import "@fontsource-variable/instrument-sans";
 @import "@fontsource-variable/jetbrains-mono";
 
-/* O tema é escolha explícita na tag <html>, não preferência do sistema: o app é
-   escuro por natureza e a troca precisa ser previsível. */
+/* O tema é escolha explícita na tag <html>, não preferência do sistema: o app fica
+   aberto o dia inteiro e não deve mudar de cara ao anoitecer. */
 @custom-variant dark (&:where(.dark, .dark *));
+@custom-variant light (&:where(.light, .light *));
 
 /**
  * Tokens do Pauta.
@@ -141,18 +142,66 @@
   --spacing-hour: 3.5rem;
 }
 
+/*
+ * Tema claro.
+ *
+ * Não é o escuro com os números invertidos: em fundo claro, elevação se lê por **tinta**,
+ * não por brilho. `surface-raised` — o fundo do hover e do selecionado — fica mais escuro
+ * que `surface`, ao contrário do escuro, onde fica mais claro. O que se preserva é o
+ * papel de cada token, não a posição dele na régua.
+ *
+ * O branco é levemente quente (matiz 85). Branco puro em painel grande cansa a vista de
+ * quem passa o dia na tela, e o cinza neutro deixa a interface com cara de rascunho.
+ *
+ * O acento escurece: o íris do escuro (L 0.68) sobre branco dá ~3,5:1, abaixo do mínimo
+ * para texto. Aqui ele vai a 0.52, que passa dos 4,5:1 e continua sendo a mesma cor.
+ */
+.light {
+  --color-shell: oklch(0.935 0.006 85);
+  --color-canvas: oklch(0.99 0.002 85);
+  --color-surface: oklch(1 0 0);
+  --color-surface-raised: oklch(0.945 0.006 85);
+  --color-surface-overlay: oklch(1 0 0);
+
+  --color-line: oklch(0.9 0.005 85);
+  --color-line-strong: oklch(0.78 0.008 85);
+
+  --color-ink: oklch(0.22 0.01 275);
+  --color-ink-muted: oklch(0.45 0.012 275);
+  --color-ink-subtle: oklch(0.6 0.012 275);
+
+  --color-iris: oklch(0.52 0.2 285);
+  --color-iris-strong: oklch(0.46 0.21 285);
+  --color-iris-soft: oklch(0.92 0.04 285);
+
+  --color-p1: oklch(0.55 0.21 25);
+  --color-p2: oklch(0.58 0.15 65);
+  --color-p3: oklch(0.55 0.15 240);
+  --color-p4: oklch(0.6 0.012 275);
+
+  --color-positive: oklch(0.52 0.15 155);
+  --color-warning: oklch(0.56 0.14 85);
+  --color-danger: oklch(0.53 0.21 25);
+}
+
 @layer base {
   * {
     border-color: var(--color-line);
   }
 
   html {
-    background-color: var(--color-canvas);
+    background-color: var(--color-shell);
     color-scheme: dark;
   }
 
+  /* Acompanha o tema: é o que pinta barra de rolagem, seletor de data e hora, e o
+     resto dos controles nativos, que não leem os nossos tokens. */
+  html.light {
+    color-scheme: light;
+  }
+
   body {
-    background-color: var(--color-canvas);
+    background-color: var(--color-shell);
     color: var(--color-ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;

@@ -4,6 +4,25 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="dark light" />
+
+    <!--
+      Aplica o tema guardado antes do primeiro pixel.
+
+      Precisa ser embutido e síncrono: o bundle é módulo, então roda depois da primeira
+      pintura, e o app claro abriria escuro por um quadro. A chave é a mesma de
+      `shared/lib/theme.ts`.
+    -->
+    <script>
+      const tema = (() => {
+        try {
+          return localStorage.getItem("pauta.theme")
+        } catch {
+          return null
+        }
+      })()
+
+      if (tema === "light" || tema === "dark") document.documentElement.className = tema
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Pauta</title>
     <meta name="description" content="Planner, tarefas e notas num lugar só." />
