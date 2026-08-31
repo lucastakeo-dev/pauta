@@ -133,7 +133,15 @@ export const taskViewSchema = z.object({
   estimateMin: z.number().int().nullable(),
   completedAt: z.string().nullable(),
   projectId: z.string().nullable(),
-  project: z.object({ id: z.string(), name: z.string(), color: z.string() }).nullable(),
+  project: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      /** Ainda pinta o bloco no planner. A lista e a barra lateral usam o ícone. */
+      color: z.string(),
+      icon: z.string().nullable(),
+    })
+    .nullable(),
   parentId: z.string().nullable(),
   labels: z.array(labelViewSchema),
   subtaskCount: z.number().int(),

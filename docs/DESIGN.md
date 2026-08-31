@@ -158,6 +158,44 @@ inteiro é o alvo do clique — a seta sozinha é pequena demais para mirar.
 espaço demais, e como agora é a única navegação, não dá para simplesmente escondê-la.
 A branch `fix/reachable-panels-on-small-screens` trata das telas pequenas.
 
+## Ícone, não bolinha
+
+Cada projeto tem um ícone escolhido de um catálogo curado de 48 desenhos do lucide
+(`shared/ui/icon-catalog.tsx`). Ele é a identidade do projeto onde quer que o projeto
+apareça: barra lateral, índice, cabeçalho da página e a linha da tarefa.
+
+Antes era uma bolinha com a cor do projeto. Numa coluna de 232px com três níveis de
+recuo, seis cores lado a lado viravam ruído — e a bolinha não dizia nada sobre o projeto,
+só que ele era diferente do de cima. **Forma distingue melhor que matiz**, e é o que faz o
+olho correr pelos nomes em vez de tropeçar nas cores.
+
+O ícone é **monocromático e herda a cor da linha**, sem tratamento próprio: assim o par
+ícone + nome acende junto no hover e no ativo, e é lido como uma coisa só. É o que a
+[referência](https://linear.app) faz na barra dela.
+
+**A cor do projeto continua existindo, e só no planner** — ela pinta o bloco na grade de
+horas, que é onde distinguir de relance vale a coluna que ocupa. O diálogo diz isso no
+próprio rótulo do campo ("Cor no planner"): uma escolha que parece não ter efeito é pior
+que uma escolha que não existe.
+
+Quem não escolheu ícone recebe o `#`. Chave desconhecida cai no mesmo lugar — o catálogo
+pode encolher sem quebrar um projeto antigo.
+
+**A grade do seletor tem oito colunas porque cada linha é um tema** (geral, trabalho,
+estudo, código, criação, vida). Agrupa sem gastar altura com título de grupo, que em 48
+ícones custaria mais do que ajuda a achar. São rádios de verdade, um por ícone: as setas
+do teclado andam pela grade e o leitor de tela anuncia o nome do desenho, não uma chave.
+
+Editar tem dois caminhos, e a razão é o espaço:
+
+| Onde | O que abre a edição |
+|---|---|
+| Barra lateral | o lápis que aparece na ponta da linha, ao lado do `+` |
+| Página do projeto | o próprio ícone do título, que é um botão |
+
+Na barra não cabe um alvo de 32px; no cabeçalho cabe, e ali o ícone-botão é a coisa mais
+direta que existe — clicar no que se quer trocar.
+
 ## Projetos são uma árvore
 
 Pasta é um projeto com filhos — não há entidade separada. A hierarquia aparece em três

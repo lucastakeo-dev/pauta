@@ -12,6 +12,7 @@ import {
 } from '../../entities/task/index.js'
 import { cn } from '../../shared/lib/cn.js'
 import { Checkbox } from '../../shared/ui/checkbox.js'
+import { NamedIcon } from '../../shared/ui/icon-catalog.js'
 import { useDeleteTask, useToggleTask, useUpdateTask } from './queries.js'
 import { TaskSchedule } from './task-schedule.js'
 
@@ -142,11 +143,7 @@ export function TaskItem({ task }: TaskItemProps) {
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
           {task.project ? (
             <span className="flex items-center gap-1.5 text-ink-subtle">
-              <span
-                aria-hidden="true"
-                className="size-2 rounded-[3px]"
-                style={{ backgroundColor: task.project.color }}
-              />
+              <NamedIcon name={task.project.icon} className="size-3.5 shrink-0" />
               {task.project.name}
             </span>
           ) : null}

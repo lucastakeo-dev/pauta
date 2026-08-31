@@ -211,7 +211,7 @@ describe('toPlannerItems', () => {
         task({
           scheduledStart: at(15, 9).toISOString(),
           scheduledEnd: at(15, 10).toISOString(),
-          project: { id: 'p', name: 'Casa', color: '#FF0000' },
+          project: { id: 'p', name: 'Casa', color: '#FF0000', icon: 'house' },
         }),
       ],
       [],

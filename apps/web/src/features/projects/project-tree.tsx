@@ -1,9 +1,11 @@
 import { Link } from '@tanstack/react-router'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Layers, Pencil } from 'lucide-react'
 import { buildProjectTree, type ProjectNode } from '../../entities/project/index.js'
 import { cn } from '../../shared/lib/cn.js'
 import { usePersistentSet } from '../../shared/lib/persistent-set.js'
-import { NewProjectDialog } from './new-project-dialog.js'
+import { IconButton } from '../../shared/ui/icon-button.js'
+import { NamedIcon } from '../../shared/ui/icon-catalog.js'
+import { EditProjectDialog, NewProjectDialog } from './project-dialog.js'
 import { useProjects } from './queries.js'
 
 const COPY = {
@@ -12,6 +14,7 @@ const COPY = {
   expandir: 'Expandir',
   recolher: 'Recolher',
   abrir: 'Abrir projeto',
+  editar: 'Editar projeto',
   emAberto: 'em aberto',
 }
 
@@ -69,6 +72,10 @@ export function ProjectTree({ selectedId, onSelect }: ProjectTreeProps) {
             aria-pressed={!selectedId}
             className={cn(rotulo, 'flex-1', selectedId ? rotuloInativo : rotuloAtivo)}
           >
+            {/* Também com ícone, ainda que "Todas" não seja um projeto: sem ele o rótulo
+                começaria 24px à esquerda de todos os outros e a coluna quebraria logo
+                na primeira linha. */}
+            <Layers aria-hidden="true" className="size-4 shrink-0" />
             {COPY.todas}
           </button>
         </li>
@@ -119,13 +126,15 @@ function Node({
   */
   const descricao = contador > 0 ? `${node.name}, ${contador} ${COPY.emAberto}` : node.name
 
+  /*
+    O ícone herda a cor da linha, sem tratamento próprio: assim o par ícone + nome acende
+    junto no hover e no ativo, e lê como uma coisa só. Ele substituiu a bolinha colorida
+    — seis cores numa coluna de 232px eram ruído, e a forma distingue melhor que o matiz.
+    A cor do projeto continua existindo; ela pinta o bloco no planner.
+  */
   const nome = (
     <>
-      <span
-        aria-hidden="true"
-        className={cn('size-1.5 shrink-0 rounded-full transition-opacity', !ativo && 'opacity-70')}
-        style={{ backgroundColor: node.color }}
-      />
+      <NamedIcon name={node.icon} className="size-4 shrink-0" />
       <span className="truncate">{node.name}</span>
     </>
   )
@@ -189,10 +198,20 @@ function Node({
         ) : null}
 
         {/*
-          Some até o mouse chegar: com uma dúzia de projetos, um `+` fixo por linha vira
-          uma coluna de ruído ao lado dos nomes.
+          Somem até o mouse chegar: com uma dúzia de projetos, dois botões fixos por linha
+          viram uma coluna de ruído ao lado dos nomes. Continuam alcançáveis pelo teclado —
+          o `focus-within` os revela quando o Tab chega neles.
         */}
-        <span className="absolute right-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+        <span className="absolute right-1 flex items-center gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+          <EditProjectDialog
+            project={node}
+            trigger={
+              <IconButton aria-label={`${COPY.editar}: ${node.name}`} title={COPY.editar}>
+                <Pencil aria-hidden="true" className="size-3" />
+              </IconButton>
+            }
+          />
+
           <NewProjectDialog parentId={node.id} />
         </span>
       </div>

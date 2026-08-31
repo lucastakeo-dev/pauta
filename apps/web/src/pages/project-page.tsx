@@ -3,12 +3,13 @@ import { Link } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { buildProjectTree, type ProjectNode, projectPath } from '../entities/project/index.js'
-import { NewProjectDialog } from '../features/projects/new-project-dialog.js'
+import { EditProjectDialog, NewProjectDialog } from '../features/projects/project-dialog.js'
 import { ProjectTree } from '../features/projects/project-tree.js'
 import { useProjects } from '../features/projects/queries.js'
 import { TaskComposer } from '../features/tasks/task-composer.js'
 import { TaskList } from '../features/tasks/task-list.js'
 import { cn } from '../shared/lib/cn.js'
+import { NamedIcon } from '../shared/ui/icon-catalog.js'
 import { SidebarGroup } from '../shared/ui/sidebar-group.js'
 import { SidebarSlot } from '../shared/ui/sidebar-slot.js'
 
@@ -25,6 +26,7 @@ const COPY = {
   naSubarvore: 'Na subárvore',
   trilha: 'Trilha de navegação',
   abas: 'Seções do projeto',
+  editar: 'Editar projeto',
 }
 
 const ABAS = [
@@ -96,12 +98,27 @@ export function ProjectPage({ projectId }: { projectId: string }) {
         <header className="flex flex-col gap-3 border-line border-b px-8 pt-6">
           <Trilha caminho={caminho} />
 
-          <div className="flex items-center gap-2.5">
-            <span
-              aria-hidden="true"
-              className="size-3 shrink-0 rounded-[4px]"
-              style={{ backgroundColor: projeto.color }}
+          {/* O ícone é o botão de editar, como no Linear. Aqui cabe: a barra lateral
+              não tem espaço para um alvo de 32px, então lá a edição é o lápis do hover. */}
+          <div className="-ml-1.5 flex items-center gap-1.5">
+            <EditProjectDialog
+              project={projeto}
+              trigger={
+                <button
+                  type="button"
+                  aria-label={`${COPY.editar}: ${projeto.name}`}
+                  title={COPY.editar}
+                  className={cn(
+                    'flex size-8 shrink-0 items-center justify-center rounded-control',
+                    'text-ink-muted transition-colors duration-100',
+                    'hover:bg-surface-raised hover:text-ink',
+                  )}
+                >
+                  <NamedIcon name={projeto.icon} className="size-5" />
+                </button>
+              }
             />
+
             <h1 className="font-semibold text-ink text-lg">{projeto.name}</h1>
           </div>
 
@@ -201,11 +218,7 @@ function Overview({ projeto }: { projeto: ProjectNode }) {
                   params={{ projectId: filho.id }}
                   className="flex items-center gap-3 py-2.5 transition-colors hover:bg-surface/60"
                 >
-                  <span
-                    aria-hidden="true"
-                    className="size-2.5 shrink-0 rounded-[3px]"
-                    style={{ backgroundColor: filho.color }}
-                  />
+                  <NamedIcon name={filho.icon} className="size-4 shrink-0 text-ink-subtle" />
                   <span className="min-w-0 flex-1 truncate text-ink text-sm">{filho.name}</span>
                   <span className="tabular text-ink-subtle text-xs">
                     {filho.totalOpenTaskCount}
