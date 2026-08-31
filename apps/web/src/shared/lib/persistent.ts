@@ -60,6 +60,39 @@ function lerFlag(key: string, padrao: boolean): boolean {
   }
 }
 
+/**
+ * Uma escolha entre opções conhecidas, guardada no navegador — a tela do planner.
+ *
+ * Valida na leitura: valor de uma versão antiga, ou mexido à mão, cai no padrão em vez
+ * de deixar a tela num modo que não existe mais.
+ */
+export function usePersistentChoice<T extends string>(
+  key: string,
+  opcoes: readonly T[],
+  padrao: T,
+): [T, (valor: T) => void] {
+  const [escolha, setEscolha] = useState<T>(() => lerEscolha(key, opcoes, padrao))
+
+  const escolher = useCallback(
+    (valor: T) => {
+      gravarJson(key, valor)
+      setEscolha(valor)
+    },
+    [key],
+  )
+
+  return [escolha, escolher]
+}
+
+function lerEscolha<T extends string>(key: string, opcoes: readonly T[], padrao: T): T {
+  try {
+    const bruto: unknown = JSON.parse(window.localStorage.getItem(key) ?? '""')
+    return opcoes.find((opcao) => opcao === bruto) ?? padrao
+  } catch {
+    return padrao
+  }
+}
+
 function ler(key: string): ReadonlySet<string> {
   try {
     const bruto = window.localStorage.getItem(key)

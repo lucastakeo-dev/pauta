@@ -82,17 +82,24 @@ try {
 
   // 6. A moldura: trilho, painel, e o painel recolhendo sem levar a navegação junto.
   const barra = page.locator('aside')
-  const trilho = page.getByRole('navigation', { name: 'Atalhos das seções' })
-  const menu = page.getByRole('navigation', { name: 'Seções', exact: true })
+  const trilho = page.getByRole('navigation', { name: 'Seções', exact: true })
+  // Dentro da barra: a grade também tem um título "Hoje", e é outro elemento.
+  const painel = barra.getByRole('heading', { name: 'Hoje', exact: true })
 
   check(
     'trilho e painel são uma região só',
-    (await barra.count()) === 1 && (await trilho.count()) === 1 && (await menu.count()) === 1,
+    (await barra.count()) === 1 && (await trilho.count()) === 1,
   )
+
+  // O painel nomeia a seção em vez de repetir os destinos: cada destino aparece uma
+  // vez só na barra inteira, e é no trilho.
+  const destinos = await barra.locator('a').count()
+  check('o painel não espelha os destinos do trilho', destinos === 3, `${destinos} links`)
+  check('o painel nomeia a seção em que se está', await painel.isVisible())
 
   const larguraAberto = Math.round((await barra.boundingBox()).width)
   await page.getByRole('button', { name: 'Recolher o menu' }).click()
-  await menu.waitFor({ state: 'detached', timeout: 5000 })
+  await painel.waitFor({ state: 'detached', timeout: 5000 })
   const larguraRecolhido = Math.round((await barra.boundingBox()).width)
 
   check(
@@ -109,10 +116,10 @@ try {
 
   await page.reload({ waitUntil: 'networkidle' })
   await trilho.waitFor({ timeout: 10_000 })
-  check('o menu recolhido continua recolhido depois de recarregar', (await menu.count()) === 0)
+  check('o menu recolhido continua recolhido depois de recarregar', (await painel.count()) === 0)
 
   await page.getByRole('button', { name: 'Expandir o menu' }).click()
-  await menu.waitFor({ timeout: 5000 })
+  await painel.waitFor({ timeout: 5000 })
   check('expandir traz o menu de volta', true)
 
   // 7. Sair volta ao login, e a área logada volta a ser barrada.

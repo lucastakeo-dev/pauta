@@ -33,7 +33,6 @@ const COPY = {
   atalho: '⌘K',
   barra: 'Barra lateral',
   secoes: 'Seções',
-  atalhos: 'Atalhos das seções',
   recolher: 'Recolher o menu',
   expandir: 'Expandir o menu',
 }
@@ -67,6 +66,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   // `startsWith` e não igualdade: a página de um projeto também é "Projetos".
   const ehAtivo = (to: string) => pathname === to || pathname.startsWith(`${to}/`)
 
+  // O cabeçalho do painel nomeia esta seção. Cair no primeiro item é o comportamento
+  // certo para uma rota que ainda não existe: melhor um nome por um instante do que um
+  // painel sem cabeçalho nenhum.
+  const secao = NAV.find((item) => ehAtivo(item.to)) ?? NAV[0]
+
   return (
     <SidebarSlotProvider>
       <div className="flex h-dvh gap-1.5 overflow-hidden bg-shell p-1.5">
@@ -78,7 +82,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
             <hr className="my-1.5 w-6 border-line border-t" />
 
-            <nav aria-label={COPY.atalhos} className="flex flex-col items-center gap-1">
+            <nav aria-label={COPY.secoes} className="flex flex-col items-center gap-1">
               {NAV.map((item) => {
                 const ativo = ehAtivo(item.to)
                 const Icon = item.icon
@@ -129,53 +133,25 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
 
           {aberto ? (
-            <div className="flex w-[336px] shrink-0 overflow-hidden rounded-card bg-surface">
-              <div className="flex w-[132px] shrink-0 flex-col border-line border-r p-2">
-                <header className="flex h-8 items-center gap-1.5 px-1.5">
-                  <Sparkles aria-hidden="true" className="size-4 shrink-0 text-ink" />
-                  <span className="min-w-0 truncate font-semibold text-ink text-sm">
-                    {COPY.marca}
-                  </span>
-                </header>
+            <div className="flex w-[272px] shrink-0 flex-col overflow-hidden rounded-card bg-surface">
+              {/*
+                O cabeçalho nomeia a seção em que se está — não repete a marca nem os
+                destinos. O trilho troca de seção; o painel mostra o que há dentro dela.
+                Enquanto ele espelhava o trilho, clicar no calendário levava às mesmas
+                três opções de novo, e a coluna inteira não dizia nada sobre o calendário.
+              */}
+              <header className="flex h-11 shrink-0 items-center gap-2 border-line border-b px-3">
+                <secao.icon aria-hidden="true" className="size-4 shrink-0 text-ink-muted" />
+                <h2 className="min-w-0 truncate font-semibold text-ink text-sm">{secao.label}</h2>
+              </header>
 
-                <hr className="my-2 border-line border-t" />
-
-                <nav aria-label={COPY.secoes} className="flex flex-col gap-0.5">
-                  {NAV.map((item) => {
-                    const ativo = ehAtivo(item.to)
-                    const Icon = item.icon
-
-                    return (
-                      <Link
-                        key={item.to}
-                        to={item.to}
-                        aria-current={ativo ? 'page' : undefined}
-                        className={cn(
-                          'flex h-8 items-center gap-2 rounded-[10px] px-2 text-[13px]',
-                          'transition-colors duration-100',
-                          // Pílula sólida, como na referência. É o degrau mais forte da
-                          // barra: a coluna da direita marca o item ativo dela com a
-                          // pílula suave, e as duas não podem se confundir.
-                          ativo
-                            ? 'bg-ink font-medium text-canvas'
-                            : 'text-ink-muted hover:bg-surface-raised hover:text-ink',
-                        )}
-                      >
-                        <Icon aria-hidden="true" className="size-4 shrink-0" />
-                        <span className="truncate">{item.label}</span>
-                      </Link>
-                    )
-                  })}
-                </nav>
-              </div>
-
-              {/* O que a tela atual quer na barra. Vazio é um estado normal. */}
+              {/* O que a seção atual quer na barra. Vazio é um estado normal. */}
               <SidebarSlotTarget
                 className={cn(
                   'flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto p-2',
-                  // O traço entre seções mora aqui e não dentro do grupo: as seções
-                  // chegam pelo portal com pais diferentes, então nenhuma delas sabe
-                  // sozinha se é a primeira da coluna.
+                  // O traço entre seções mora aqui e não dentro do grupo: elas chegam
+                  // pelo portal com pais diferentes, então nenhuma sabe sozinha se é a
+                  // primeira da coluna.
                   'divide-y divide-line',
                 )}
               />

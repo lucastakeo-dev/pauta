@@ -5,6 +5,7 @@ import { cn } from '../../shared/lib/cn.js'
 import { usePersistentSet } from '../../shared/lib/persistent.js'
 import { IconButton } from '../../shared/ui/icon-button.js'
 import { NamedIcon } from '../../shared/ui/icon-catalog.js'
+import { sidebarRow, sidebarRowActive } from '../../shared/ui/sidebar-row.js'
 import { EditProjectDialog, NewProjectDialog } from './project-dialog.js'
 import { useProjects } from './queries.js'
 
@@ -27,14 +28,12 @@ const CHAVE_RECOLHIDOS = 'pauta.projects.collapsed'
   um link é HTML inválido. Com o fundo no contêiner, os dois convivem e a linha inteira
   continua acendendo junta.
 */
-const linha = 'flex h-8 items-center gap-1 rounded-[10px] px-2 transition-colors duration-100'
-
 /*
-  Pílula suave com traço — o item ativo da coluna da direita na referência. A pílula
-  sólida é do destino no menu ao lado; se as duas fossem iguais, "estou em Projetos" e
-  "este projeto está selecionado" diriam a mesma coisa com a mesma força.
+  A linha usa a régua da coluna, mas com `gap-1`: aqui o rótulo é um filho separado, e
+  o espaço entre ícone e nome vem dele, não do contêiner.
 */
-const linhaAtiva = 'bg-surface-raised ring-1 ring-line'
+const linha = cn(sidebarRow, 'gap-1')
+const linhaAtiva = sidebarRowActive
 const linhaInativa = 'hover:bg-surface-raised/70'
 
 const rotulo = 'flex min-w-0 items-center gap-2 text-left text-[13px] transition-colors'

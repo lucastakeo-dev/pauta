@@ -1,7 +1,9 @@
+import { Plus } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
 import { useNotes } from '../../entities/note/index.js'
 import { cn } from '../../shared/lib/cn.js'
 import { SidebarGroup } from '../../shared/ui/sidebar-group.js'
+import { sidebarRow, sidebarRowActive, sidebarRowIdle } from '../../shared/ui/sidebar-row.js'
 import { useCreateNote } from './queries.js'
 
 const COPY = {
@@ -44,13 +46,13 @@ export function NoteSidebar({ selectedId, dailyId, onSelect }: NoteSidebarProps)
   const paginas = notes?.filter((note) => note.id !== dailyId) ?? []
 
   return (
-    <nav aria-label="Notas" className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
+    <nav aria-label="Notas" className="flex min-h-0 flex-col gap-2">
       <input
         value={search}
         onChange={(event) => setSearch(event.target.value)}
         placeholder={COPY.buscar}
         aria-label={COPY.buscar}
-        className="h-9 rounded-control border border-line bg-surface px-3 text-ink text-sm outline-none placeholder:text-ink-subtle focus:border-iris"
+        className="h-8 rounded-[10px] border border-line bg-surface px-2.5 text-[13px] text-ink outline-none placeholder:text-ink-subtle focus:border-iris"
       />
 
       {dailyId ? (
@@ -58,12 +60,7 @@ export function NoteSidebar({ selectedId, dailyId, onSelect }: NoteSidebarProps)
           type="button"
           onClick={() => onSelect(dailyId)}
           aria-pressed={selectedId === dailyId}
-          className={cn(
-            'rounded-control px-3 py-2 text-left text-sm transition-colors',
-            selectedId === dailyId
-              ? 'bg-surface-raised text-ink'
-              : 'text-ink-muted hover:bg-surface',
-          )}
+          className={cn(sidebarRow, selectedId === dailyId ? sidebarRowActive : sidebarRowIdle)}
         >
           {COPY.hoje}
         </button>
@@ -78,13 +75,14 @@ export function NoteSidebar({ selectedId, dailyId, onSelect }: NoteSidebarProps)
               type="button"
               onClick={() => setCreating(true)}
               aria-label={COPY.nova}
+              title={COPY.nova}
               className={cn(
-                'rounded-control px-1.5 text-ink-subtle text-sm leading-none',
+                'flex size-5 shrink-0 items-center justify-center rounded-[4px] text-ink-subtle',
                 'transition-[colors,transform] duration-150 ease-press',
-                'hover:text-ink active:scale-90',
+                'hover:bg-surface-raised hover:text-ink active:scale-90',
               )}
             >
-              +
+              <Plus aria-hidden="true" className="size-3.5" />
             </button>
           )
         }
@@ -106,7 +104,7 @@ export function NoteSidebar({ selectedId, dailyId, onSelect }: NoteSidebarProps)
 
         <div className="flex min-h-0 flex-col overflow-y-auto">
           {paginas.length === 0 ? (
-            <p className="px-3 py-1 text-ink-subtle text-xs">
+            <p className="px-2 py-1.5 text-ink-subtle text-xs">
               {search.trim() ? COPY.semResultado : COPY.vazio}
             </p>
           ) : null}
@@ -117,14 +115,9 @@ export function NoteSidebar({ selectedId, dailyId, onSelect }: NoteSidebarProps)
               type="button"
               onClick={() => onSelect(note.id)}
               aria-pressed={selectedId === note.id}
-              className={cn(
-                'truncate rounded-control px-3 py-1.5 text-left text-sm transition-colors',
-                selectedId === note.id
-                  ? 'bg-surface-raised text-ink'
-                  : 'text-ink-muted hover:bg-surface',
-              )}
+              className={cn(sidebarRow, selectedId === note.id ? sidebarRowActive : sidebarRowIdle)}
             >
-              {note.title}
+              <span className="truncate">{note.title}</span>
             </button>
           ))}
         </div>

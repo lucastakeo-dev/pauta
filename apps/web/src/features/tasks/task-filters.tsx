@@ -1,5 +1,6 @@
 import { cn } from '../../shared/lib/cn.js'
 import { SidebarGroup } from '../../shared/ui/sidebar-group.js'
+import { sidebarRow, sidebarRowActive, sidebarRowIdle } from '../../shared/ui/sidebar-row.js'
 import { useLabels } from './queries.js'
 
 const COPY = {
@@ -72,11 +73,9 @@ function FilterButton({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        'flex h-8 items-center gap-2 rounded-[10px] px-2 text-left text-[13px]',
+        sidebarRow,
         'transition-[colors,transform] duration-150 ease-press active:scale-[0.98]',
-        active
-          ? 'bg-surface-raised text-ink ring-1 ring-line'
-          : 'text-ink-muted hover:bg-surface-raised/70 hover:text-ink',
+        active ? sidebarRowActive : sidebarRowIdle,
       )}
     >
       {/* A cor da etiqueta ocupa a mesma caixa de 16px do ícone dos projetos: sem

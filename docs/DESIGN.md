@@ -143,42 +143,51 @@ mais escuro que o `canvas` — ele existe só para os painéis terem de onde se 
 | Peça | Largura | O que carrega |
 |---|---|---|
 | **Trilho** | 52px | marca, os três destinos como ícone, recolher, captura e conta |
-| **Painel** | 336px | coluna do menu (132px) e coluna do que a tela atual quiser |
+| **Painel** | 272px | o nome da seção ativa e o que há **dentro dela** |
 | **Tela** | o resto | o conteúdo da página |
 
-Antes disso houve uma faixa no topo, com marca, navegação e sair; ela custava uma linha
-inteira de altura para dizer o que a barra já podia dizer. Depois houve uma barra só, de
-232px. O formato atual segue a referência de duas colunas e resolve o que a barra única
-não resolvia.
+**O trilho troca de seção; o painel mostra o que há dentro dela.** Esta é a regra, e ela
+custou uma versão para ficar clara: a primeira repetia os três destinos dentro do painel,
+de modo que clicar no calendário levava às mesmas três opções de novo e a coluna inteira
+não dizia nada sobre o calendário. Um painel que espelha o trilho é uma coluna inteira
+gasta para não dizer nada.
 
-**Os destinos aparecem duas vezes, e é isso que paga o trilho.** Recolhido o painel, a
-navegação continua inteira em 52px. Enquanto a barra era a única navegação do app, ela
-não podia ser escondida — abaixo de ~768px comia a tela e não havia o que fazer. Agora
-há: o botão de recolher, e o que foi recolhido continua assim entre telas e recargas.
+| Seção | O painel mostra |
+|---|---|
+| **Hoje** | as telas do calendário, e abaixo os filtros da lista |
+| **Projetos** | a árvore e o `+` |
+| **Notas** | busca, a nota de hoje e a lista de páginas |
+
+Antes de tudo isso houve uma faixa no topo, com marca, navegação e sair; ela custava uma
+linha inteira de altura para dizer o que a barra já podia dizer. Depois houve uma barra
+só, de 232px.
+
+**Recolher o painel deixa a navegação inteira em 52px.** Enquanto a barra era a única
+navegação do app, ela não podia ser escondida — abaixo de ~768px comia a tela e não havia
+o que fazer. É isso que o trilho paga, e o que foi recolhido continua assim entre telas e
+recargas.
 
 Para quem navega por marcos, trilho e painel são **uma região só** (`aside` com nome).
-Separá-los daria dois `complementary` sem nome útil. As duas listas de destino são dois
-`nav` com rótulos diferentes — "Seções" no painel, "Atalhos das seções" no trilho — que
-é o que permite ao leitor de tela dizer qual é qual.
+Separá-los daria dois `complementary` sem nome útil. Os destinos aparecem **uma vez só**,
+no trilho, num `nav` chamado "Seções"; o painel os nomeia por um cabeçalho, não por links.
 
-**A coluna da direita vem da página, por portal.** O painel é do `app/`, mas o conteúdo
-dessa coluna é da tela — filtros em Hoje, lista de páginas em Notas — e a página não pode
-importar de `app/`. Então ela renderiza o trecho onde ele nasce, junto do estado que o
-alimenta, e o `SidebarSlot` o entrega dentro do painel. O portal preserva o contexto do
-React, então nada precisa ser içado para a rota.
+**A coluna do painel vem da página, por portal.** O painel é do `app/`, mas o conteúdo
+dele é da tela, e a página não pode importar de `app/`. Então ela renderiza o trecho onde
+ele nasce, junto do estado que o alimenta, e o `SidebarSlot` o entrega dentro do painel.
+O portal preserva o contexto do React, então nada precisa ser içado para a rota.
 
 ### Dois pesos de "ativo"
 
 | Onde | Marca | Por quê |
 |---|---|---|
-| Destino no menu | pílula sólida (`ink` sobre texto `canvas`) | é a tela em que se está |
-| Item na coluna da direita | pílula suave com traço | é o que está selecionado dentro dela |
+| Destino no trilho | chip com fundo `surface-raised` | é a seção em que se está |
+| Item no painel | pílula suave com traço | é o que está selecionado dentro dela |
 
-São dois degraus porque as duas coisas são verdade ao mesmo tempo: estou em **Projetos**
-e, dentro dele, **Casa** está selecionado. Com a mesma marca, a segunda informação
+São dois degraus porque as duas coisas são verdade ao mesmo tempo: estou em **Hoje** e,
+dentro dele, a tela **Semana** está escolhida. Com a mesma marca, a segunda informação
 desapareceria na primeira.
 
-### Seções da coluna da direita
+### Seções do painel
 
 Título em caixa normal com o total entre parênteses — `Projetos (7)` — e a ação à
 direita, **visível o tempo todo**. Um `+` que só aparece sob o mouse é um caminho que
@@ -194,8 +203,37 @@ O traço entre seções mora no contêiner, não no grupo: elas chegam pelo port
 diferentes, então nenhuma sabe sozinha se é a primeira da coluna.
 
 **Tudo na coluna divide a mesma métrica** — 32px de altura, ícone de 16px na mesma
-abscissa, canto de 10px. Projeto, etiqueta e "Mostrar concluídas" seguem a mesma régua;
-quando não seguiam, cada bloco começava num lugar e a coluna parecia três listas.
+abscissa, canto de 10px. As classes moram em `shared/ui/sidebar-row.ts` porque as listas
+são feitas por features que não se conhecem — projeto, etiqueta, tela do planner, página
+de nota — e todas caem na mesma coluna. Enquanto cada uma trazia a própria altura, a
+coluna parecia quatro listas empilhadas em vez de uma.
+
+## As três telas do planner
+
+`Hoje` tem três, escolhidas no painel e não numa faixa de abas sobre a grade — a faixa
+repetiria a função do painel e comeria altura da grade, que é a tela pela qual o produto
+existe.
+
+| Tela | O que é |
+|---|---|
+| **Dia** | lista de tarefas e a grade do dia lado a lado |
+| **Semana** | sete colunas na mesma grade, com a régua de horas à esquerda |
+| **Só o calendário** | a grade do dia sozinha, na largura toda |
+
+A escolha sobrevive ao recarregar: é preferência de quem olha, não dado de servidor.
+
+**Cada coluna de dia é um alvo de soltura próprio, com a data no id.** É o que faz a
+semana funcionar sem uma segunda regra de arrastar: quem recebe a soltura já sabe em que
+dia caiu. Enquanto havia um alvo só, o dia vinha de fora — de quem renderizava a grade —
+e numa tela com sete colunas essa informação não existe em lugar nenhum além do alvo.
+
+Trocar de coluna leva o **horário** junto: as 14h de terça arrastadas para quinta viram
+14h de quinta. Recalcular pela posição do ponteiro perderia o ponto onde o bloco foi
+pego, e ele saltaria para debaixo do cursor.
+
+Na semana, hoje ganha o acento no número do dia — é a coluna que se procura ao abrir. E o
+"nenhum compromisso" fala uma vez só, no lugar da grade: sete vezes a mesma frase seria
+ruído, não informação.
 
 ## Ícone, não bolinha
 
