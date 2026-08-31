@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import { dayKey, HOURS_IN_DAY, isSameDay } from '../../entities/planner/index.js'
+import { AllDayBand, AllDayGutter } from './all-day-band.js'
 import {
   DayColumn,
   HOUR_HEIGHT,
@@ -17,7 +18,7 @@ const COPY = {
 
 /** A grade de um dia: a régua de horas e uma coluna. */
 export function DayGrid({ day }: { day: Date }) {
-  const { items, isPending, isError } = useDayPlanner(day)
+  const { items, allDay, isPending, isError } = useDayPlanner(day)
   const scrollRef = useRef<HTMLDivElement>(null)
   const now = useNowTick()
 
@@ -37,6 +38,16 @@ export function DayGrid({ day }: { day: Date }) {
         <p role="status" aria-live="polite" className="sr-only">
           {COPY.carregando}
         </p>
+      ) : null}
+
+      {/* Fora da rolagem, como o cabeçalho da semana: um prazo não pode sumir de vista
+          porque a grade foi rolada até as 18h. Some quando não há o que mostrar — uma
+          faixa vazia só comeria altura da grade. */}
+      {allDay.length > 0 ? (
+        <div data-planner-allday className="flex shrink-0 border-line border-b">
+          <AllDayGutter width={RULER_WIDTH} />
+          <AllDayBand items={allDay} className="flex-1" />
+        </div>
       ) : null}
 
       <div ref={scrollRef} data-planner-scroll className="min-h-0 flex-1 overflow-y-auto">

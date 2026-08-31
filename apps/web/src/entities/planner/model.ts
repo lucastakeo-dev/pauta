@@ -95,6 +95,10 @@ export function toPlannerItems(tasks: TaskView[], events: EventView[], day: Date
   }
 
   for (const event of events) {
+    // Dia inteiro não tem hora: desenhá-lo aqui virava um bloco de 24h cobrindo a
+    // grade toda. O lugar dele é a faixa acima dela.
+    if (event.allDay) continue
+
     const startsAt = new Date(event.startsAt)
     const endsAt = new Date(event.endsAt)
 
@@ -115,6 +119,92 @@ export function toPlannerItems(tasks: TaskView[], events: EventView[], day: Date
   }
 
   return items.sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime())
+}
+
+/**
+ * O que tem data neste dia mas não tem hora.
+ *
+ * São duas coisas com o mesmo destino na tela: o prazo de uma tarefa e o evento de dia
+ * inteiro. Nenhum dos dois cabe numa linha de hora — um prazo não é um compromisso das
+ * 12h —, mas ambos precisam ser vistos ao olhar o dia.
+ */
+export type AllDayItem = {
+  id: string
+  kind: 'task' | 'event'
+  title: string
+  /** Cor do projeto (tarefa) ou nula. */
+  color: string | null
+  /** Ícone do projeto, para o chip repetir a identidade que a lista já usa. */
+  projectIcon: string | null
+  done: boolean
+  priority: number | null
+  /** Duração sugerida ao arrastar o chip para a grade. */
+  estimateMin: number | null
+}
+
+/**
+ * Prazos e eventos de dia inteiro deste dia.
+ *
+ * Uma tarefa que vence hoje **e** já tem bloco hoje fica de fora: ela já está desenhada
+ * na grade logo abaixo, e repeti-la na faixa contaria a mesma coisa duas vezes. Se o
+ * bloco está em outro dia, ela aparece nos dois — são informações diferentes, "vence
+ * hoje" e "reservei terça para fazer".
+ */
+export function toAllDayItems(tasks: TaskView[], events: EventView[], day: Date): AllDayItem[] {
+  const { start, end } = dayBounds(day)
+  const items: AllDayItem[] = []
+
+  for (const event of events) {
+    if (!event.allDay) continue
+
+    const startsAt = new Date(event.startsAt)
+    const endsAt = new Date(event.endsAt)
+
+    if (endsAt <= start || startsAt >= end) continue
+
+    items.push({
+      id: event.id,
+      kind: 'event',
+      title: event.title,
+      color: null,
+      projectIcon: null,
+      done: false,
+      priority: null,
+      estimateMin: null,
+    })
+  }
+
+  const prazos: AllDayItem[] = []
+
+  for (const task of tasks) {
+    if (!task.dueAt) continue
+    if (!isSameDay(new Date(task.dueAt), day)) continue
+
+    const agendadaHoje =
+      task.scheduledStart !== null &&
+      task.scheduledEnd !== null &&
+      new Date(task.scheduledEnd) > start &&
+      new Date(task.scheduledStart) < end
+
+    if (agendadaHoje) continue
+
+    prazos.push({
+      id: task.id,
+      kind: 'task',
+      title: task.title,
+      color: task.project?.color ?? null,
+      projectIcon: task.project?.icon ?? null,
+      done: task.status === 'done',
+      priority: task.priority,
+      estimateMin: task.estimateMin,
+    })
+  }
+
+  // Compromisso do dia inteiro primeiro, depois os prazos do mais urgente ao menos.
+  // A faixa é estreita: o que estiver na ponta esquerda é o que será lido.
+  prazos.sort((a, b) => (a.priority ?? 4) - (b.priority ?? 4))
+
+  return [...items, ...prazos]
 }
 
 /**

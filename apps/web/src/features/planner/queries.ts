@@ -2,9 +2,11 @@ import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { eventKeys, listEvents } from '../../entities/event/index.js'
 import {
+  type AllDayItem,
   dayBounds,
   type LaidOutItem,
   layoutOverlaps,
+  toAllDayItems,
   toPlannerItems,
   weekBounds,
   weekDays,
@@ -42,6 +44,7 @@ function useWindow(from: string, to: string) {
 /** Dados de um dia. */
 export function useDayPlanner(day: Date): {
   items: LaidOutItem[]
+  allDay: AllDayItem[]
   isPending: boolean
   isError: boolean
 } {
@@ -55,10 +58,15 @@ export function useDayPlanner(day: Date): {
     [janela.tasks, janela.events, day],
   )
 
-  return { items, isPending: janela.isPending, isError: janela.isError }
+  const allDay = useMemo(
+    () => toAllDayItems(janela.tasks, janela.events, day),
+    [janela.tasks, janela.events, day],
+  )
+
+  return { items, allDay, isPending: janela.isPending, isError: janela.isError }
 }
 
-export type PlannerDay = { day: Date; items: LaidOutItem[] }
+export type PlannerDay = { day: Date; items: LaidOutItem[]; allDay: AllDayItem[] }
 
 /**
  * Dados de uma semana, já separados por coluna.
@@ -80,6 +88,7 @@ export function useWeekPlanner(reference: Date): {
       weekDays(reference).map((day) => ({
         day,
         items: layoutOverlaps(toPlannerItems(janela.tasks, janela.events, day)),
+        allDay: toAllDayItems(janela.tasks, janela.events, day),
       })),
     [janela.tasks, janela.events, reference],
   )

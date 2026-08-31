@@ -7,6 +7,7 @@ import {
   weekdayLabel,
 } from '../../entities/planner/index.js'
 import { cn } from '../../shared/lib/cn.js'
+import { AllDayBand, AllDayGutter } from './all-day-band.js'
 import {
   DayColumn,
   HOUR_HEIGHT,
@@ -63,6 +64,22 @@ export function WeekGrid({ reference }: { reference: Date }) {
           <Cabecalho key={dayKey(day)} day={day} hoje={isSameDay(day, hoje)} />
         ))}
       </div>
+
+      {/* A faixa acompanha o cabeçalho fora da rolagem, e só existe quando algum dia
+          da semana tem prazo ou evento de dia inteiro. Quando existe, existe para os
+          sete: uma coluna vazia aqui é informação — não vence nada naquele dia. */}
+      {days.some((dia) => dia.allDay.length > 0) ? (
+        <div data-planner-allday className="flex shrink-0 border-line border-b">
+          <AllDayGutter width={RULER_WIDTH} />
+          {days.map(({ day, allDay }) => (
+            <AllDayBand
+              key={dayKey(day)}
+              items={allDay}
+              className="min-w-0 flex-1 border-line border-l"
+            />
+          ))}
+        </div>
+      ) : null}
 
       <div ref={scrollRef} data-planner-scroll className="relative min-h-0 flex-1 overflow-y-auto">
         <div className="relative flex" style={{ height: HOURS_IN_DAY * HOUR_HEIGHT }}>

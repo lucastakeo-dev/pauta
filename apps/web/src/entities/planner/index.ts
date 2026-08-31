@@ -1,4 +1,5 @@
 export {
+  type AllDayItem,
   addDays,
   blockGeometry,
   DAYS_IN_WEEK,
@@ -26,6 +27,7 @@ export {
   startOfWeek,
   timeFromOffset,
   timeLabel,
+  toAllDayItems,
   toDateInputValue,
   toPlannerItems,
   toTimeInputValue,
