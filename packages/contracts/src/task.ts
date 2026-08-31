@@ -54,28 +54,44 @@ const timeBlockRefinement = <T extends { scheduledStart?: unknown; scheduledEnd?
   }
 }
 
-const taskFields = {
+/**
+ * Os campos que a pessoa edita, **sem valor padrão nenhum**.
+ *
+ * Os padrões moram só na criação, e de propósito: `.partial()` não remove um `.default()`.
+ * Herdá-los aqui fazia todo PATCH chegar ao model com `status`, `priority` e `labelIds`
+ * definidos — então editar só o título de uma tarefa jogava ela de volta na inbox,
+ * rebaixava a prioridade para P4 e apagava as etiquetas. Concluída, ela ainda voltava a
+ * aberta, porque `status` arrasta o carimbo de conclusão junto.
+ */
+const CAMPOS_EDITAVEIS = {
   title: z.string().trim().min(1, 'Dê um título à tarefa.').max(500, 'Título longo demais.'),
   notes: z.string().max(10_000, 'Anotação longa demais.').nullish(),
-  status: taskStatusSchema.default('inbox'),
-  priority: prioritySchema.default(4),
+  status: taskStatusSchema,
+  priority: prioritySchema,
   dueAt: isoDateTimeSchema.nullish(),
   scheduledStart: isoDateTimeSchema.nullish(),
   scheduledEnd: isoDateTimeSchema.nullish(),
   estimateMin: z.int().positive('A estimativa precisa ser maior que zero.').max(1440).nullish(),
   projectId: uuidSchema.nullish(),
   parentId: uuidSchema.nullish(),
-  labelIds: z.array(uuidSchema).max(20, 'Muitas etiquetas numa tarefa só.').default([]),
+  labelIds: z.array(uuidSchema).max(20, 'Muitas etiquetas numa tarefa só.'),
 }
 
 export const createTaskSchema = z
-  .object({ ...taskFields, recurrence: recurrenceInputSchema.nullish() })
+  .object({
+    ...CAMPOS_EDITAVEIS,
+    /** Tudo que é capturado nasce por processar. A Inbox é onde isso vira decisão. */
+    status: taskStatusSchema.default('inbox'),
+    priority: prioritySchema.default(4),
+    labelIds: CAMPOS_EDITAVEIS.labelIds.default([]),
+    recurrence: recurrenceInputSchema.nullish(),
+  })
   .superRefine(timeBlockRefinement)
 export type CreateTaskInput = z.infer<typeof createTaskSchema>
 
 export const updateTaskSchema = z
   .object({
-    ...taskFields,
+    ...CAMPOS_EDITAVEIS,
     recurrence: recurrenceInputSchema.nullish(),
   })
   .partial()
