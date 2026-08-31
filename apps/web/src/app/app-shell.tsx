@@ -3,6 +3,7 @@ import {
   CalendarDays,
   FileText,
   FolderTree,
+  Inbox,
   LogOut,
   Moon,
   PanelLeftClose,
@@ -46,6 +47,9 @@ const COPY = {
 const CHAVE_MENU = 'pauta.menu.open'
 
 const NAV = [
+  // O inbox vem primeiro por ser onde a captura aterrissa: o que foi jogado ali sem
+  // pensar é a primeira coisa a resolver no dia, antes de olhar a agenda.
+  { to: '/inbox', label: 'Inbox', icon: Inbox },
   { to: '/today', label: 'Hoje', icon: CalendarDays },
   { to: '/projects', label: 'Projetos', icon: FolderTree },
   { to: '/notes', label: 'Notas', icon: FileText },

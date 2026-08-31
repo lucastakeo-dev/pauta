@@ -12,6 +12,7 @@
     "lint": "biome check .",
     "smoke": "node scripts/smoke.mjs",
     "smoke:tasks": "node scripts/smoke-tasks.mjs",
+    "smoke:inbox": "node scripts/smoke-inbox.mjs",
     "smoke:planner": "node scripts/smoke-planner.mjs",
     "smoke:drag": "node scripts/smoke-drag.mjs",
     "smoke:polish": "node scripts/smoke-polish.mjs",

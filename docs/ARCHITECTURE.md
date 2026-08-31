@@ -116,6 +116,8 @@ pnpm db:studio             # prisma studio
 # na apps/web:
 pnpm smoke <dir>           # entrada e guarda de rota, num Chrome de verdade
 pnpm smoke:tasks <dir>     # tela de tarefas (criar, concluir, editar, filtrar, projeto)
+pnpm smoke:inbox <dir>     # fila do inbox, propriedades e processar
+pnpm smoke:projects <dir>  # árvore de projetos, ícones e página do projeto
 pnpm smoke:write <dir>     # escritas otimistas: atrasa e derruba requisições de propósito
 pnpm smoke:planner <dir>   # grade do dia
 pnpm smoke:drag <dir>      # arrastar tarefa para o planner
@@ -156,7 +158,9 @@ constraints escritas à mão são exercitadas de verdade — por isso os testes 
 | `/` | **Pública** — a vitrine. Com sessão, redireciona para `/today` |
 | `/signin` | Pública — entrar |
 | `/signup` | Pública — criar conta |
+| `/inbox` | Fila do que foi capturado e ainda não foi processado |
 | `/today` | Planner e tarefas |
+| `/projects` | Índice dos projetos; `/projects/:id` abre um |
 | `/notes` | Notas |
 
 A vitrine usa **tema claro** com tokens próprios (`paper`, `graphite`, `rule`), escopados
