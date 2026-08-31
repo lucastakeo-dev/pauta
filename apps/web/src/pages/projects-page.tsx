@@ -36,7 +36,7 @@ export function ProjectsPage() {
   return (
     <>
       <SidebarSlot>
-        <SidebarGroup title={COPY.titulo} action={<NewProjectDialog />}>
+        <SidebarGroup title={COPY.titulo} count={linhas.length} action={<NewProjectDialog />}>
           <ProjectTree />
         </SidebarGroup>
       </SidebarSlot>

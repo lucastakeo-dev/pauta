@@ -1,14 +1,26 @@
 import { Link, useRouterState } from '@tanstack/react-router'
-import { CalendarDays, ChevronDown, FileText, FolderTree, LogOut, Search } from 'lucide-react'
-import type { ReactNode } from 'react'
+import {
+  CalendarDays,
+  FileText,
+  FolderTree,
+  LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Search,
+  Sparkles,
+} from 'lucide-react'
+import type { ComponentProps, ReactNode } from 'react'
 import { useSession } from '../features/auth/session-context.js'
 import { ConsoleOverlay } from '../features/console/console-overlay.js'
 import { useConsoleShortcut } from '../features/console/use-console-shortcut.js'
 import { cn } from '../shared/lib/cn.js'
+import { usePersistentFlag } from '../shared/lib/persistent.js'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../shared/ui/dropdown-menu.js'
 import { SidebarSlotProvider, SidebarSlotTarget } from '../shared/ui/sidebar-slot.js'
@@ -19,8 +31,15 @@ const COPY = {
   sair: 'Sair',
   console: 'Captura rápida',
   atalho: '⌘K',
-  navegacao: 'Seções',
+  barra: 'Barra lateral',
+  secoes: 'Seções',
+  atalhos: 'Atalhos das seções',
+  recolher: 'Recolher o menu',
+  expandir: 'Expandir o menu',
 }
+
+/** Painel aberto ou recolhido. Preferência de quem olha, não dado de servidor. */
+const CHAVE_MENU = 'pauta.menu.open'
 
 const NAV = [
   { to: '/today', label: 'Hoje', icon: CalendarDays },
@@ -29,77 +48,144 @@ const NAV = [
 ] as const
 
 /**
- * Moldura das telas logadas: uma barra lateral, e nada mais.
+ * Moldura das telas logadas: painéis flutuando sobre um fundo, em dois trilhos.
  *
- * Antes havia também uma faixa no topo com marca, navegação e sair. Ela custava uma
- * linha inteira de altura para repetir o que a barra já podia dizer — num planner, onde
- * a grade de horas quer altura, essa faixa competia com o conteúdo.
+ * O trilho estreito carrega marca, destinos e conta; o painel ao lado abre os mesmos
+ * destinos com rótulo e, na coluna da direita, o que a tela atual quiser mostrar.
  *
- * A barra tem três partes: identidade no topo, navegação no meio e o encaixe da tela
- * atual embaixo. Só a do meio é fixa; o resto é da página, entregue pelo `SidebarSlot`.
+ * A repetição dos destinos nos dois é de propósito, e é o que paga o trilho: recolhido
+ * o painel, a navegação continua inteira em 52px. Antes a barra era a única navegação
+ * do app e por isso não podia ser escondida — abaixo de ~768px ela comia a tela e não
+ * havia o que fazer.
  */
 export function AppShell({ children }: { children: ReactNode }) {
   const { user, signOut } = useSession()
   const quickCapture = useConsoleShortcut()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const [aberto, alternarMenu] = usePersistentFlag(CHAVE_MENU, true)
+
+  // `startsWith` e não igualdade: a página de um projeto também é "Projetos".
+  const ehAtivo = (to: string) => pathname === to || pathname.startsWith(`${to}/`)
 
   return (
     <SidebarSlotProvider>
-      <div className="flex h-dvh overflow-hidden">
-        <aside className="flex w-[232px] shrink-0 flex-col gap-4 overflow-y-auto border-line border-r bg-surface/40 px-2 py-3">
-          {/*
-            Identidade e captura dividem a primeira linha, como na referência. A captura
-            é a única ação não-navegacional da barra; como ícone ela para de competir
-            com os destinos logo abaixo, e o atalho vive no `title`.
-          */}
-          <div className="flex items-center gap-1">
-            <ContaMenu name={user?.name ?? COPY.marca} onSignOut={signOut} />
+      <div className="flex h-dvh gap-1.5 overflow-hidden bg-shell p-1.5">
+        {/* Trilho e painel são dois retângulos na tela, mas uma região só para quem
+            navega por marcos: separá-los daria dois "complementary" sem nome útil. */}
+        <aside aria-label={COPY.barra} className="flex shrink-0 gap-1.5">
+          <div className="flex w-13 shrink-0 flex-col items-center gap-1 rounded-card bg-surface py-2.5">
+            <Marca />
 
-            <button
-              type="button"
-              onClick={() => quickCapture.setOpen(true)}
-              aria-label={COPY.console}
-              title={`${COPY.console} (${COPY.atalho})`}
-              className={cn(
-                'flex size-7 shrink-0 items-center justify-center rounded-[5px] text-ink-subtle',
-                'transition-colors hover:bg-surface-raised hover:text-ink',
-              )}
+            <hr className="my-1.5 w-6 border-line border-t" />
+
+            <nav aria-label={COPY.atalhos} className="flex flex-col items-center gap-1">
+              {NAV.map((item) => {
+                const ativo = ehAtivo(item.to)
+                const Icon = item.icon
+
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    aria-current={ativo ? 'page' : undefined}
+                    title={item.label}
+                    className={cn(
+                      'flex size-9 items-center justify-center rounded-[10px]',
+                      'transition-colors duration-100',
+                      ativo
+                        ? 'bg-surface-raised text-ink'
+                        : 'text-ink-subtle hover:bg-surface-raised hover:text-ink-muted',
+                    )}
+                  >
+                    <Icon aria-hidden="true" className="size-[18px]" />
+                    <span className="sr-only">{item.label}</span>
+                  </Link>
+                )
+              })}
+            </nav>
+
+            <span className="flex-1" />
+
+            <BotaoTrilho
+              onClick={alternarMenu}
+              aria-expanded={aberto}
+              rotulo={aberto ? COPY.recolher : COPY.expandir}
             >
-              <Search aria-hidden="true" className="size-4" />
-            </button>
+              {aberto ? (
+                <PanelLeftClose aria-hidden="true" className="size-[18px]" />
+              ) : (
+                <PanelLeftOpen aria-hidden="true" className="size-[18px]" />
+              )}
+            </BotaoTrilho>
+
+            <BotaoTrilho
+              onClick={() => quickCapture.setOpen(true)}
+              rotulo={`${COPY.console} (${COPY.atalho})`}
+            >
+              <Search aria-hidden="true" className="size-[18px]" />
+            </BotaoTrilho>
+
+            <ContaMenu name={user?.name ?? COPY.marca} onSignOut={signOut} />
           </div>
 
-          <nav aria-label={COPY.navegacao} className="flex flex-col gap-px">
-            {NAV.map((item) => {
-              // `startsWith` e não igualdade: a página de um projeto também é "Projetos".
-              const active = pathname === item.to || pathname.startsWith(`${item.to}/`)
-              const Icon = item.icon
+          {aberto ? (
+            <div className="flex w-[336px] shrink-0 overflow-hidden rounded-card bg-surface">
+              <div className="flex w-[132px] shrink-0 flex-col border-line border-r p-2">
+                <header className="flex h-8 items-center gap-1.5 px-1.5">
+                  <Sparkles aria-hidden="true" className="size-4 shrink-0 text-ink" />
+                  <span className="min-w-0 truncate font-semibold text-ink text-sm">
+                    {COPY.marca}
+                  </span>
+                </header>
 
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  aria-current={active ? 'page' : undefined}
-                  className={cn(
-                    'flex h-7 items-center gap-2 rounded-[5px] px-2 text-[13px]',
-                    'transition-colors duration-100',
-                    active
-                      ? 'bg-surface-raised font-medium text-ink'
-                      : 'text-ink-muted hover:bg-surface hover:text-ink',
-                  )}
-                >
-                  <Icon aria-hidden="true" className="size-4 shrink-0" />
-                  {item.label}
-                </Link>
-              )
-            })}
-          </nav>
+                <hr className="my-2 border-line border-t" />
 
-          {/* O que a tela atual quer na barra. Vazio é um estado normal. */}
-          <SidebarSlotTarget className="flex min-h-0 flex-1 flex-col" />
+                <nav aria-label={COPY.secoes} className="flex flex-col gap-0.5">
+                  {NAV.map((item) => {
+                    const ativo = ehAtivo(item.to)
+                    const Icon = item.icon
+
+                    return (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        aria-current={ativo ? 'page' : undefined}
+                        className={cn(
+                          'flex h-8 items-center gap-2 rounded-[10px] px-2 text-[13px]',
+                          'transition-colors duration-100',
+                          // Pílula sólida, como na referência. É o degrau mais forte da
+                          // barra: a coluna da direita marca o item ativo dela com a
+                          // pílula suave, e as duas não podem se confundir.
+                          ativo
+                            ? 'bg-ink font-medium text-canvas'
+                            : 'text-ink-muted hover:bg-surface-raised hover:text-ink',
+                        )}
+                      >
+                        <Icon aria-hidden="true" className="size-4 shrink-0" />
+                        <span className="truncate">{item.label}</span>
+                      </Link>
+                    )
+                  })}
+                </nav>
+              </div>
+
+              {/* O que a tela atual quer na barra. Vazio é um estado normal. */}
+              <SidebarSlotTarget
+                className={cn(
+                  'flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto p-2',
+                  // O traço entre seções mora aqui e não dentro do grupo: as seções
+                  // chegam pelo portal com pais diferentes, então nenhuma delas sabe
+                  // sozinha se é a primeira da coluna.
+                  'divide-y divide-line',
+                )}
+              />
+            </div>
+          ) : null}
         </aside>
 
-        <div className="flex min-h-0 min-w-0 flex-1">{children}</div>
+        <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden rounded-card bg-canvas">
+          {children}
+        </div>
 
         {quickCapture.open ? <ConsoleOverlay onClose={() => quickCapture.setOpen(false)} /> : null}
       </div>
@@ -108,10 +194,48 @@ export function AppShell({ children }: { children: ReactNode }) {
 }
 
 /**
- * Identidade e saída, no formato que o Linear usa: o nome é o próprio botão do menu.
+ * A marca, sem fundo colorido.
  *
- * Sair mora aqui em vez de solto na barra porque é ação rara e destrutiva o bastante
- * para não merecer ficar a um clique de distância o tempo todo.
+ * O acento tem um trabalho só neste app — ação e foco. Com o trilho colorindo também a
+ * marca e o avatar, sobrariam três manchas iris numa coluna de 52px e nenhuma delas
+ * chamaria atenção. O avatar fica com a cor porque identidade é a única das três que
+ * precisa ser encontrada de relance.
+ */
+function Marca() {
+  return (
+    <span aria-hidden="true" className="flex size-8 shrink-0 items-center justify-center text-ink">
+      <Sparkles className="size-[19px]" />
+    </span>
+  )
+}
+
+/** Os botões do trilho: mesma medida e mesma forma dos destinos logo acima. */
+function BotaoTrilho({
+  rotulo,
+  children,
+  ...props
+}: { rotulo: string } & ComponentProps<'button'>) {
+  return (
+    <button
+      type="button"
+      aria-label={rotulo}
+      title={rotulo}
+      className={cn(
+        'flex size-9 shrink-0 items-center justify-center rounded-[10px] text-ink-subtle',
+        'transition-colors duration-100 hover:bg-surface-raised hover:text-ink',
+      )}
+      {...props}
+    >
+      {children}
+    </button>
+  )
+}
+
+/**
+ * Identidade e saída no pé do trilho.
+ *
+ * Sair mora dentro do menu em vez de solto na barra porque é ação rara e destrutiva o
+ * bastante para não merecer ficar a um clique de distância o tempo todo.
  */
 function ContaMenu({ name, onSignOut }: { name: string; onSignOut: () => void }) {
   const inicial = name.trim().slice(0, 2).toUpperCase()
@@ -120,23 +244,18 @@ function ContaMenu({ name, onSignOut }: { name: string; onSignOut: () => void })
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label={COPY.conta}
+        title={name}
         className={cn(
-          'flex h-7 min-w-0 flex-1 items-center gap-2 rounded-[5px] px-1.5 text-left',
-          'transition-colors hover:bg-surface-raised',
+          'flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-iris',
+          'font-medium text-[11px] text-canvas transition-opacity hover:opacity-90',
         )}
       >
-        <span
-          aria-hidden="true"
-          className="flex size-5 shrink-0 items-center justify-center rounded-[5px] bg-iris font-medium text-[10px] text-canvas"
-        >
-          {inicial}
-        </span>
-
-        <span className="min-w-0 truncate font-medium text-ink text-[13px]">{name}</span>
-        <ChevronDown aria-hidden="true" className="size-3 shrink-0 text-ink-subtle" />
+        <span aria-hidden="true">{inicial}</span>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="start" className="w-52">
+      <DropdownMenuContent side="right" align="end" className="w-52">
+        <DropdownMenuLabel className="truncate">{name}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={onSignOut}>
           <LogOut aria-hidden="true" className="size-4" />
           {COPY.sair}

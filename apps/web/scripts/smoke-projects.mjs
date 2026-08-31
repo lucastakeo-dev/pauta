@@ -61,8 +61,11 @@ try {
   await page.getByRole('button', { name: 'Entrar', exact: true }).click()
   await page.waitForURL((url) => url.pathname === '/today', { timeout: 10_000 })
 
+  // O trilho repete os mesmos destinos do menu: sem escopo, o clique é ambíguo.
+  const menu = page.locator('nav[aria-label="Seções"]')
+
   // 1. A árvore aparece na barra, aninhada.
-  await page.getByRole('link', { name: 'Projetos' }).click()
+  await menu.getByRole('link', { name: 'Projetos' }).click()
   await page.waitForURL((url) => url.pathname.startsWith('/projects'), { timeout: 10_000 })
 
   const barra = page.locator('aside')
@@ -130,9 +133,9 @@ try {
 
   // Recolhido continua recolhido depois de trocar de tela e de recarregar: a árvore é
   // remontada a cada navegação, e sem persistir isso tudo voltaria aberto.
-  await page.getByRole('link', { name: 'Hoje' }).click()
+  await menu.getByRole('link', { name: 'Hoje' }).click()
   await page.waitForURL((url) => url.pathname === '/today', { timeout: 10_000 })
-  await page.getByRole('link', { name: 'Projetos' }).click()
+  await menu.getByRole('link', { name: 'Projetos' }).click()
   await page.waitForURL((url) => url.pathname.startsWith('/projects'), { timeout: 10_000 })
   await barra.getByRole('button', { name: /Expandir: Trabalho/ }).waitFor({ timeout: 5000 })
   check('o que foi recolhido segue recolhido ao trocar de tela', true)
@@ -169,7 +172,7 @@ try {
   check('a aba Visão geral volta ao resumo', true)
 
   // 4. O índice lista a árvore inteira, com recuo.
-  await page.getByRole('link', { name: 'Projetos', exact: true }).first().click()
+  await menu.getByRole('link', { name: 'Projetos' }).click()
   await page.waitForURL((url) => url.pathname === '/projects', { timeout: 10_000 })
   const linhas = await page.locator('main a[href^="/projects/"]').count()
   check('o índice lista todos os projetos', linhas === 4, `${linhas} de 4`)

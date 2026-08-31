@@ -58,7 +58,7 @@ export function ProjectPage({ projectId }: { projectId: string }) {
 
   const barra = (
     <SidebarSlot>
-      <SidebarGroup title={COPY.projetos} action={<NewProjectDialog />}>
+      <SidebarGroup title={COPY.projetos} count={projects?.length} action={<NewProjectDialog />}>
         <ProjectTree selectedId={projectId} />
       </SidebarGroup>
     </SidebarSlot>

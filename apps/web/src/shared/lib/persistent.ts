@@ -30,6 +30,36 @@ export function usePersistentSet(key: string): [ReadonlySet<string>, (id: string
   return [ids, alternar]
 }
 
+/**
+ * Um liga/desliga que sobrevive ao recarregar — o painel do menu aberto ou recolhido.
+ *
+ * Mesmo raciocínio do conjunto acima: é preferência de quem está olhando, não dado de
+ * servidor. Recolher o painel e reencontrá-lo aberto na tela seguinte seria trabalho
+ * refeito a cada navegação.
+ */
+export function usePersistentFlag(key: string, padrao: boolean): [boolean, () => void] {
+  const [ligado, setLigado] = useState(() => lerFlag(key, padrao))
+
+  const alternar = useCallback(() => {
+    setLigado((atual) => {
+      const proximo = !atual
+      gravarJson(key, proximo)
+      return proximo
+    })
+  }, [key])
+
+  return [ligado, alternar]
+}
+
+function lerFlag(key: string, padrao: boolean): boolean {
+  try {
+    const bruto = window.localStorage.getItem(key)
+    return bruto === null ? padrao : bruto === 'true'
+  } catch {
+    return padrao
+  }
+}
+
 function ler(key: string): ReadonlySet<string> {
   try {
     const bruto = window.localStorage.getItem(key)
@@ -43,8 +73,12 @@ function ler(key: string): ReadonlySet<string> {
 }
 
 function gravar(key: string, ids: ReadonlySet<string>): void {
+  gravarJson(key, [...ids])
+}
+
+function gravarJson(key: string, valor: unknown): void {
   try {
-    window.localStorage.setItem(key, JSON.stringify([...ids]))
+    window.localStorage.setItem(key, JSON.stringify(valor))
   } catch {
     // Não poder lembrar a preferência não é motivo para quebrar a tela.
   }

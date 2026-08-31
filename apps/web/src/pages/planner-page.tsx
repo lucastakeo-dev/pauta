@@ -5,6 +5,7 @@ import { DayNav } from '../features/planner/day-nav.js'
 import { PlannerDndProvider } from '../features/planner/planner-dnd.js'
 import { NewProjectDialog } from '../features/projects/project-dialog.js'
 import { ProjectTree } from '../features/projects/project-tree.js'
+import { useProjects } from '../features/projects/queries.js'
 import { TaskComposer } from '../features/tasks/task-composer.js'
 import { type TaskFilterState, TaskFilters } from '../features/tasks/task-filters.js'
 import { TaskList } from '../features/tasks/task-list.js'
@@ -32,6 +33,7 @@ const HOUR_HEIGHT = 56
  * entrega dentro daquela barra.
  */
 export function PlannerPage() {
+  const { data: projects } = useProjects()
   const [filters, setFilters] = useState<TaskFilterState>({ includeDone: false })
   const [day, setDay] = useState(() => new Date())
 
@@ -52,7 +54,7 @@ export function PlannerPage() {
           Aqui a árvore filtra em vez de navegar: quem está no planner quer estreitar a
           lista ao lado, não trocar de tela. Clicar de novo no mesmo projeto solta o filtro.
         */}
-        <SidebarGroup title={COPY.projetos} action={<NewProjectDialog />}>
+        <SidebarGroup title={COPY.projetos} count={projects?.length} action={<NewProjectDialog />}>
           <ProjectTree
             selectedId={filters.projectId}
             onSelect={(id) =>

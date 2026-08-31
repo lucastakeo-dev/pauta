@@ -71,6 +71,7 @@ export function NoteSidebar({ selectedId, dailyId, onSelect }: NoteSidebarProps)
 
       <SidebarGroup
         title={COPY.paginas}
+        count={paginas.length}
         action={
           creating ? null : (
             <button

@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { ChevronDown, Layers, Pencil } from 'lucide-react'
 import { buildProjectTree, type ProjectNode } from '../../entities/project/index.js'
 import { cn } from '../../shared/lib/cn.js'
-import { usePersistentSet } from '../../shared/lib/persistent-set.js'
+import { usePersistentSet } from '../../shared/lib/persistent.js'
 import { IconButton } from '../../shared/ui/icon-button.js'
 import { NamedIcon } from '../../shared/ui/icon-catalog.js'
 import { EditProjectDialog, NewProjectDialog } from './project-dialog.js'
@@ -27,9 +27,15 @@ const CHAVE_RECOLHIDOS = 'pauta.projects.collapsed'
   um link é HTML inválido. Com o fundo no contêiner, os dois convivem e a linha inteira
   continua acendendo junta.
 */
-const linha = 'flex h-7 items-center gap-1 rounded-[5px] px-2 transition-colors duration-100'
-const linhaAtiva = 'bg-surface-raised'
-const linhaInativa = 'hover:bg-surface'
+const linha = 'flex h-8 items-center gap-1 rounded-[10px] px-2 transition-colors duration-100'
+
+/*
+  Pílula suave com traço — o item ativo da coluna da direita na referência. A pílula
+  sólida é do destino no menu ao lado; se as duas fossem iguais, "estou em Projetos" e
+  "este projeto está selecionado" diriam a mesma coisa com a mesma força.
+*/
+const linhaAtiva = 'bg-surface-raised ring-1 ring-line'
+const linhaInativa = 'hover:bg-surface-raised/70'
 
 const rotulo = 'flex min-w-0 items-center gap-2 text-left text-[13px] transition-colors'
 const rotuloAtivo = 'font-medium text-ink'

@@ -80,7 +80,42 @@ try {
   const continuaLogado = await page.getByRole('heading', { name: 'Tarefas' }).isVisible()
   check('sessão sobrevive ao reload', continuaLogado, page.url())
 
-  // 6. Sair volta ao login, e a área logada volta a ser barrada.
+  // 6. A moldura: trilho, painel, e o painel recolhendo sem levar a navegação junto.
+  const barra = page.locator('aside')
+  const trilho = page.getByRole('navigation', { name: 'Atalhos das seções' })
+  const menu = page.getByRole('navigation', { name: 'Seções', exact: true })
+
+  check(
+    'trilho e painel são uma região só',
+    (await barra.count()) === 1 && (await trilho.count()) === 1 && (await menu.count()) === 1,
+  )
+
+  const larguraAberto = Math.round((await barra.boundingBox()).width)
+  await page.getByRole('button', { name: 'Recolher o menu' }).click()
+  await menu.waitFor({ state: 'detached', timeout: 5000 })
+  const larguraRecolhido = Math.round((await barra.boundingBox()).width)
+
+  check(
+    'recolher o menu devolve a largura à tela',
+    larguraRecolhido < larguraAberto / 4,
+    `${larguraAberto}px → ${larguraRecolhido}px`,
+  )
+  // É isto que paga a repetição dos destinos: recolhido, ainda dá para navegar.
+  check(
+    'recolhido, o trilho continua navegando',
+    await trilho.getByRole('link', { name: 'Notas' }).isVisible(),
+  )
+  await page.screenshot({ path: `${outDir}/04-recolhido.png` })
+
+  await page.reload({ waitUntil: 'networkidle' })
+  await trilho.waitFor({ timeout: 10_000 })
+  check('o menu recolhido continua recolhido depois de recarregar', (await menu.count()) === 0)
+
+  await page.getByRole('button', { name: 'Expandir o menu' }).click()
+  await menu.waitFor({ timeout: 5000 })
+  check('expandir traz o menu de volta', true)
+
+  // 7. Sair volta ao login, e a área logada volta a ser barrada.
   //    Sair mora no menu da conta, na barra lateral — não mais solto numa faixa no topo.
   await page.getByRole('button', { name: 'Conta' }).click()
   await page.getByRole('menuitem', { name: 'Sair' }).click()
@@ -89,7 +124,7 @@ try {
   await page.goto(`${WEB}/today`, { waitUntil: 'networkidle' })
   check('após sair, /today volta a exigir login', page.url().includes('/signin'), page.url())
 
-  // 7. Com sessão, a vitrine não faz sentido: a raiz manda para o app.
+  // 8. Com sessão, a vitrine não faz sentido: a raiz manda para o app.
   await page.getByLabel('E-mail').fill(email)
   await page.getByLabel('Senha').fill('senha-bem-segura')
   await page.getByRole('button', { name: 'Entrar', exact: true }).click()

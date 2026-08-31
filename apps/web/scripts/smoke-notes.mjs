@@ -76,7 +76,7 @@ try {
   await page.waitForURL((url) => !url.pathname.includes('/signin'), { timeout: 10_000 })
 
   // 1. Navegar para Notas pelo cabeçalho.
-  await page.getByRole('link', { name: 'Notas' }).click()
+  await page.locator('nav[aria-label="Seções"]').getByRole('link', { name: 'Notas' }).click()
   await page.waitForURL((url) => url.pathname === '/notes', { timeout: 10_000 })
   check('o cabeçalho leva para as notas', true)
 

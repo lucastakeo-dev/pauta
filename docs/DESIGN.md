@@ -19,8 +19,9 @@ ação alcançável pelo mouse precisa ser alcançável pelo teclado.
 
 ## Superfícies
 
-Quatro degraus pequenos, do fundo para a frente: `canvas` → `surface` → `surface-raised` →
-`surface-overlay`. Os passos são curtos de propósito: numa grade com dezenas de linhas, contraste
+Cinco degraus pequenos, do fundo para a frente: `shell` → `canvas` → `surface` →
+`surface-raised` → `surface-overlay`. O primeiro entrou com a moldura de painéis
+flutuantes e não recebe conteúdo nenhum: é só o vão entre o trilho, o menu e a tela. Os passos são curtos de propósito: numa grade com dezenas de linhas, contraste
 alto entre faixas vira listra e cansa.
 
 Traços em dois pesos: `line` para separar, `line-strong` para delimitar o que é interativo.
@@ -134,29 +135,67 @@ Duas exceções, ambas porque existe lugar melhor para a mensagem:
 - **Autosave da nota** tem indicador próprio no editor. Não é ação pedida, é consequência
   de digitar.
 
-## Moldura: uma barra lateral, sem topo
+## Moldura: trilho, painel e tela
 
-As telas logadas têm só a barra à esquerda. Havia também uma faixa no topo com marca,
-navegação e sair; ela custava uma linha inteira de altura para dizer o que a barra já
-podia dizer — e num planner, onde a grade de horas quer altura, competia com o conteúdo.
+As telas logadas são três retângulos flutuando sobre um fundo (`shell`, o único degrau
+mais escuro que o `canvas` — ele existe só para os painéis terem de onde se destacar):
 
-O formato segue o [Linear](https://linear.app): identidade no topo (o nome é o botão do
-menu da conta), captura rápida logo abaixo com o atalho à mostra, navegação, e por
-último o trecho que muda conforme a tela.
+| Peça | Largura | O que carrega |
+|---|---|---|
+| **Trilho** | 52px | marca, os três destinos como ícone, recolher, captura e conta |
+| **Painel** | 336px | coluna do menu (132px) e coluna do que a tela atual quiser |
+| **Tela** | o resto | o conteúdo da página |
 
-**O trecho que muda vem da página, por portal.** A barra é do `app/`, mas seu conteúdo
-de baixo é da tela — filtros de projeto em Hoje, lista de páginas em Notas — e a página
-não pode importar de `app/`. Então ela renderiza o trecho onde ele nasce, junto do estado
-que o alimenta, e o `SidebarSlot` o entrega dentro da barra. O portal preserva o contexto
-do React, então nada precisa ser içado para a rota.
+Antes disso houve uma faixa no topo, com marca, navegação e sair; ela custava uma linha
+inteira de altura para dizer o que a barra já podia dizer. Depois houve uma barra só, de
+232px. O formato atual segue a referência de duas colunas e resolve o que a barra única
+não resolvia.
 
-Seções são recolhíveis (`SidebarGroup`), porque projetos e etiquetas crescem sem limite:
-quem tem vinte projetos não deveria rolar por eles para chegar nas etiquetas. O título
-inteiro é o alvo do clique — a seta sozinha é pequena demais para mirar.
+**Os destinos aparecem duas vezes, e é isso que paga o trilho.** Recolhido o painel, a
+navegação continua inteira em 52px. Enquanto a barra era a única navegação do app, ela
+não podia ser escondida — abaixo de ~768px comia a tela e não havia o que fazer. Agora
+há: o botão de recolher, e o que foi recolhido continua assim entre telas e recargas.
 
-**Pendente:** a barra tem largura fixa e fica sempre visível. Abaixo de ~768px ela come
-espaço demais, e como agora é a única navegação, não dá para simplesmente escondê-la.
-A branch `fix/reachable-panels-on-small-screens` trata das telas pequenas.
+Para quem navega por marcos, trilho e painel são **uma região só** (`aside` com nome).
+Separá-los daria dois `complementary` sem nome útil. As duas listas de destino são dois
+`nav` com rótulos diferentes — "Seções" no painel, "Atalhos das seções" no trilho — que
+é o que permite ao leitor de tela dizer qual é qual.
+
+**A coluna da direita vem da página, por portal.** O painel é do `app/`, mas o conteúdo
+dessa coluna é da tela — filtros em Hoje, lista de páginas em Notas — e a página não pode
+importar de `app/`. Então ela renderiza o trecho onde ele nasce, junto do estado que o
+alimenta, e o `SidebarSlot` o entrega dentro do painel. O portal preserva o contexto do
+React, então nada precisa ser içado para a rota.
+
+### Dois pesos de "ativo"
+
+| Onde | Marca | Por quê |
+|---|---|---|
+| Destino no menu | pílula sólida (`ink` sobre texto `canvas`) | é a tela em que se está |
+| Item na coluna da direita | pílula suave com traço | é o que está selecionado dentro dela |
+
+São dois degraus porque as duas coisas são verdade ao mesmo tempo: estou em **Projetos**
+e, dentro dele, **Casa** está selecionado. Com a mesma marca, a segunda informação
+desapareceria na primeira.
+
+### Seções da coluna da direita
+
+Título em caixa normal com o total entre parênteses — `Projetos (7)` — e a ação à
+direita, **visível o tempo todo**. Um `+` que só aparece sob o mouse é um caminho que
+ninguém encontra de propósito; era assim antes, e escondia a única forma de criar
+projeto pela barra.
+
+São recolhíveis porque projetos e etiquetas crescem sem limite: quem tem vinte projetos
+não deveria rolar por eles para chegar nas etiquetas. O alvo do clique é o título
+inteiro — a seta sozinha é pequena demais para mirar. Recolhida, o número é o que a
+seção ainda diz sobre o que está escondendo.
+
+O traço entre seções mora no contêiner, não no grupo: elas chegam pelo portal com pais
+diferentes, então nenhuma sabe sozinha se é a primeira da coluna.
+
+**Tudo na coluna divide a mesma métrica** — 32px de altura, ícone de 16px na mesma
+abscissa, canto de 10px. Projeto, etiqueta e "Mostrar concluídas" seguem a mesma régua;
+quando não seguiam, cada bloco começava num lugar e a coluna parecia três listas.
 
 ## Ícone, não bolinha
 
@@ -203,8 +242,8 @@ lugares, e cada um faz uma coisa diferente com o clique:
 
 | Onde | O clique no nome |
 |---|---|
-| Barra, em **Hoje** | filtra a lista ao lado |
-| Barra, nas demais telas | abre a página do projeto |
+| Coluna da direita, em **Hoje** | filtra a lista ao lado |
+| Coluna da direita, nas demais telas | abre a página do projeto |
 | Índice `/projects` | abre a página do projeto |
 
 A seta de recolher é botão à parte, nunca parte da linha: recolher a pasta e abrir o

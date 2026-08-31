@@ -23,8 +23,8 @@ export function TaskFilters({ value, onChange }: TaskFiltersProps) {
   const { data: labels } = useLabels()
 
   return (
-    <nav className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto" aria-label="Filtros">
-      <SidebarGroup title={COPY.etiquetas}>
+    <nav className="flex flex-col" aria-label="Filtros">
+      <SidebarGroup title={COPY.etiquetas} count={labels?.length}>
         {labels?.length === 0 ? <Empty>{COPY.semEtiquetas}</Empty> : null}
 
         {labels?.map((label) => (
@@ -40,7 +40,7 @@ export function TaskFilters({ value, onChange }: TaskFiltersProps) {
         ))}
       </SidebarGroup>
 
-      <label className="flex cursor-pointer items-center gap-2 px-3 text-ink-subtle text-xs">
+      <label className="flex h-8 cursor-pointer items-center gap-2 px-2 text-ink-subtle text-xs">
         <input
           type="checkbox"
           checked={value.includeDone}
@@ -72,17 +72,19 @@ function FilterButton({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        'flex items-center gap-2 rounded-control px-3 py-1.5 text-left text-sm',
+        'flex h-8 items-center gap-2 rounded-[10px] px-2 text-left text-[13px]',
         'transition-[colors,transform] duration-150 ease-press active:scale-[0.98]',
-        active ? 'bg-surface-raised text-ink' : 'text-ink-muted hover:bg-surface hover:text-ink',
+        active
+          ? 'bg-surface-raised text-ink ring-1 ring-line'
+          : 'text-ink-muted hover:bg-surface-raised/70 hover:text-ink',
       )}
     >
+      {/* A cor da etiqueta ocupa a mesma caixa de 16px do ícone dos projetos: sem
+          isso, os nomes das etiquetas começariam quatro pixels à esquerda dos deles. */}
       {color ? (
-        <span
-          aria-hidden="true"
-          className="size-2 shrink-0 rounded-[3px]"
-          style={{ backgroundColor: color }}
-        />
+        <span aria-hidden="true" className="flex size-4 shrink-0 items-center justify-center">
+          <span className="size-2 rounded-[3px]" style={{ backgroundColor: color }} />
+        </span>
       ) : null}
 
       <span className="min-w-0 flex-1 truncate">{label}</span>
@@ -95,5 +97,5 @@ function FilterButton({
 }
 
 function Empty({ children }: { children: React.ReactNode }) {
-  return <p className="px-3 py-1 text-ink-subtle text-xs">{children}</p>
+  return <p className="px-2 py-1.5 text-ink-subtle text-xs">{children}</p>
 }
