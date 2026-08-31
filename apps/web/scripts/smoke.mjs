@@ -93,8 +93,15 @@ try {
 
   // O painel nomeia a seção em vez de repetir os destinos: cada destino aparece uma
   // vez só na barra inteira, e é no trilho.
-  const destinos = await barra.locator('a').count()
-  check('o painel não espelha os destinos do trilho', destinos === 3, `${destinos} links`)
+  // Contado contra o próprio trilho, e não contra um número escrito aqui: um destino
+  // novo no app não deve derrubar um teste que fala de espelhamento.
+  const noTrilho = await trilho.locator('a').count()
+  const naBarra = await barra.locator('a').count()
+  check(
+    'o painel não espelha os destinos do trilho',
+    naBarra === noTrilho,
+    `${naBarra} na barra, ${noTrilho} no trilho`,
+  )
   check('o painel nomeia a seção em que se está', await painel.isVisible())
 
   const larguraAberto = Math.round((await barra.boundingBox()).width)

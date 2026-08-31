@@ -32,6 +32,12 @@ futuro ser um import, e não uma migration dolorosa.
 e só viram linha no banco quando a pessoa conclui ou edita aquela ocorrência específica. É o padrão
 de calendário; materializar tudo encheria a tabela com milhares de linhas mortas.
 
+**O inbox é a saída da captura, e processar é só trocar o status.** Tudo que entra pelo `⌘K`
+nasce com status `inbox`; a tela do inbox é onde isso vira decisão — projeto, prioridade, prazo,
+hora no planner — e "processar" muda o status para `todo` e mais nada. Não conclui nem arquiva: a
+tarefa segue viva nas listas e apenas deixa de ser um item por decidir. Um botão que fizesse as
+três coisas obrigaria a escolher o destino antes de ter decidido o que a tarefa é.
+
 **API própria em vez de falar direto com o Supabase.** Custa um app a mais para manter, mas mantém
 regra de negócio num lugar só quando o mobile chegar, e deixa o PostgREST trancado.
 

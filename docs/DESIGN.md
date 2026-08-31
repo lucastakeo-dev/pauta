@@ -271,6 +271,49 @@ Na semana, hoje ganha o acento no número do dia — é a coluna que se procura 
 "nenhum compromisso" fala uma vez só, no lugar da grade: sete vezes a mesma frase seria
 ruído, não informação.
 
+## O inbox: fila e detalhe
+
+A tela existe para dar saída ao que o `⌘K` captura. Antes dela, capturar era fácil e
+decidir era impossível: tudo nascia com status `inbox` e nada tirava de lá.
+
+A fila fica **na barra**, não na tela. É a mesma coluna que lista projetos e páginas de
+nota, e pela mesma razão: é o índice de onde se está, e o que muda ao escolher um item é
+a tela ao lado — não a coluna inteira.
+
+**Duas linhas por item, e a segunda só quando tem o que dizer.** Título em cima; embaixo
+projeto e prazo, quando existem. Escrever "sem projeto" em toda captura nova encheria a
+fila de uma informação que é sempre a mesma — e é justamente o que a tela serve para
+resolver. À direita, a idade (`hoje`, `3d`, `2sem`): numa fila de captura, o que está
+parado há três semanas é o que mais precisa de uma decisão, nem que seja apagar.
+
+A bolinha de prioridade ocupa a coluna de 16px dos ícones, no eixo dos projetos e das
+etiquetas — a fila divide a régua do painel com o resto. **P4 não tem cor**: a maioria é
+P4, e colorir todas anularia o sinal.
+
+**A seleção segue a posição, não o id.** Processar tira o item da fila, e quem estava
+embaixo sobe para o cursor — como numa caixa de e-mail. Voltar ao topo a cada
+processamento faria a fila ser trabalhada sempre pelo primeiro item. Com a fila vazia, a
+seleção é `null` e os dois lados mostram o vazio.
+
+**As setas percorrem a fila levando o foco junto.** Tab também funciona — cada linha é um
+botão de verdade —, mas Tab é para sair da lista, não para andar por ela: com trinta
+capturas, chegar à última custaria trinta paradas.
+
+Na tela, o item aberto ganha duas colunas com um traço entre elas: à esquerda o que se lê
+e escreve (título e anotação, numa medida de leitura), à direita o que se decide —
+prioridade, projeto, prazo, planner e etiquetas. Sem o traço, as propriedades pareciam
+soltas na borda em vez de um painel.
+
+A trilha do cabeçalho diz `Inbox · 2 de 3`, e não o título: ele está 40px abaixo, em corpo
+maior. Quanto falta é o que não aparece em nenhum outro lugar da tela.
+
+**Processar só troca o status.** Não conclui, não apaga: a tarefa segue viva nas listas e
+apenas deixa de ser um item por decidir. Concluir e Excluir estão ao lado, nomeados pelo
+que fazem.
+
+Título e anotação salvam **ao sair do campo**, não a cada tecla — uma requisição por letra
+digitada encheria a fila de escritas e a tela de avisos.
+
 ## Ícone, não bolinha
 
 Cada projeto tem um ícone escolhido de um catálogo curado de 48 desenhos do lucide
