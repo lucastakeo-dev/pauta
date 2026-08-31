@@ -57,7 +57,7 @@ export function TaskComposer({ projectId }: TaskComposerProps) {
         placeholder={COPY.placeholder}
         aria-label="Nova tarefa"
         className={[
-          'h-11 w-full rounded-control border border-line bg-surface px-3.5 text-ink text-sm',
+          'h-9 w-full rounded-control border border-line bg-surface px-3 text-ink text-sm',
           'placeholder:text-ink-subtle',
           'transition-colors focus:border-iris',
         ].join(' ')}

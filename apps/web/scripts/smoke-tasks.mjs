@@ -156,11 +156,35 @@ try {
   // Com o projeto filtrado, só a tarefa dele aparece.
   const soDoProjeto = (await tarefa(page, 'Comprar café especial').count()) === 0
   check('filtro por projeto esconde as demais', soDoProjeto)
+
+  // A geometria da lista: uma tarefa é uma linha. É o primeiro valor que se perde
+  // quando alguém acrescenta mais uma informação à direita, e sem medir ninguém nota.
+  const linha = page.getByRole('listitem').filter({ hasText: 'Trocar lâmpada' }).first()
+  const altura = (await linha.boundingBox()).height
+  check('a tarefa cabe numa linha', altura <= 40, `${Math.round(altura)}px`)
+
+  const dentroDoProjeto = await linha.innerText()
+  check(
+    'dentro do projeto, a linha não repete o nome dele',
+    !dentroDoProjeto.includes('Casa'),
+    JSON.stringify(dentroDoProjeto.replace(/\n/g, ' ')),
+  )
   await page.screenshot({ path: `${outDir}/03-projeto.png` })
 
   // 8. "Todas" volta a mostrar tudo, e o contador do projeto aparece.
   await page.getByRole('button', { name: 'Todas' }).click()
   await tarefa(page, 'Comprar café especial').waitFor({ timeout: 10_000 })
+
+  const foraDoProjeto = await page
+    .getByRole('listitem')
+    .filter({ hasText: 'Trocar lâmpada' })
+    .first()
+    .innerText()
+  check(
+    'fora dele, a linha mostra a que projeto pertence',
+    foraDoProjeto.includes('Casa'),
+    JSON.stringify(foraDoProjeto.replace(/\n/g, ' ')),
+  )
   const contador = await page.getByRole('button', { name: /^Casa/ }).getAttribute('aria-label')
   check('projeto mostra a contagem de tarefas em aberto', contador?.includes('1'), contador ?? '')
 
