@@ -1,5 +1,6 @@
 import { useDraggable } from '@dnd-kit/core'
-import type { TaskView } from '@pauta/contracts'
+import type { LabelView, TaskView } from '@pauta/contracts'
+import { CalendarClock, GripVertical, Repeat2, Trash2 } from 'lucide-react'
 import { type KeyboardEvent, useState } from 'react'
 import { DEFAULT_BLOCK_MINUTES, type DragPayload } from '../../entities/planner/index.js'
 import {
@@ -22,13 +23,34 @@ const COPY = {
   repete: 'Repete',
   arrastar: 'Arrastar para o planner',
   agendar: 'Agendar',
+  subtarefas: 'subtarefas concluídas',
+  maisEtiquetas: 'mais etiquetas',
 }
+
+/** Quantas etiquetas cabem antes de a linha virar uma faixa de pílulas. */
+const ETIQUETAS_VISIVEIS = 2
+
+/** Altura da linha. Sai daqui para o rascunho e o cabeçalho de grupo copiarem. */
+export const TASK_ROW = 'flex h-9 items-center gap-2 pr-2 pl-1'
 
 type TaskItemProps = {
   task: TaskView
+  /** Some quando a lista inteira já é de um projeto só. */
+  showProject?: boolean
 }
 
-export function TaskItem({ task }: TaskItemProps) {
+/**
+ * Uma tarefa em uma linha só.
+ *
+ * A geometria é de tabela e não de cartão: 36px de altura, título ocupando o espaço que
+ * sobra e todo o resto encostado à direita, em colunas que se repetem linha após linha.
+ * É o que permite varrer trinta tarefas de cima a baixo — antes cada uma ocupava duas
+ * linhas e a lista rolava três vezes mais.
+ *
+ * As ações flutuam sobre a ponta direita quando o ponteiro entra, em vez de morarem no
+ * fluxo: reservar espaço para elas custaria a coluna que hoje mostra prazo e etiquetas.
+ */
+export function TaskItem({ task, showProject = true }: TaskItemProps) {
   const toggle = useToggleTask()
   const update = useUpdateTask()
   const remove = useDeleteTask()
@@ -53,6 +75,8 @@ export function TaskItem({ task }: TaskItemProps) {
   const done = isDone(task)
   const overdue = isOverdue(task)
   const timeRange = timeRangeLabel(task)
+  const etiquetas = task.labels.slice(0, ETIQUETAS_VISIVEIS)
+  const escondidas = task.labels.length - etiquetas.length
 
   function commit() {
     const title = draft.trim()
@@ -79,44 +103,40 @@ export function TaskItem({ task }: TaskItemProps) {
     <li
       ref={setNodeRef}
       className={cn(
-        'group flex items-start gap-3 rounded-control px-3 py-2.5 transition-colors',
-        'hover:bg-surface',
+        'group relative border-line/60 border-b transition-colors',
+        // Opaco de propósito: é o mesmo fundo que as ações usam para cobrir a ponta
+        // direita, e com transparência a etiqueta por baixo apareceria pela metade.
+        'hover:bg-surface-raised has-focus-visible:bg-surface-raised',
         isDragging && 'opacity-40',
       )}
     >
-      {/*
-        Alça dedicada em vez de arrastar a linha inteira: assim o arrasto nunca disputa
-        o ponteiro com a caixa de marcar, o título editável e o botão de remover.
-      */}
-      <button
-        type="button"
-        aria-label={`${COPY.arrastar}: ${task.title}`}
-        className={cn(
-          'mt-0.5 shrink-0 cursor-grab rounded-[4px] px-0.5 text-ink-subtle text-xs',
-          'opacity-0 transition duration-150 ease-press hover:text-ink group-hover:opacity-100 focus-visible:opacity-100',
-          'active:cursor-grabbing',
-        )}
-        {...attributes}
-        {...listeners}
-      >
-        ⠿
-      </button>
+      <div className={TASK_ROW}>
+        {/*
+          Alça dedicada em vez de arrastar a linha inteira: assim o arrasto nunca disputa
+          o ponteiro com a caixa de marcar, o título editável e os botões da ponta.
+        */}
+        <button
+          type="button"
+          aria-label={`${COPY.arrastar}: ${task.title}`}
+          className={cn(
+            'flex size-4 shrink-0 cursor-grab items-center justify-center rounded-[4px]',
+            'text-ink-subtle opacity-0 transition duration-150 ease-press',
+            'hover:text-ink group-hover:opacity-100 focus-visible:opacity-100',
+            'active:cursor-grabbing',
+          )}
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical aria-hidden="true" className="size-3.5" />
+        </button>
 
-      <span
-        aria-hidden="true"
-        title={PRIORITY_LABELS[task.priority]}
-        className={cn('mt-[7px] size-1.5 shrink-0 rounded-full', priorityColorClass(task.priority))}
-      />
-
-      <div className="mt-px">
         <Checkbox
           checked={done}
           onChange={(checked) => toggle.mutate({ id: task.id, done: checked })}
           label={`${COPY.concluir} ${task.title}`}
+          className="shrink-0"
         />
-      </div>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
         {editing ? (
           <input
             // biome-ignore lint/a11y/noAutofocus: o campo só existe após o clique de editar, então o foco é a intenção
@@ -125,14 +145,15 @@ export function TaskItem({ task }: TaskItemProps) {
             onChange={(event) => setDraft(event.target.value)}
             onBlur={commit}
             onKeyDown={handleKeyDown}
-            className="w-full rounded-[4px] bg-surface-raised px-1 py-0.5 text-ink text-sm outline-none"
+            className="h-6 min-w-0 flex-1 rounded-[4px] bg-surface-raised px-1.5 text-ink text-sm outline-none"
           />
         ) : (
           <button
             type="button"
             onClick={() => setEditing(true)}
+            title={task.title}
             className={cn(
-              'text-left text-sm transition-colors',
+              'min-w-0 flex-1 truncate text-left text-sm transition-colors',
               done ? 'text-ink-subtle line-through' : 'text-ink',
             )}
           >
@@ -140,76 +161,204 @@ export function TaskItem({ task }: TaskItemProps) {
           </button>
         )}
 
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-          {task.project ? (
-            <span className="flex items-center gap-1.5 text-ink-subtle">
-              <NamedIcon name={task.project.icon} className="size-3.5 shrink-0" />
-              {task.project.name}
-            </span>
-          ) : null}
-
-          {timeRange ? <span className="tabular text-ink-subtle">{timeRange}</span> : null}
-
-          {task.dueAt ? (
-            <span className={cn('tabular', overdue ? 'text-danger' : 'text-ink-subtle')}>
-              {dueLabel(task.dueAt)}
-            </span>
-          ) : null}
-
-          {task.recurrence ? (
-            <span className="text-ink-subtle" title={`${COPY.repete} ${task.recurrence.summary}`}>
-              ↻ {task.recurrence.summary}
-            </span>
-          ) : null}
-
+        {/* Tudo que descreve a tarefa mora encostado à direita, na mesma ordem em toda
+            linha: o olho desce a coluna procurando prazo ou etiqueta sem reler o meio. */}
+        <span className="flex shrink-0 items-center gap-1.5 pl-3 text-[11px]">
           {task.subtaskCount > 0 ? (
-            <span className="tabular text-ink-subtle">
+            <span
+              className="tabular text-ink-subtle"
+              title={`${task.completedSubtaskCount} de ${task.subtaskCount} ${COPY.subtarefas}`}
+            >
               {task.completedSubtaskCount}/{task.subtaskCount}
             </span>
           ) : null}
 
-          {task.labels.map((label) => (
-            <span key={label.id} className="text-ink-subtle" style={{ color: label.color }}>
-              #{label.name}
+          {/* O resumo já é uma frase ("toda segunda"); escrevê-lo na linha custaria a
+              largura que o título usa para não ser cortado. */}
+          {task.recurrence ? (
+            <span title={`${COPY.repete} ${task.recurrence.summary}`} className="flex shrink-0">
+              <Repeat2 aria-hidden="true" className="size-3.5 text-ink-subtle" />
             </span>
-          ))}
-        </div>
+          ) : null}
 
-        {scheduling ? <TaskSchedule task={task} onClose={() => setScheduling(false)} /> : null}
+          {timeRange ? <span className="tabular shrink-0 text-ink-subtle">{timeRange}</span> : null}
+
+          {/* Só o atraso ganha pílula. Fundo cinza em todo prazo competiria com as
+              etiquetas, que são as únicas manchas de cor que a linha deveria ter. */}
+          {task.dueAt ? (
+            overdue ? (
+              <Chip className="tabular bg-danger/15 text-danger">{dueLabel(task.dueAt)}</Chip>
+            ) : (
+              <span className="tabular shrink-0 text-ink-muted">{dueLabel(task.dueAt)}</span>
+            )
+          ) : null}
+
+          {task.project && showProject ? (
+            <span className="flex min-w-0 items-center gap-1 text-ink-subtle">
+              <NamedIcon name={task.project.icon} className="size-3.5 shrink-0" />
+              <span className="max-w-24 truncate">{task.project.name}</span>
+            </span>
+          ) : null}
+
+          {etiquetas.map((label) => (
+            <LabelChip key={label.id} label={label} />
+          ))}
+
+          {escondidas > 0 ? (
+            <Chip
+              className="text-ink-subtle"
+              title={task.labels
+                .slice(ETIQUETAS_VISIVEIS)
+                .map((label) => label.name)
+                .join(', ')}
+            >
+              +{escondidas} <span className="sr-only">{COPY.maisEtiquetas}</span>
+            </Chip>
+          ) : null}
+
+          <PriorityBars priority={task.priority} />
+        </span>
       </div>
 
-      {/*
-        Caminho de teclado para agendar. Arrastar é gesto de ponteiro: sem este botão,
-        quem não usa mouse não conseguiria pôr a tarefa no planner.
-      */}
-      <button
-        type="button"
-        onClick={() => setScheduling((open) => !open)}
-        aria-expanded={scheduling}
-        aria-label={`${COPY.agendar}: ${task.title}`}
-        className={cn(
-          'shrink-0 rounded-control px-2 py-1 text-xs',
-          'transition duration-150 ease-press hover:bg-surface-raised hover:text-ink active:scale-90',
-          scheduling
-            ? 'text-iris opacity-100'
-            : 'text-ink-subtle opacity-0 group-hover:opacity-100 focus-visible:opacity-100',
-        )}
-      >
-        🕑
-      </button>
+      {scheduling ? (
+        <div className="pr-2 pb-3 pl-11">
+          <TaskSchedule task={task} onClose={() => setScheduling(false)} />
+        </div>
+      ) : null}
 
-      <button
-        type="button"
-        onClick={() => remove.mutate(task.id)}
-        aria-label={`${COPY.remover}: ${task.title}`}
+      {/*
+        As ações cobrem a ponta direita em vez de empurrá-la. O fundo é o mesmo da linha
+        sob o ponteiro, então elas parecem deslizar por cima do que já estava ali.
+      */}
+      <span
         className={cn(
-          'shrink-0 rounded-control px-2 py-1 text-ink-subtle text-xs opacity-0',
-          'transition duration-150 ease-press hover:bg-surface-raised hover:text-danger active:scale-90',
-          'group-hover:opacity-100 focus-visible:opacity-100',
+          'absolute top-0 right-1 flex h-9 items-center gap-0.5 bg-surface-raised',
+          'before:pointer-events-none before:absolute before:top-0 before:right-full',
+          'before:h-full before:w-10 before:bg-gradient-to-l before:from-surface-raised',
+          'before:to-transparent before:content-[""]',
+          'opacity-0 transition-opacity duration-100',
+          'group-hover:opacity-100 group-focus-within:opacity-100',
         )}
       >
-        ✕
-      </button>
+        {/* Caminho de teclado para agendar. Arrastar é gesto de ponteiro: sem este
+            botão, quem não usa mouse não conseguiria pôr a tarefa no planner. */}
+        <IconAction
+          onClick={() => setScheduling((open) => !open)}
+          aria-expanded={scheduling}
+          aria-label={`${COPY.agendar}: ${task.title}`}
+          className={scheduling ? 'text-iris' : undefined}
+        >
+          <CalendarClock aria-hidden="true" className="size-3.5" />
+        </IconAction>
+
+        <IconAction
+          onClick={() => remove.mutate(task.id)}
+          aria-label={`${COPY.remover}: ${task.title}`}
+          className="hover:text-danger"
+        >
+          <Trash2 aria-hidden="true" className="size-3.5" />
+        </IconAction>
+      </span>
     </li>
+  )
+}
+
+function Chip({
+  className,
+  children,
+  title,
+  style,
+}: {
+  className?: string
+  children: React.ReactNode
+  title?: string
+  style?: React.CSSProperties
+}) {
+  return (
+    <span
+      title={title}
+      style={style}
+      className={cn('flex shrink-0 items-center rounded-[4px] px-1.5 py-0.5', className)}
+    >
+      {children}
+    </span>
+  )
+}
+
+/**
+ * A etiqueta como pílula tingida da própria cor.
+ *
+ * O texto colorido sobre o fundo da tela — o desenho anterior — sumia nas cores escuras
+ * e gritava nas claras. A pílula resolve os dois: o fundo é a mesma cor a 18%, então a
+ * mancha é sempre igual.
+ *
+ * O texto não é a cor pura: ela é puxada 20% na direção da tinta do tema. No claro isso
+ * escurece um verde que teria 2:1 de contraste sobre branco; no escuro clareia o mesmo
+ * verde. Uma cor escolhida pela pessoa não tem como servir aos dois fundos sozinha.
+ */
+function LabelChip({ label }: { label: LabelView }) {
+  return (
+    <Chip
+      className="max-w-24 truncate font-medium"
+      // `color-mix` em vez de classes: a cor vem do banco, e o Tailwind só gera as
+      // classes que encontra escritas no código.
+      style={{
+        color: `color-mix(in oklab, ${label.color} 80%, var(--color-ink))`,
+        backgroundColor: `color-mix(in oklab, ${label.color} 18%, transparent)`,
+      }}
+    >
+      {label.name}
+    </Chip>
+  )
+}
+
+/**
+ * Prioridade em barras, como num sinal de celular: P1 são três, P4 é nenhuma.
+ *
+ * Substituiu a bolinha colorida à esquerda do título. A bolinha dizia a prioridade pela
+ * cor e só pela cor — quem não distingue vermelho de laranja via duas tarefas iguais.
+ * A altura é lida antes da cor, e some para a ponta direita junto com o resto do que
+ * descreve a tarefa.
+ */
+export function PriorityBars({ priority }: { priority: number }) {
+  const acesas = priority >= 4 ? 0 : 4 - priority
+
+  return (
+    <span
+      title={PRIORITY_LABELS[priority]}
+      aria-hidden="true"
+      className="flex h-3.5 w-3.5 shrink-0 items-end justify-center gap-px"
+    >
+      {[0, 1, 2].map((indice) => (
+        <span
+          key={indice}
+          className={cn(
+            'w-[3px] rounded-[1px]',
+            indice === 0 ? 'h-1' : indice === 1 ? 'h-2' : 'h-3',
+            indice < acesas ? priorityColorClass(priority) : 'bg-line-strong',
+          )}
+        />
+      ))}
+    </span>
+  )
+}
+
+function IconAction({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<'button'> & { 'aria-label': string }) {
+  return (
+    <button
+      type="button"
+      className={cn(
+        'flex size-6 shrink-0 items-center justify-center rounded-[6px] text-ink-subtle',
+        'transition duration-150 ease-press hover:bg-surface-raised hover:text-ink active:scale-90',
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </button>
   )
 }

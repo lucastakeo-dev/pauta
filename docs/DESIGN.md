@@ -68,6 +68,9 @@ ao atualizar.
 `p1` vermelho, `p2` âmbar, `p3` azul, `p4` cinza. A escala vai do urgente ao neutro, e `p4` é
 propositalmente sem cor: a maioria das tarefas é P4, e colorir todas anularia o sinal.
 
+Na lista, a cor vem acompanhada de **altura**: são três barras, e a prioridade decide
+quantas acendem. Cor sozinha não é sinal para quem não a distingue.
+
 ## Espaçamento e forma
 
 `--spacing-hour` (3.5rem) é a altura de uma hora na grade. É variável porque o zoom do dia (Fase 2)
@@ -313,6 +316,46 @@ que fazem.
 
 Título e anotação salvam **ao sair do campo**, não a cada tecla — uma requisição por letra
 digitada encheria a fila de escritas e a tela de avisos.
+
+## A lista de tarefas é uma tabela
+
+Uma tarefa é **uma linha de 36px**, e não um cartão de duas. Antes, título em cima e uma
+faixa de projeto, prazo e etiquetas embaixo: doze tarefas já enchiam a tela e a lista
+rolava três vezes mais do que precisava. Agora o título ocupa o espaço que sobra e tudo
+que o descreve fica encostado à direita, na mesma ordem em toda linha — é o que permite
+descer a coluna procurando um prazo sem reler o meio de cada tarefa.
+
+A ordem da direita, de dentro para fora: subtarefas, recorrência, hora, prazo, projeto,
+etiquetas, prioridade. As duas pontas são as que se procuram de longe, então são as que
+ficam nos extremos.
+
+**Só ganha pílula o que tem cor própria.** Etiqueta é pílula tingida da própria cor;
+atraso é pílula vermelha. Hora, prazo no futuro e projeto são texto. Fundo cinza em toda
+informação transformaria a linha numa fileira de caixinhas, e a mancha vermelha do atraso
+— a única que precisa ser vista antes de qualquer outra coisa — deixaria de se destacar.
+
+O texto da etiqueta não é a cor crua do banco: ela é puxada 20% na direção da tinta do
+tema. Uma cor escolhida no seletor não sabe sobre que fundo vai cair, e um verde com 2:1
+de contraste sobre branco é ilegível no tema claro por mais bonito que seja no escuro.
+
+**Prioridade em barras, não em bolinha.** Três barras de alturas diferentes, como sinal de
+celular: P1 acende as três, P4 nenhuma. A bolinha anterior dizia a prioridade pela cor e
+só pela cor — quem não distingue vermelho de laranja via duas tarefas iguais. Altura se lê
+antes de matiz, e o indicador foi para a ponta direita junto com o resto do que descreve a
+tarefa, deixando o começo da linha só com a caixa de marcar e o título.
+
+**As ações cobrem a ponta direita quando o ponteiro entra**, com o mesmo fundo da linha
+sob o mouse e um degradê à esquerda — o que estava ali some, não é cortado ao meio.
+Reservar espaço fixo para elas custaria a coluna que hoje mostra prazo e etiquetas.
+
+O cabeçalho de grupo é uma linha da mesma altura, com um círculo que muda de forma além de
+cor (cheio para o vencido, tracejado para o sem data) e a contagem ao lado do nome. Ele
+começa com os mesmos vãos da linha de tarefa — alça e caixa de marcar — para o nome do
+grupo cair na mesma abscissa dos títulos abaixo dele.
+
+O campo de nova tarefa continua acima da lista. A referência tem ali um botão que abre um
+formulário; digitar e apertar Enter é mais curto que isso, e o `⌘K` já cobre a captura com
+data em linguagem natural.
 
 ## Ícone, não bolinha
 
