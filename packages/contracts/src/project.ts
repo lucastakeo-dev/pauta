@@ -1,21 +1,33 @@
 import { z } from 'zod'
 import { hexColorSchema, uuidSchema } from './common.js'
 
-export const createProjectSchema = z.object({
+/**
+ * Os campos que a pessoa edita, sem valor padrão nenhum.
+ *
+ * O padrão da cor mora só na criação, e de propósito: `.partial()` **não** remove um
+ * `.default()`, então herdá-lo aqui fazia todo PATCH chegar ao model com uma cor que
+ * ninguém mandou — trocar o ícone repintava o projeto de azul. Pelo mesmo motivo o
+ * "envie ao menos um campo" nunca disparava: o corpo vazio já chegava com uma chave.
+ */
+const CAMPOS_EDITAVEIS = {
   name: z.string().trim().min(1, 'Dê um nome ao projeto.').max(120, 'Nome longo demais.'),
+  color: hexColorSchema,
+  icon: z.string().trim().max(40),
+}
+
+export const createProjectSchema = z.object({
+  ...CAMPOS_EDITAVEIS,
   color: hexColorSchema.default('#6E7BF2'),
-  icon: z.string().trim().max(40).optional(),
+  icon: CAMPOS_EDITAVEIS.icon.optional(),
   /** Projeto que vai conter este. Ausente ou `null` cria na raiz. */
   parentId: uuidSchema.nullish(),
 })
 export type CreateProjectInput = z.infer<typeof createProjectSchema>
 
-export const updateProjectSchema = createProjectSchema
-  .omit({
-    // Mover tem rota própria: trocar de pai exige checar ciclo e recalcular a ordem
-    // entre irmãos, o que não cabe num PATCH que também renomeia e troca cor.
-    parentId: true,
-  })
+export const updateProjectSchema = z
+  // Mover tem rota própria: trocar de pai exige checar ciclo e recalcular a ordem
+  // entre irmãos, o que não cabe num PATCH que também renomeia e troca cor.
+  .object(CAMPOS_EDITAVEIS)
   .partial()
   .extend({
     /** Arquivar tira o projeto das listas sem apagar o histórico das tarefas. */

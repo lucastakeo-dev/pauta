@@ -33,7 +33,7 @@ export type TaskRecord = {
   estimateMin: number | null
   completedAt: Date | null
   projectId: string | null
-  project: { id: string; name: string; color: string } | null
+  project: { id: string; name: string; color: string; icon: string | null } | null
   parentId: string | null
   labels: Array<{ id: string; name: string; color: string }>
   subtaskCount: number
@@ -63,7 +63,7 @@ const selection = {
   position: true,
   createdAt: true,
   updatedAt: true,
-  project: { select: { id: true, name: true, color: true } },
+  project: { select: { id: true, name: true, color: true, icon: true } },
   labels: { select: { label: { select: { id: true, name: true, color: true } } } },
   recurrence: { select: { id: true, rrule: true, anchorAt: true } },
   // Os dois contadores de subtarefa vêm do mesmo `select`: o Prisma não aceita dois
@@ -89,7 +89,7 @@ type Row = {
   position: number
   createdAt: Date
   updatedAt: Date
-  project: { id: string; name: string; color: string } | null
+  project: { id: string; name: string; color: string; icon: string | null } | null
   labels: Array<{ label: { id: string; name: string; color: string } }>
   recurrence: { id: string; rrule: string; anchorAt: Date } | null
   subtasks: Array<{ status: TaskStatus }>

@@ -4,6 +4,7 @@ import {
   addDays,
   blockGeometry,
   dayBounds,
+  dayKey,
   dayLabel,
   durationInMinutes,
   fitBlockInDay,
@@ -17,10 +18,15 @@ import {
   type PlannerItem,
   resizeEnd,
   snapMinutes,
+  startOfWeek,
   timeFromOffset,
   toDateInputValue,
   toPlannerItems,
   toTimeInputValue,
+  weekBounds,
+  weekDays,
+  weekLabel,
+  withSameTime,
 } from './model.js'
 
 const HOUR = 56
@@ -211,7 +217,7 @@ describe('toPlannerItems', () => {
         task({
           scheduledStart: at(15, 9).toISOString(),
           scheduledEnd: at(15, 10).toISOString(),
-          project: { id: 'p', name: 'Casa', color: '#FF0000' },
+          project: { id: 'p', name: 'Casa', color: '#FF0000', icon: 'house' },
         }),
       ],
       [],
@@ -428,5 +434,63 @@ describe('campos nativos de data e hora', () => {
     expect(fromDateTimeInputs('2026-09-15', '')).toBeNull()
     expect(fromDateTimeInputs('', '09:00')).toBeNull()
     expect(fromDateTimeInputs('15/09/2026', '09:00')).toBeNull()
+  })
+})
+
+describe('semana', () => {
+  it('começa na segunda-feira', () => {
+    // 2026-08-31 é uma segunda.
+    expect(dayKey(startOfWeek(new Date(2026, 7, 31)))).toBe('2026-08-31')
+    expect(dayKey(startOfWeek(new Date(2026, 8, 2)))).toBe('2026-08-31')
+  })
+
+  it('põe o domingo na semana que começou na segunda anterior', () => {
+    // O caso que um `-getDay()` ingênuo erra: `getDay()` do domingo é 0, e sem o
+    // ajuste ele abriria uma semana própria, com seis dias no futuro.
+    expect(dayKey(startOfWeek(new Date(2026, 8, 6)))).toBe('2026-08-31')
+  })
+
+  it('devolve sete dias em ordem', () => {
+    const dias = weekDays(new Date(2026, 8, 3))
+
+    expect(dias).toHaveLength(7)
+    expect(dias.map(dayKey)).toEqual([
+      '2026-08-31',
+      '2026-09-01',
+      '2026-09-02',
+      '2026-09-03',
+      '2026-09-04',
+      '2026-09-05',
+      '2026-09-06',
+    ])
+  })
+
+  it('a janela vai da segunda à segunda seguinte', () => {
+    const { start, end } = weekBounds(new Date(2026, 8, 3))
+
+    expect(dayKey(start)).toBe('2026-08-31')
+    expect(dayKey(end)).toBe('2026-09-07')
+  })
+
+  it('rotula a semana dentro do mês e atravessando o mês', () => {
+    expect(weekLabel(new Date(2026, 7, 25))).toBe('24 – 30 de ago')
+    expect(weekLabel(new Date(2026, 8, 3))).toBe('31 de ago – 6 de set')
+  })
+
+  it('leva o horário para outro dia sem mudá-lo', () => {
+    const terca = new Date(2026, 8, 1, 14, 30)
+    const quinta = new Date(2026, 8, 3)
+
+    const movido = withSameTime(quinta, terca)
+
+    expect(dayKey(movido)).toBe('2026-09-03')
+    expect(movido.getHours()).toBe(14)
+    expect(movido.getMinutes()).toBe(30)
+  })
+
+  it('a chave do dia usa o fuso local, não UTC', () => {
+    // Às 21h de Brasília o `toISOString()` já virou o dia seguinte; se a chave viesse
+    // dele, o bloco cairia na coluna errada toda noite.
+    expect(dayKey(new Date(2026, 8, 3, 21, 0))).toBe('2026-09-03')
   })
 })

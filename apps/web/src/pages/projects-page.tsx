@@ -1,10 +1,11 @@
 import { Link } from '@tanstack/react-router'
 import { FolderTree } from 'lucide-react'
 import { buildProjectTree, flattenProjectTree } from '../entities/project/index.js'
-import { NewProjectDialog } from '../features/projects/new-project-dialog.js'
+import { NewProjectDialog } from '../features/projects/project-dialog.js'
 import { ProjectTree } from '../features/projects/project-tree.js'
 import { useProjects } from '../features/projects/queries.js'
 import { Button } from '../shared/ui/button.js'
+import { NamedIcon } from '../shared/ui/icon-catalog.js'
 import { SidebarGroup } from '../shared/ui/sidebar-group.js'
 import { SidebarSlot } from '../shared/ui/sidebar-slot.js'
 
@@ -35,7 +36,7 @@ export function ProjectsPage() {
   return (
     <>
       <SidebarSlot>
-        <SidebarGroup title={COPY.titulo} action={<NewProjectDialog />}>
+        <SidebarGroup title={COPY.titulo} count={linhas.length} action={<NewProjectDialog />}>
           <ProjectTree />
         </SidebarGroup>
       </SidebarSlot>
@@ -64,11 +65,7 @@ export function ProjectsPage() {
                     className="flex items-center gap-3 py-3 pr-2 transition-colors hover:bg-surface/60"
                     style={{ paddingLeft: node.depth * 20 }}
                   >
-                    <span
-                      aria-hidden="true"
-                      className="size-2.5 shrink-0 rounded-[3px]"
-                      style={{ backgroundColor: node.color }}
-                    />
+                    <NamedIcon name={node.icon} className="size-4 shrink-0 text-ink-subtle" />
 
                     <span className="min-w-0 flex-1 truncate text-ink text-sm">{node.name}</span>
 

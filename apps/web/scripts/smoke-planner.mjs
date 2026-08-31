@@ -155,6 +155,50 @@ try {
 
   await page.screenshot({ path: `${outDir}/03-final.png` })
 
+  // 7. As três telas do calendário, escolhidas no painel da seção.
+  //    O painel mostra o que há dentro de "Hoje" — não repete os destinos do trilho.
+  const painel = page.locator('aside')
+  check(
+    'o painel de Hoje não repete os destinos do trilho',
+    (await painel.getByRole('link', { name: 'Notas' }).count()) === 1,
+  )
+
+  await painel.getByRole('button', { name: 'Semana' }).click()
+  const semana = page.getByRole('region', { name: 'Planner da semana' })
+  await semana.waitFor({ timeout: 10_000 })
+
+  const colunas = await semana.locator('[data-planner-grid]').count()
+  check('a semana mostra sete colunas', colunas === 7, `${colunas} colunas`)
+
+  // O bloco de hoje continua lá, agora na coluna do dia certo.
+  const chaveHoje = new Date().toLocaleDateString('sv-SE')
+  const naColunaDeHoje = await semana
+    .locator(`[data-day="${chaveHoje}"]`)
+    .getByText('Reunião de time')
+    .count()
+  check('o bloco cai na coluna do próprio dia', naColunaDeHoje === 1)
+  await page.screenshot({ path: `${outDir}/04-semana.png` })
+
+  await painel.getByRole('button', { name: 'Só o calendário' }).click()
+  await page.getByRole('region', { name: 'Planner do dia' }).waitFor({ timeout: 10_000 })
+  check(
+    'só o calendário esconde a lista de tarefas',
+    (await page.getByLabel('Nova tarefa').count()) === 0,
+  )
+  await page.screenshot({ path: `${outDir}/05-calendario.png` })
+
+  // A tela escolhida é preferência: tem de voltar como estava.
+  await page.reload({ waitUntil: 'networkidle' })
+  await page.getByRole('region', { name: 'Planner do dia' }).waitFor({ timeout: 10_000 })
+  check(
+    'a tela escolhida sobrevive ao recarregar',
+    (await page.getByLabel('Nova tarefa').count()) === 0,
+  )
+
+  await painel.getByRole('button', { name: 'Dia' }).click()
+  await page.getByLabel('Nova tarefa').waitFor({ timeout: 10_000 })
+  check('voltar para Dia traz a lista de volta', true)
+
   check('sem erros no console', consoleErrors.length === 0, consoleErrors.slice(0, 2).join(' | '))
 } finally {
   await browser.close()

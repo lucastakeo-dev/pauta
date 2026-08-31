@@ -171,3 +171,63 @@ describe('apagar projeto com filhos', () => {
     expect((await ana.get(`/tasks/${tarefa.id}`)).json().projectId).toBe(api.id)
   })
 })
+
+describe('edição parcial do projeto', () => {
+  it('trocar um campo não repinta o projeto', async () => {
+    // `updateProjectSchema` herdava o `.default()` da cor, e `.partial()` não desfaz
+    // isso: todo PATCH chegava ao model carregando a cor azul padrão.
+    const casa = (await ana.post('/projects', { name: 'Casa', color: '#4FB477' })).json()
+
+    await ana.patch(`/projects/${casa.id}`, { icon: 'coffee' })
+
+    expect((await ana.get('/projects')).json()[0]).toMatchObject({
+      color: '#4FB477',
+      icon: 'coffee',
+    })
+  })
+
+  it('recusa PATCH sem campo nenhum', async () => {
+    // Pelo mesmo motivo o "envie ao menos um campo" nunca disparava — o corpo vazio
+    // já chegava ao refine com uma chave dentro.
+    const casa = await projeto(ana, 'Casa')
+
+    expect((await ana.patch(`/projects/${casa.id}`, {})).statusCode).toBe(400)
+  })
+})
+
+describe('ícone do projeto', () => {
+  it('guarda o ícone escolhido na criação', async () => {
+    const response = await ana.post('/projects', { name: 'Casa', icon: 'house' })
+
+    expect(response.statusCode).toBe(201)
+    expect(response.json().icon).toBe('house')
+  })
+
+  it('nasce sem ícone quando não recebe um', async () => {
+    // `null` e não string vazia: é o que faz a tela cair no ícone padrão em vez de
+    // procurar uma chave que não existe no catálogo.
+    expect((await projeto(ana, 'Sem ícone')).icon).toBeNull()
+  })
+
+  it('troca o ícone sem mexer no resto', async () => {
+    const casa = await ana.post('/projects', { name: 'Casa', icon: 'house', color: '#4FB477' })
+    const { id } = casa.json()
+
+    const response = await ana.patch(`/projects/${id}`, { icon: 'coffee' })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toMatchObject({ name: 'Casa', color: '#4FB477', icon: 'coffee' })
+  })
+
+  it('a tarefa carrega o ícone do projeto dela', async () => {
+    // A lista de tarefas mostra o ícone ao lado do nome do projeto; se ele não vier
+    // aninhado aqui, a lista teria de buscar os projetos só para desenhar uma linha.
+    const casa = (await ana.post('/projects', { name: 'Casa', icon: 'house' })).json()
+    const tarefa = await createTask(ana, { projectId: casa.id })
+
+    expect((await ana.get(`/tasks/${tarefa.id}`)).json().project).toMatchObject({
+      name: 'Casa',
+      icon: 'house',
+    })
+  })
+})

@@ -1,10 +1,11 @@
-import type { CreateProjectInput, MoveProjectInput } from '@pauta/contracts'
+import type { CreateProjectInput, MoveProjectInput, UpdateProjectInput } from '@pauta/contracts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   createProject,
   deleteProject,
   moveProject,
   projectKeys,
+  updateProject,
   useProjects,
 } from '../../entities/project/index.js'
 import { taskKeys } from '../../entities/task/index.js'
@@ -13,6 +14,7 @@ import { useToast } from '../../shared/ui/toast.js'
 
 const AVISOS = {
   criar: { ok: 'Projeto criado.', erro: 'Não consegui criar o projeto.' },
+  editar: { ok: 'Projeto atualizado.', erro: 'Não consegui salvar o projeto.' },
   mover: { ok: 'Projeto movido.', erro: 'Não consegui mover o projeto.' },
   excluir: { ok: 'Projeto excluído.', erro: 'Não consegui excluir o projeto.' },
 }
@@ -35,6 +37,24 @@ export function useCreateProject() {
     },
     // A falha não vira aviso: o diálogo a mostra ao lado do campo, que é onde a pessoa
     // vai corrigir. Nome repetido precisa apontar para o nome.
+  })
+}
+
+export function useUpdateProject() {
+  const queryClient = useQueryClient()
+  const toast = useToast()
+
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: UpdateProjectInput }) =>
+      updateProject(id, input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: projectKeys.all })
+      // O nome e o ícone do projeto aparecem em cada tarefa da lista; sem isto a
+      // barra lateral mudaria e as tarefas continuariam mostrando o nome antigo.
+      void queryClient.invalidateQueries({ queryKey: taskKeys.all })
+      toast.success(AVISOS.editar.ok)
+    },
+    // A falha não vira aviso: o diálogo a mostra ao lado do campo, como na criação.
   })
 }
 

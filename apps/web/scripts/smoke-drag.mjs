@@ -101,9 +101,12 @@ try {
     return { start: t.scheduledStart, end: t.scheduledEnd }
   }
 
-  // A grade abre na hora atual; rolamos para o topo para ter horas previsíveis.
-  await page.locator('[data-planner-grid]').evaluate((el) => {
-    el.parentElement.scrollTop = 0
+  // A grade abre na hora atual; rolamos para o topo para ter horas previsíveis — e
+  // longe das bordas, onde o dnd-kit rola sozinho e move o alvo debaixo do ponteiro.
+  // Pelo gancho e não pelo pai: a coluna deixou de ser filha direta do contêiner que
+  // rola, e mirar na forma da árvore fez o teste rolar coisa nenhuma em silêncio.
+  await page.locator('[data-planner-scroll]').evaluate((el) => {
+    el.scrollTop = 0
   })
   await page.waitForTimeout(200)
 

@@ -28,6 +28,15 @@
  */
 @theme {
   /* Superfícies, do fundo para a frente */
+
+  /*
+   * O fundo da moldura, atrás dos painéis. É o único degrau mais escuro que o `canvas`,
+   * e existe porque a barra lateral virou painel flutuante: sem um fundo abaixo dela, o
+   * painel não teria de onde se destacar. Nenhum conteúdo mora aqui — só o vão entre
+   * o trilho, o menu e a tela.
+   */
+  --color-shell: oklch(0.12 0.007 275);
+
   --color-canvas: oklch(0.16 0.008 275);
   --color-surface: oklch(0.2 0.009 275);
   --color-surface-raised: oklch(0.24 0.01 275);

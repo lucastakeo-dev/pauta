@@ -42,9 +42,10 @@ try {
       (r) => r.json(),
     )
 
-  const trabalho = await criar({ name: 'Trabalho' })
-  const plataforma = await criar({ name: 'Plataforma', parentId: trabalho.id })
-  await criar({ name: 'Fase 1', parentId: plataforma.id })
+  const trabalho = await criar({ name: 'Trabalho', icon: 'briefcase', color: '#4FB477' })
+  const plataforma = await criar({ name: 'Plataforma', parentId: trabalho.id, icon: 'server' })
+  await criar({ name: 'Fase 1', parentId: plataforma.id, icon: 'rocket' })
+  // Sem ícone de propósito: é ele que prova o padrão do catálogo.
   await criar({ name: 'Pessoal' })
 
   // Uma tarefa no neto: é ela que prova a soma da subárvore.
@@ -60,8 +61,11 @@ try {
   await page.getByRole('button', { name: 'Entrar', exact: true }).click()
   await page.waitForURL((url) => url.pathname === '/today', { timeout: 10_000 })
 
+  // O trilho repete os mesmos destinos do menu: sem escopo, o clique é ambíguo.
+  const menu = page.locator('nav[aria-label="Seções"]')
+
   // 1. A árvore aparece na barra, aninhada.
-  await page.getByRole('link', { name: 'Projetos' }).click()
+  await menu.getByRole('link', { name: 'Projetos' }).click()
   await page.waitForURL((url) => url.pathname.startsWith('/projects'), { timeout: 10_000 })
 
   const barra = page.locator('aside')
@@ -117,13 +121,21 @@ try {
   await linhaPai.hover()
   const criarDentro = barra.getByRole('button', { name: 'Novo subprojeto' }).first()
   check('sob o mouse, a linha oferece criar um subprojeto', await criarDentro.isVisible())
+
+  // Clicar, e não só olhar: um gatilho que aparece mas não abre nada passaria batido
+  // por uma verificação de visibilidade — e já passou uma vez.
+  await criarDentro.click()
+  await page.getByRole('dialog', { name: 'Novo subprojeto' }).waitFor({ timeout: 5000 })
+  check('o `+` da linha abre o diálogo', true)
+  await page.keyboard.press('Escape')
+  await page.getByRole('dialog').waitFor({ state: 'detached', timeout: 5000 })
   await page.mouse.move(0, 0)
 
   // Recolhido continua recolhido depois de trocar de tela e de recarregar: a árvore é
   // remontada a cada navegação, e sem persistir isso tudo voltaria aberto.
-  await page.getByRole('link', { name: 'Hoje' }).click()
+  await menu.getByRole('link', { name: 'Hoje' }).click()
   await page.waitForURL((url) => url.pathname === '/today', { timeout: 10_000 })
-  await page.getByRole('link', { name: 'Projetos' }).click()
+  await menu.getByRole('link', { name: 'Projetos' }).click()
   await page.waitForURL((url) => url.pathname.startsWith('/projects'), { timeout: 10_000 })
   await barra.getByRole('button', { name: /Expandir: Trabalho/ }).waitFor({ timeout: 5000 })
   check('o que foi recolhido segue recolhido ao trocar de tela', true)
@@ -160,11 +172,66 @@ try {
   check('a aba Visão geral volta ao resumo', true)
 
   // 4. O índice lista a árvore inteira, com recuo.
-  await page.getByRole('link', { name: 'Projetos', exact: true }).first().click()
+  await menu.getByRole('link', { name: 'Projetos' }).click()
   await page.waitForURL((url) => url.pathname === '/projects', { timeout: 10_000 })
   const linhas = await page.locator('main a[href^="/projects/"]').count()
   check('o índice lista todos os projetos', linhas === 4, `${linhas} de 4`)
   await page.screenshot({ path: `${outDir}/03-indice.png` })
+
+  // 5. Ícones: a barra desenha o escolhido, e quem não escolheu cai no padrão.
+  const iconeDe = async (nome) =>
+    (await barra
+      .getByRole('link', { name: new RegExp(`^Abrir projeto: ${nome}(,|$)`) })
+      .locator('svg')
+      .first()
+      .getAttribute('class')) ?? ''
+
+  check(
+    'a barra desenha o ícone escolhido',
+    (await iconeDe('Trabalho')).includes('lucide-briefcase'),
+    await iconeDe('Trabalho'),
+  )
+  check(
+    'projeto sem ícone cai no padrão do catálogo',
+    (await iconeDe('Pessoal')).includes('lucide-hash'),
+    await iconeDe('Pessoal'),
+  )
+
+  // Nenhuma bolinha colorida sobrou na barra: era o que a árvore usava antes, e é o
+  // que o ícone veio substituir.
+  const bolinhas = await barra.locator('span[style*="background-color"]').count()
+  check('a barra não tem mais bolinha colorida', bolinhas === 0, `${bolinhas} encontradas`)
+
+  // 6. Trocar o ícone pelo lápis que aparece sob o mouse.
+  await barra.getByRole('link', { name: /Abrir projeto: Trabalho/ }).hover()
+  await barra.getByRole('button', { name: /Editar projeto: Trabalho/ }).click()
+  await page.getByRole('heading', { name: 'Editar projeto' }).waitFor({ timeout: 5000 })
+  check('o lápis da barra abre a edição', true)
+
+  await page.locator('label:has(input[aria-label="Café"])').click()
+  await page.getByRole('button', { name: 'Salvar' }).click()
+
+  const aviso = page.locator('[data-slot="toasts"]')
+  await aviso.getByText('Projeto atualizado.').waitFor({ timeout: 5000 })
+  check('salvar responde num Toast', true)
+
+  await page.mouse.move(0, 0)
+  await page.waitForFunction(
+    () => !document.querySelector('aside')?.innerHTML.includes('lucide-briefcase'),
+    { timeout: 5000 },
+  )
+  check('o ícone novo aparece na barra', (await iconeDe('Trabalho')).includes('lucide-coffee'))
+
+  // 7. O ícone é dado, não preferência de navegador: tem de voltar depois do reload.
+  await page.reload({ waitUntil: 'networkidle' })
+  await barra.getByRole('link', { name: /Abrir projeto: Trabalho/ }).waitFor({ timeout: 10_000 })
+  check('o ícone sobrevive ao recarregar', (await iconeDe('Trabalho')).includes('lucide-coffee'))
+
+  // Regressão: o PATCH herdava o `.default()` da cor e repintava o projeto de azul.
+  const depois = await fetch(`${API}/projects`, { headers: auth }).then((r) => r.json())
+  const cor = depois.find((projeto) => projeto.name === 'Trabalho').color
+  check('trocar o ícone não repinta o projeto', cor === '#4FB477', cor)
+  await page.screenshot({ path: `${outDir}/04-icones.png` })
 } finally {
   await browser.close()
 }

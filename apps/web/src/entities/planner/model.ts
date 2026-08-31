@@ -163,6 +163,86 @@ export function dayLabel(day: Date, now: Date = new Date()): string {
   return day.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'short' })
 }
 
+export const DAYS_IN_WEEK = 7
+
+/**
+ * Segunda-feira da semana do dia informado.
+ *
+ * A semana começa na segunda, como se lê um calendário em pt-BR. `getDay()` devolve 0
+ * para domingo, então o domingo pertence à semana que começou na segunda **anterior** —
+ * é o `+6` que garante isso, e não um `-getDay()` ingênuo.
+ */
+export function startOfWeek(date: Date): Date {
+  const start = new Date(date)
+  start.setHours(0, 0, 0, 0)
+  start.setDate(start.getDate() - ((start.getDay() + 6) % 7))
+
+  return start
+}
+
+/** Os sete dias da semana do dia informado, de segunda a domingo. */
+export function weekDays(date: Date): Date[] {
+  const inicio = startOfWeek(date)
+  return Array.from({ length: DAYS_IN_WEEK }, (_, indice) => addDays(inicio, indice))
+}
+
+/** Meia-noite da segunda e a meia-noite da segunda seguinte. */
+export function weekBounds(date: Date): { start: Date; end: Date } {
+  const start = startOfWeek(date)
+  return { start, end: addDays(start, DAYS_IN_WEEK) }
+}
+
+/**
+ * Chave estável de um dia, no fuso local.
+ *
+ * É o que indexa a semana e o que viaja no id do alvo de soltura. Precisa ser local e
+ * não ISO em UTC: às 21h de Brasília o `toISOString()` já é o dia seguinte, e o bloco
+ * cairia na coluna errada.
+ */
+export function dayKey(date: Date): string {
+  return toDateInputValue(date)
+}
+
+/**
+ * O mesmo horário, noutro dia.
+ *
+ * Move um bloco de coluna sem perder o ponto onde a pessoa o pegou: arrastar as 14h de
+ * terça para quinta deve dar 14h de quinta, não o horário onde o ponteiro parou.
+ */
+export function withSameTime(day: Date, instant: Date): Date {
+  const next = new Date(day)
+  next.setHours(
+    instant.getHours(),
+    instant.getMinutes(),
+    instant.getSeconds(),
+    instant.getMilliseconds(),
+  )
+
+  return next
+}
+
+/** `seg`, `ter`… sem o ponto que o `toLocaleDateString` acrescenta em pt-BR. */
+export function weekdayLabel(date: Date): string {
+  return date.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')
+}
+
+/** `25 – 31 de ago`, ou `28 de jul – 3 de ago` quando a semana atravessa o mês. */
+export function weekLabel(date: Date): string {
+  const dias = weekDays(date)
+  const inicio = dias[0]
+  const fim = dias[DAYS_IN_WEEK - 1]
+
+  if (!inicio || !fim) return ''
+
+  const mes = (dia: Date) => dia.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')
+  const mesmoMes =
+    inicio.getMonth() === fim.getMonth() && inicio.getFullYear() === fim.getFullYear()
+
+  return mesmoMes
+    ? `${inicio.getDate()} – ${fim.getDate()} de ${mes(inicio)}`
+    : `${inicio.getDate()} de ${mes(inicio)} – ${fim.getDate()} de ${mes(fim)}`
+}
+
 /** `09:00` — sempre dois dígitos, para a coluna de horas alinhar. */
 export function hourLabel(hour: number): string {
   return `${String(hour).padStart(2, '0')}:00`

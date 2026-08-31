@@ -19,8 +19,9 @@ ação alcançável pelo mouse precisa ser alcançável pelo teclado.
 
 ## Superfícies
 
-Quatro degraus pequenos, do fundo para a frente: `canvas` → `surface` → `surface-raised` →
-`surface-overlay`. Os passos são curtos de propósito: numa grade com dezenas de linhas, contraste
+Cinco degraus pequenos, do fundo para a frente: `shell` → `canvas` → `surface` →
+`surface-raised` → `surface-overlay`. O primeiro entrou com a moldura de painéis
+flutuantes e não recebe conteúdo nenhum: é só o vão entre o trilho, o menu e a tela. Os passos são curtos de propósito: numa grade com dezenas de linhas, contraste
 alto entre faixas vira listra e cansa.
 
 Traços em dois pesos: `line` para separar, `line-strong` para delimitar o que é interativo.
@@ -134,29 +135,143 @@ Duas exceções, ambas porque existe lugar melhor para a mensagem:
 - **Autosave da nota** tem indicador próprio no editor. Não é ação pedida, é consequência
   de digitar.
 
-## Moldura: uma barra lateral, sem topo
+## Moldura: trilho, painel e tela
 
-As telas logadas têm só a barra à esquerda. Havia também uma faixa no topo com marca,
-navegação e sair; ela custava uma linha inteira de altura para dizer o que a barra já
-podia dizer — e num planner, onde a grade de horas quer altura, competia com o conteúdo.
+As telas logadas são três retângulos flutuando sobre um fundo (`shell`, o único degrau
+mais escuro que o `canvas` — ele existe só para os painéis terem de onde se destacar):
 
-O formato segue o [Linear](https://linear.app): identidade no topo (o nome é o botão do
-menu da conta), captura rápida logo abaixo com o atalho à mostra, navegação, e por
-último o trecho que muda conforme a tela.
+| Peça | Largura | O que carrega |
+|---|---|---|
+| **Trilho** | 52px | marca, os três destinos como ícone, recolher, captura e conta |
+| **Painel** | 272px | o nome da seção ativa e o que há **dentro dela** |
+| **Tela** | o resto | o conteúdo da página |
 
-**O trecho que muda vem da página, por portal.** A barra é do `app/`, mas seu conteúdo
-de baixo é da tela — filtros de projeto em Hoje, lista de páginas em Notas — e a página
-não pode importar de `app/`. Então ela renderiza o trecho onde ele nasce, junto do estado
-que o alimenta, e o `SidebarSlot` o entrega dentro da barra. O portal preserva o contexto
-do React, então nada precisa ser içado para a rota.
+**O trilho troca de seção; o painel mostra o que há dentro dela.** Esta é a regra, e ela
+custou uma versão para ficar clara: a primeira repetia os três destinos dentro do painel,
+de modo que clicar no calendário levava às mesmas três opções de novo e a coluna inteira
+não dizia nada sobre o calendário. Um painel que espelha o trilho é uma coluna inteira
+gasta para não dizer nada.
 
-Seções são recolhíveis (`SidebarGroup`), porque projetos e etiquetas crescem sem limite:
-quem tem vinte projetos não deveria rolar por eles para chegar nas etiquetas. O título
-inteiro é o alvo do clique — a seta sozinha é pequena demais para mirar.
+| Seção | O painel mostra |
+|---|---|
+| **Hoje** | as telas do calendário, e abaixo os filtros da lista |
+| **Projetos** | a árvore e o `+` |
+| **Notas** | busca, a nota de hoje e a lista de páginas |
 
-**Pendente:** a barra tem largura fixa e fica sempre visível. Abaixo de ~768px ela come
-espaço demais, e como agora é a única navegação, não dá para simplesmente escondê-la.
-A branch `fix/reachable-panels-on-small-screens` trata das telas pequenas.
+Antes de tudo isso houve uma faixa no topo, com marca, navegação e sair; ela custava uma
+linha inteira de altura para dizer o que a barra já podia dizer. Depois houve uma barra
+só, de 232px.
+
+**Recolher o painel deixa a navegação inteira em 52px.** Enquanto a barra era a única
+navegação do app, ela não podia ser escondida — abaixo de ~768px comia a tela e não havia
+o que fazer. É isso que o trilho paga, e o que foi recolhido continua assim entre telas e
+recargas.
+
+Para quem navega por marcos, trilho e painel são **uma região só** (`aside` com nome).
+Separá-los daria dois `complementary` sem nome útil. Os destinos aparecem **uma vez só**,
+no trilho, num `nav` chamado "Seções"; o painel os nomeia por um cabeçalho, não por links.
+
+**A coluna do painel vem da página, por portal.** O painel é do `app/`, mas o conteúdo
+dele é da tela, e a página não pode importar de `app/`. Então ela renderiza o trecho onde
+ele nasce, junto do estado que o alimenta, e o `SidebarSlot` o entrega dentro do painel.
+O portal preserva o contexto do React, então nada precisa ser içado para a rota.
+
+### Dois pesos de "ativo"
+
+| Onde | Marca | Por quê |
+|---|---|---|
+| Destino no trilho | chip com fundo `surface-raised` | é a seção em que se está |
+| Item no painel | pílula suave com traço | é o que está selecionado dentro dela |
+
+São dois degraus porque as duas coisas são verdade ao mesmo tempo: estou em **Hoje** e,
+dentro dele, a tela **Semana** está escolhida. Com a mesma marca, a segunda informação
+desapareceria na primeira.
+
+### Seções do painel
+
+Título em caixa normal com o total entre parênteses — `Projetos (7)` — e a ação à
+direita, **visível o tempo todo**. Um `+` que só aparece sob o mouse é um caminho que
+ninguém encontra de propósito; era assim antes, e escondia a única forma de criar
+projeto pela barra.
+
+São recolhíveis porque projetos e etiquetas crescem sem limite: quem tem vinte projetos
+não deveria rolar por eles para chegar nas etiquetas. O alvo do clique é o título
+inteiro — a seta sozinha é pequena demais para mirar. Recolhida, o número é o que a
+seção ainda diz sobre o que está escondendo.
+
+O traço entre seções mora no contêiner, não no grupo: elas chegam pelo portal com pais
+diferentes, então nenhuma sabe sozinha se é a primeira da coluna.
+
+**Tudo na coluna divide a mesma métrica** — 32px de altura, ícone de 16px na mesma
+abscissa, canto de 10px. As classes moram em `shared/ui/sidebar-row.ts` porque as listas
+são feitas por features que não se conhecem — projeto, etiqueta, tela do planner, página
+de nota — e todas caem na mesma coluna. Enquanto cada uma trazia a própria altura, a
+coluna parecia quatro listas empilhadas em vez de uma.
+
+## As três telas do planner
+
+`Hoje` tem três, escolhidas no painel e não numa faixa de abas sobre a grade — a faixa
+repetiria a função do painel e comeria altura da grade, que é a tela pela qual o produto
+existe.
+
+| Tela | O que é |
+|---|---|
+| **Dia** | lista de tarefas e a grade do dia lado a lado |
+| **Semana** | sete colunas na mesma grade, com a régua de horas à esquerda |
+| **Só o calendário** | a grade do dia sozinha, na largura toda |
+
+A escolha sobrevive ao recarregar: é preferência de quem olha, não dado de servidor.
+
+**Cada coluna de dia é um alvo de soltura próprio, com a data no id.** É o que faz a
+semana funcionar sem uma segunda regra de arrastar: quem recebe a soltura já sabe em que
+dia caiu. Enquanto havia um alvo só, o dia vinha de fora — de quem renderizava a grade —
+e numa tela com sete colunas essa informação não existe em lugar nenhum além do alvo.
+
+Trocar de coluna leva o **horário** junto: as 14h de terça arrastadas para quinta viram
+14h de quinta. Recalcular pela posição do ponteiro perderia o ponto onde o bloco foi
+pego, e ele saltaria para debaixo do cursor.
+
+Na semana, hoje ganha o acento no número do dia — é a coluna que se procura ao abrir. E o
+"nenhum compromisso" fala uma vez só, no lugar da grade: sete vezes a mesma frase seria
+ruído, não informação.
+
+## Ícone, não bolinha
+
+Cada projeto tem um ícone escolhido de um catálogo curado de 48 desenhos do lucide
+(`shared/ui/icon-catalog.tsx`). Ele é a identidade do projeto onde quer que o projeto
+apareça: barra lateral, índice, cabeçalho da página e a linha da tarefa.
+
+Antes era uma bolinha com a cor do projeto. Numa coluna de 232px com três níveis de
+recuo, seis cores lado a lado viravam ruído — e a bolinha não dizia nada sobre o projeto,
+só que ele era diferente do de cima. **Forma distingue melhor que matiz**, e é o que faz o
+olho correr pelos nomes em vez de tropeçar nas cores.
+
+O ícone é **monocromático e herda a cor da linha**, sem tratamento próprio: assim o par
+ícone + nome acende junto no hover e no ativo, e é lido como uma coisa só. É o que a
+[referência](https://linear.app) faz na barra dela.
+
+**A cor do projeto continua existindo, e só no planner** — ela pinta o bloco na grade de
+horas, que é onde distinguir de relance vale a coluna que ocupa. O diálogo diz isso no
+próprio rótulo do campo ("Cor no planner"): uma escolha que parece não ter efeito é pior
+que uma escolha que não existe.
+
+Quem não escolheu ícone recebe o `#`. Chave desconhecida cai no mesmo lugar — o catálogo
+pode encolher sem quebrar um projeto antigo.
+
+**A grade do seletor tem oito colunas porque cada linha é um tema** (geral, trabalho,
+estudo, código, criação, vida). Agrupa sem gastar altura com título de grupo, que em 48
+ícones custaria mais do que ajuda a achar. São rádios de verdade, um por ícone: as setas
+do teclado andam pela grade e o leitor de tela anuncia o nome do desenho, não uma chave.
+
+Editar tem dois caminhos, e a razão é o espaço:
+
+| Onde | O que abre a edição |
+|---|---|
+| Barra lateral | o lápis que aparece na ponta da linha, ao lado do `+` |
+| Página do projeto | o próprio ícone do título, que é um botão |
+
+Na barra não cabe um alvo de 32px; no cabeçalho cabe, e ali o ícone-botão é a coisa mais
+direta que existe — clicar no que se quer trocar.
 
 ## Projetos são uma árvore
 
@@ -165,8 +280,8 @@ lugares, e cada um faz uma coisa diferente com o clique:
 
 | Onde | O clique no nome |
 |---|---|
-| Barra, em **Hoje** | filtra a lista ao lado |
-| Barra, nas demais telas | abre a página do projeto |
+| Coluna da direita, em **Hoje** | filtra a lista ao lado |
+| Coluna da direita, nas demais telas | abre a página do projeto |
 | Índice `/projects` | abre a página do projeto |
 
 A seta de recolher é botão à parte, nunca parte da linha: recolher a pasta e abrir o
