@@ -493,6 +493,65 @@ describe('etiquetas', () => {
   })
 })
 
+describe('edição parcial da tarefa', () => {
+  /*
+    Regressão de perda de dado. `updateTaskSchema` nascia dos mesmos campos da criação,
+    onde `status`, `priority` e `labelIds` têm `.default()`. `.partial()` torna o campo
+    opcional mas **não** remove o padrão — então todo PATCH chegava ao model com os três
+    definidos, e mexer só no título desfazia o resto.
+  */
+  it('mexer só no título não mexe em mais nada', async () => {
+    const etiqueta = (await ana.post('/labels', { name: 'urgente' })).json()
+    const tarefa = await createTask(ana, {
+      title: 'Antes',
+      status: 'todo',
+      priority: 1,
+      labelIds: [etiqueta.id],
+    })
+
+    const body = (await ana.patch(`/tasks/${tarefa.id}`, { title: 'Depois' })).json()
+
+    expect(body.title).toBe('Depois')
+    expect(body.status).toBe('todo')
+    expect(body.priority).toBe(1)
+    expect(body.labels.map((l: { name: string }) => l.name)).toEqual(['urgente'])
+  })
+
+  it('editar uma tarefa concluída não a reabre', async () => {
+    // `status` arrasta o carimbo de conclusão junto: com o padrão vazando, renomear
+    // uma tarefa pronta a devolvia para a inbox e apagava o `completedAt`.
+    const tarefa = await createTask(ana, { title: 'Feita' })
+    await ana.post(`/tasks/${tarefa.id}/toggle`, { done: true })
+
+    const body = (await ana.patch(`/tasks/${tarefa.id}`, { title: 'Feita mesmo' })).json()
+
+    expect(body.status).toBe('done')
+    expect(body.completedAt).not.toBeNull()
+  })
+
+  it('ainda dá para limpar as etiquetas de propósito', async () => {
+    // A distinção que o conserto precisa preservar: ausente é "não mexa", lista vazia
+    // é "apague todas".
+    const etiqueta = (await ana.post('/labels', { name: 'casa' })).json()
+    const tarefa = await createTask(ana, { labelIds: [etiqueta.id] })
+
+    expect((await ana.patch(`/tasks/${tarefa.id}`, { labelIds: [] })).json().labels).toEqual([])
+  })
+
+  it('recusa PATCH sem campo nenhum', async () => {
+    const tarefa = await createTask(ana, {})
+
+    expect((await ana.patch(`/tasks/${tarefa.id}`, {})).statusCode).toBe(400)
+  })
+
+  it('a criação continua com os padrões', async () => {
+    const body = (await ana.post('/tasks', { title: 'Nova' })).json()
+
+    expect(body).toMatchObject({ status: 'inbox', priority: 4 })
+    expect(body.labels).toEqual([])
+  })
+})
+
 describe('autenticação', () => {
   it('todas as rotas de tarefa exigem token', async () => {
     for (const [method, url] of [
