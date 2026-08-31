@@ -11,8 +11,9 @@ o dado — bordas, fundos, rótulos — recua para que a grade seja legível num
 **Cor tem significado.** Um único acento (`iris`) para ação e foco. Fora dele, cor só aparece em
 prioridade (`p1..p4`) e no marcador de "agora". Se tudo colore, nada chama atenção.
 
-**Escuro por natureza, não por preferência.** O tema é escolha explícita na tag `<html>`, não
-`prefers-color-scheme`: um planner usado o dia inteiro não deve mudar de cara ao anoitecer.
+**Escuro por natureza, claro por escolha.** O app abre escuro e há um tema claro no menu da
+conta. A escolha é explícita na tag `<html>`, nunca `prefers-color-scheme`: um planner usado o
+dia inteiro não deve mudar de cara ao anoitecer.
 
 **Teclado em primeiro lugar.** `:focus-visible` tem estilo próprio e **nunca** é removido. Toda
 ação alcançável pelo mouse precisa ser alcançável pelo teclado.
@@ -25,6 +26,33 @@ flutuantes e não recebe conteúdo nenhum: é só o vão entre o trilho, o menu 
 alto entre faixas vira listra e cansa.
 
 Traços em dois pesos: `line` para separar, `line-strong` para delimitar o que é interativo.
+
+## Dois temas
+
+O escuro é o padrão; o claro está no menu da conta e é lembrado entre sessões.
+
+**O claro não é o escuro com os números invertidos.** Em fundo claro, elevação se lê por
+**tinta**, não por brilho: `surface-raised` — o fundo do hover e do selecionado — fica mais
+escuro que `surface`, ao contrário do escuro, onde fica mais claro. O que se preserva é o papel
+de cada token, não a posição dele na régua.
+
+O branco é levemente quente (matiz 85). Branco puro num painel grande cansa quem passa o dia na
+tela, e cinza neutro deixa a interface com cara de rascunho.
+
+**O acento escurece no claro.** O íris do escuro (L 0.68) sobre branco dá ~3,5:1, abaixo do
+mínimo para texto; no claro ele vai a 0.52. É a mesma cor com o mesmo papel, num contraste que
+serve à superfície.
+
+Duas coisas fazem a troca funcionar sem remendo:
+
+- **A classe mora em `<html>`**, e um script embutido no `index.html` a aplica antes do primeiro
+  pixel. O bundle é módulo, então roda depois da primeira pintura: sem esse script, quem escolheu
+  claro abriria escuro por um quadro.
+- **`color-scheme` acompanha o tema.** É ele que pinta barra de rolagem, seletor de data e hora e
+  o resto dos controles nativos, que não leem os nossos tokens.
+
+A vitrine tem paleta própria (`paper`, `graphite`) e não participa da troca: ela é lida uma vez,
+de passagem, e o app fica aberto o dia inteiro.
 
 ## Texto
 
@@ -181,11 +209,19 @@ O portal preserva o contexto do React, então nada precisa ser içado para a rot
 | Onde | Marca | Por quê |
 |---|---|---|
 | Destino no trilho | chip com fundo `surface-raised` | é a seção em que se está |
-| Item no painel | pílula suave com traço | é o que está selecionado dentro dela |
+| Item selecionado no painel | fundo tinto **e barra de acento** na borda esquerda | é o que está aberto |
+| Pasta no caminho até ele | só o peso do texto | mostra como se chegou lá |
 
-São dois degraus porque as duas coisas são verdade ao mesmo tempo: estou em **Hoje** e,
-dentro dele, a tela **Semana** está escolhida. Com a mesma marca, a segunda informação
-desapareceria na primeira.
+São três degraus porque as três coisas são verdade ao mesmo tempo: estou em **Projetos**,
+dentro dele **Fase 1** está aberto, e ele mora dentro de **Trabalho › Plataforma**.
+
+A barra substituiu um anel de 1px em volta da linha. O anel dizia "isto é uma caixa", não
+"isto é o item em que você está" — e, numa lista de linhas encostadas, virava mais um
+traço entre tantos. A barra aponta uma linha só, na margem por onde o olho desce a lista.
+
+**A barra não sobe pela árvore.** As pastas do caminho ganham apenas o peso do texto: se
+a barra subisse, três linhas diriam "é aqui" ao mesmo tempo. Sem marca nenhuma, porém, a
+pasta some entre as vizinhas e a hierarquia deixa de dizer onde se está.
 
 ### Seções do painel
 
@@ -289,9 +325,12 @@ projeto são ações diferentes, e juntá-las faria uma roubar o clique da outra
 tem filhos ganha um espaço vazio **da mesma medida exata** — na primeira versão o botão
 media diferente do espaçador, e cada linha começava num lugar.
 
-**O recuo vem do aninhamento, não de um cálculo por profundidade**, e é só recuo: sem
-traço ligando os irmãos. Cheguei a desenhar linhas-guia e tirei — elas não existem na
-referência, e com dois ou três níveis pesam mais do que ajudam.
+**O recuo vem do aninhamento, não de um cálculo por profundidade**, e leva um traço
+ligando os irmãos. Ele já esteve fora: a referência de então não o tinha, e sem ele a
+árvore parecia mais leve. A referência seguinte o tem, e com ele a subárvore lê como um
+bloco em vez de linhas soltas mais à direita. O traço é a borda esquerda da lista, não um
+desenho por linha, e `ml-4` o põe exatamente no centro do ícone do pai — 8px de padding
+mais metade de um ícone de 16. Alinhar por olho deixava um degrau visível a cada nível.
 
 **A seta fica depois do nome** (`Trabalho ⌄`), como no `work ⌄` do Linear, e não numa
 coluna antes dele — aquela coluna obrigava toda linha sem filhos a carregar um vão vazio.

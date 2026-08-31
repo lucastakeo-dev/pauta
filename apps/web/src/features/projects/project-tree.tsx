@@ -1,11 +1,15 @@
 import { Link } from '@tanstack/react-router'
 import { ChevronDown, Layers, Pencil } from 'lucide-react'
-import { buildProjectTree, type ProjectNode } from '../../entities/project/index.js'
+import {
+  buildProjectTree,
+  containsProject,
+  type ProjectNode,
+} from '../../entities/project/index.js'
 import { cn } from '../../shared/lib/cn.js'
 import { usePersistentSet } from '../../shared/lib/persistent.js'
 import { IconButton } from '../../shared/ui/icon-button.js'
 import { NamedIcon } from '../../shared/ui/icon-catalog.js'
-import { sidebarRow, sidebarRowActive } from '../../shared/ui/sidebar-row.js'
+import { sidebarRow, sidebarRowActive, sidebarRowOnPath } from '../../shared/ui/sidebar-row.js'
 import { EditProjectDialog, NewProjectDialog } from './project-dialog.js'
 import { useProjects } from './queries.js'
 
@@ -38,6 +42,7 @@ const linhaInativa = 'hover:bg-surface-raised/70'
 
 const rotulo = 'flex min-w-0 items-center gap-2 text-left text-[13px] transition-colors'
 const rotuloAtivo = 'font-medium text-ink'
+const rotuloNoCaminho = sidebarRowOnPath
 const rotuloInativo = 'text-ink-muted group-hover:text-ink'
 
 type ProjectTreeProps = {
@@ -117,6 +122,11 @@ function Node({
   const aberto = temFilhos && !recolhidos.has(node.id)
   const ativo = selectedId === node.id
 
+  // Pasta que contém o selecionado: ganha o peso do texto, não a barra. A barra aponta
+  // uma linha só — se subisse pela árvore, três linhas diriam "é aqui" ao mesmo tempo.
+  const noCaminho = !ativo && containsProject(node, selectedId)
+  const aparencia = ativo ? rotuloAtivo : noCaminho ? rotuloNoCaminho : rotuloInativo
+
   /*
     Recolhido, o contador passa a somar a subárvore. Sem isso, esconder os filhos
     esconderia junto o trabalho pendente deles — a pasta pareceria vazia tendo doze
@@ -153,7 +163,7 @@ function Node({
             onClick={() => onSelect(node.id)}
             aria-pressed={ativo}
             aria-label={descricao}
-            className={cn(rotulo, ativo ? rotuloAtivo : rotuloInativo)}
+            className={cn(rotulo, aparencia)}
           >
             {nome}
           </button>
@@ -162,7 +172,7 @@ function Node({
             to="/projects/$projectId"
             params={{ projectId: node.id }}
             aria-label={`${COPY.abrir}: ${descricao}`}
-            className={cn(rotulo, ativo ? rotuloAtivo : rotuloInativo)}
+            className={cn(rotulo, aparencia)}
           >
             {nome}
           </Link>
@@ -223,10 +233,15 @@ function Node({
 
       {aberto ? (
         /*
-          Só recuo, sem traço ligando os irmãos. A linha-guia que eu tinha desenhado não
-          existe na referência — e com dois ou três níveis pesa mais do que ajuda.
+          Recuo com traço ligando os irmãos. Ele tinha saído por não existir na
+          referência anterior; a nova o tem, e com ele a subárvore lê como um bloco em
+          vez de linhas soltas mais à direita.
+
+          `ml-4` põe o traço exatamente no centro do ícone do pai — 8px de padding mais
+          metade de um ícone de 16. Alinhar por olho deixava um degrau visível a cada
+          nível.
         */
-        <ul className="ml-[18px] flex flex-col">
+        <ul className="ml-4 flex flex-col border-line border-l pl-1">
           {node.children.map((filho) => (
             <Node
               key={filho.id}

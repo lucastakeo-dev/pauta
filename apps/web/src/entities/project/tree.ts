@@ -56,6 +56,19 @@ export function buildProjectTree(projects: ProjectView[]): ProjectNode[] {
 }
 
 /** Achata a árvore de volta, na ordem em que a tela desenha. */
+/**
+ * O projeto está nesta subárvore?
+ *
+ * A barra usa para marcar as pastas do caminho até o item selecionado. Sem isso, abrir
+ * um subprojeto deixa a linha dele acesa e todas as pastas acima apagadas — a árvore
+ * mostra onde se está sem mostrar como se chegou lá.
+ */
+export function containsProject(node: ProjectNode, id: string | undefined): boolean {
+  if (!id) return false
+
+  return node.children.some((filho) => filho.id === id || containsProject(filho, id))
+}
+
 export function flattenProjectTree(nodes: ProjectNode[]): ProjectNode[] {
   return nodes.flatMap((node) => [node, ...flattenProjectTree(node.children)])
 }

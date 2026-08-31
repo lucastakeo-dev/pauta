@@ -1,6 +1,6 @@
 import type { ProjectView } from '@pauta/contracts'
 import { describe, expect, it } from 'vitest'
-import { buildProjectTree, flattenProjectTree, projectPath } from './tree.js'
+import { buildProjectTree, containsProject, flattenProjectTree, projectPath } from './tree.js'
 
 function projeto(id: string, parentId: string | null = null, openTaskCount = 0): ProjectView {
   return {
@@ -86,5 +86,35 @@ describe('flattenProjectTree', () => {
     ])
 
     expect(flattenProjectTree(arvore).map((n) => n.id)).toEqual(['a', 'a1', 'a2', 'b'])
+  })
+})
+
+describe('containsProject', () => {
+  const arvore = buildProjectTree([
+    projeto('trabalho'),
+    projeto('plataforma', 'trabalho'),
+    projeto('fase', 'plataforma'),
+    projeto('casa'),
+  ])
+
+  const trabalho = arvore[0]
+  if (!trabalho) throw new Error('árvore vazia')
+
+  it('encontra um neto', () => {
+    expect(containsProject(trabalho, 'fase')).toBe(true)
+  })
+
+  it('não conta o próprio nó', () => {
+    // A barra usa isto para marcar as pastas *acima* do selecionado. Se o nó contasse
+    // a si mesmo, o item aberto ganharia a barra de acento e o negrito do caminho.
+    expect(containsProject(trabalho, 'trabalho')).toBe(false)
+  })
+
+  it('não atravessa para outro ramo', () => {
+    expect(containsProject(trabalho, 'casa')).toBe(false)
+  })
+
+  it('sem seleção, ninguém está no caminho', () => {
+    expect(containsProject(trabalho, undefined)).toBe(false)
   })
 })
