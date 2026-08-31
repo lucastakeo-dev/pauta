@@ -32,6 +32,17 @@ futuro ser um import, e não uma migration dolorosa.
 e só viram linha no banco quando a pessoa conclui ou edita aquela ocorrência específica. É o padrão
 de calendário; materializar tudo encheria a tabela com milhares de linhas mortas.
 
+**A janela do planner é "o que cai neste período", por bloco ou por prazo.** O filtro do
+servidor olhava só `scheduled_start`, então tarefa com prazo e sem hora nunca chegava ao
+calendário. Agora a janela também casa `due_at`, e é o cliente que decide o que vira bloco (tem
+hora) e o que vira chip na faixa do dia todo (só tem data). Uma segunda requisição só para os
+prazos daria o mesmo resultado com o dobro de idas ao servidor e um cache a mais para invalidar.
+
+**Clicar na grade cria compromisso; a alternância cria tarefa já agendada.** São as duas coisas
+que cabem num horário, e elas não se confundem: compromisso é hora marcada com alguém e não se
+conclui; tarefa é algo a fazer e continua na lista, com caixa de marcar. A tarefa criada assim
+nasce `todo`, e não `inbox` — quem escolheu o horário já decidiu o que ela é.
+
 **O inbox é a saída da captura, e processar é só trocar o status.** Tudo que entra pelo `⌘K`
 nasce com status `inbox`; a tela do inbox é onde isso vira decisão — projeto, prioridade, prazo,
 hora no planner — e "processar" muda o status para `todo` e mais nada. Não conclui nem arquiva: a

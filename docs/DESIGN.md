@@ -274,6 +274,53 @@ Na semana, hoje ganha o acento no número do dia — é a coluna que se procura 
 "nenhum compromisso" fala uma vez só, no lugar da grade: sete vezes a mesma frase seria
 ruído, não informação.
 
+## O calendário recebe o que tem data
+
+Antes, só entrava na grade o que tinha **hora**: um bloco arrastado da lista. Prazo não
+aparecia em lugar nenhum do calendário, e evento de dia inteiro virava um bloco de 24
+horas cobrindo a grade inteira. Data e hora não são a mesma coisa, e a tela precisava
+dizer isso.
+
+**A faixa do dia todo** fica acima da grade, fora da rolagem — um prazo não pode sumir de
+vista porque a grade foi rolada até as 18h. Ela some quando não há nada nela: faixa vazia
+só come altura da grade. Na semana, se existe para um dia existe para os sete — coluna
+vazia ali é informação.
+
+Uma tarefa que vence hoje **e** já tem bloco hoje fica de fora da faixa: ela já está
+desenhada logo abaixo, e repeti-la contaria a mesma coisa duas vezes. Se o bloco está em
+outro dia, ela aparece nos dois — "vence hoje" e "reservei terça para fazer" são
+informações diferentes.
+
+Os chips repetem a distinção que a grade já usa: tarefa é barra colorida do projeto sobre
+fundo neutro, evento é fundo preenchido. O mesmo par de formas vale na faixa e na grade.
+
+**O chip de prazo é arrastável para a grade.** É o gesto que transforma "vence hoje" em
+"faço às 15h" sem sair da tela — e, ao ganhar hora, o chip deixa a faixa e vira bloco.
+
+## Criar clicando no horário
+
+Clicar num horário vazio abre um cartão com um **bloco fantasma** no lugar exato: o
+horário é conferido onde ele vai ficar, não num campo de formulário. O fantasma acompanha
+a duração escolhida, e o clique encaixa no quarto de hora mais próximo.
+
+**Compromisso é o padrão**, com alternância para tarefa. Quem clica na agenda costuma
+estar marcando hora com alguém; a alternativa é reservar tempo para algo a fazer, e aí a
+tarefa nasce agendada e **já processada** — quem escolheu o horário já decidiu o que ela
+é, e mandá-la para a fila do inbox seria pedir a mesma decisão de novo.
+
+Perto do fim do dia o cartão abre para cima, e nas colunas da direita da semana ele abre
+para a esquerda: nos dois casos ele sairia da área visível e seria cortado pela rolagem.
+
+Clicar num evento abre o mesmo tipo de cartão, com renomear e **excluir**. Sem isso,
+criar na grade era um beco sem saída: o compromisso nascia ali e não havia caminho nenhum
+para desfazê-lo. Mover e redimensionar continuam sendo do arrastar, e só para tarefa —
+evento é hora marcada com alguém, e mudá-la é conversa, não gesto.
+
+Clicar na grade é **atalho de ponteiro, não o único caminho**: o `⌘K` cria com data em
+linguagem natural ("reunião amanhã 14h") e a lista tem "Agendar" para quem navega por
+teclado. O bloco de evento é um botão de verdade, então renomear e excluir também estão
+no Tab.
+
 ## O inbox: fila e detalhe
 
 A tela existe para dar saída ao que o `⌘K` captura. Antes dela, capturar era fácil e

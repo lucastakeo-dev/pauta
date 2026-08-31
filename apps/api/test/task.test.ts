@@ -272,6 +272,59 @@ describe('filtros', () => {
   })
 })
 
+describe('janela do planner', () => {
+  const JANELA =
+    'scheduledFrom=2026-09-15T00:00:00.000Z&scheduledTo=2026-09-15T23:59:59.000Z&includeDone=true'
+
+  it('traz o bloco que cai na janela', async () => {
+    await createTask(ana, {
+      title: 'Reunião',
+      scheduledStart: '2026-09-15T12:00:00.000Z',
+      scheduledEnd: '2026-09-15T13:00:00.000Z',
+    })
+
+    const janela = (await ana.get(`/tasks?${JANELA}`)).json()
+
+    expect(janela.map((t: { title: string }) => t.title)).toEqual(['Reunião'])
+  })
+
+  // O calendário desenha prazo na faixa de dia inteiro. Enquanto a janela filtrava só
+  // por `scheduledStart`, a tarefa que vence no dia nunca chegava à tela.
+  it('traz também o que vence na janela, sem hora marcada', async () => {
+    await createTask(ana, { title: 'Pagar condomínio', dueAt: '2026-09-15T12:00:00.000Z' })
+
+    const janela = (await ana.get(`/tasks?${JANELA}`)).json()
+
+    expect(janela.map((t: { title: string }) => t.title)).toEqual(['Pagar condomínio'])
+  })
+
+  it('deixa de fora prazo e bloco de outro dia', async () => {
+    await createTask(ana, { title: 'Vence depois', dueAt: '2026-09-20T12:00:00.000Z' })
+    await createTask(ana, {
+      title: 'Agendada depois',
+      scheduledStart: '2026-09-20T12:00:00.000Z',
+      scheduledEnd: '2026-09-20T13:00:00.000Z',
+    })
+
+    const janela = (await ana.get(`/tasks?${JANELA}`)).json()
+
+    expect(janela).toEqual([])
+  })
+
+  it('não repete a tarefa que tem bloco e prazo na mesma janela', async () => {
+    await createTask(ana, {
+      title: 'Revisar contrato',
+      dueAt: '2026-09-15T23:00:00.000Z',
+      scheduledStart: '2026-09-15T12:00:00.000Z',
+      scheduledEnd: '2026-09-15T13:00:00.000Z',
+    })
+
+    const janela = (await ana.get(`/tasks?${JANELA}`)).json()
+
+    expect(janela).toHaveLength(1)
+  })
+})
+
 describe('recorrência', () => {
   const JANELA = 'scheduledFrom=2026-09-01T00:00:00.000Z&scheduledTo=2026-09-30T23:59:59.000Z'
 

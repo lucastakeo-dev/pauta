@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import {
   dayKey,
   HOURS_IN_DAY,
@@ -7,6 +7,7 @@ import {
   weekdayLabel,
 } from '../../entities/planner/index.js'
 import { cn } from '../../shared/lib/cn.js'
+import { AllDayBand, AllDayGutter } from './all-day-band.js'
 import {
   DayColumn,
   HOUR_HEIGHT,
@@ -33,6 +34,7 @@ export function WeekGrid({ reference }: { reference: Date }) {
   const { days, isPending, isError } = useWeekPlanner(reference)
   const scrollRef = useRef<HTMLDivElement>(null)
   const now = useNowTick()
+  const [slot, setSlot] = useState<Date | null>(null)
 
   const hoje = new Date()
   const contemHoje = isSameDay(startOfWeek(reference), startOfWeek(hoje))
@@ -64,18 +66,39 @@ export function WeekGrid({ reference }: { reference: Date }) {
         ))}
       </div>
 
+      {/* A faixa acompanha o cabeçalho fora da rolagem, e só existe quando algum dia
+          da semana tem prazo ou evento de dia inteiro. Quando existe, existe para os
+          sete: uma coluna vazia aqui é informação — não vence nada naquele dia. */}
+      {days.some((dia) => dia.allDay.length > 0) ? (
+        <div data-planner-allday className="flex shrink-0 border-line border-b">
+          <AllDayGutter width={RULER_WIDTH} />
+          {days.map(({ day, allDay }) => (
+            <AllDayBand
+              key={dayKey(day)}
+              items={allDay}
+              className="min-w-0 flex-1 border-line border-l"
+            />
+          ))}
+        </div>
+      ) : null}
+
       <div ref={scrollRef} data-planner-scroll className="relative min-h-0 flex-1 overflow-y-auto">
         <div className="relative flex" style={{ height: HOURS_IN_DAY * HOUR_HEIGHT }}>
           <HourLines />
 
           <div className="shrink-0" style={{ width: RULER_WIDTH }} />
 
-          {days.map(({ day, items }) => (
+          {days.map(({ day, items }, indice) => (
             <DayColumn
               key={dayKey(day)}
               day={day}
               items={items}
               now={now}
+              slot={slot && isSameDay(slot, day) ? slot : null}
+              onSlot={setSlot}
+              // Da quinta em diante o cartão abre para a esquerda: aberto para a
+              // direita, ele sairia pela borda da tela nas últimas colunas.
+              alignRight={indice >= 4}
               // Sete vezes "nenhum compromisso neste dia" é ruído, não informação: a
               // semana vazia fala uma vez só, no lugar da grade.
               showEmpty={false}

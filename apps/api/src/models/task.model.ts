@@ -123,6 +123,8 @@ const OPEN_STATUSES: TaskStatus[] = ['inbox', 'todo', 'doing']
 
 export async function list(userId: string, query: ListTasksQuery): Promise<TaskRecord[]> {
   const hasWindow = query.scheduledFrom !== undefined && query.scheduledTo !== undefined
+  const from = hasWindow ? new Date(query.scheduledFrom as string) : null
+  const to = hasWindow ? new Date(query.scheduledTo as string) : null
 
   const where = {
     userId,
@@ -133,12 +135,12 @@ export async function list(userId: string, query: ListTasksQuery): Promise<TaskR
     ...(query.parentId ? { parentId: query.parentId } : query.rootOnly ? { parentId: null } : {}),
     ...(query.search ? { title: { contains: query.search, mode: 'insensitive' as const } } : {}),
     ...(query.dueBefore ? { dueAt: { lte: new Date(query.dueBefore) } } : {}),
-    ...(hasWindow
+    // A janela é "o que cai neste período", e prazo também cai: uma tarefa que vence
+    // terça precisa aparecer na terça mesmo sem hora marcada — é a faixa de dia inteiro
+    // do calendário. Enquanto só o bloco entrava aqui, o calendário ignorava todo prazo.
+    ...(hasWindow && from && to
       ? {
-          scheduledStart: {
-            gte: new Date(query.scheduledFrom as string),
-            lte: new Date(query.scheduledTo as string),
-          },
+          OR: [{ scheduledStart: { gte: from, lte: to } }, { dueAt: { gte: from, lte: to } }],
         }
       : {}),
     // Numa janela, quem aparece são as ocorrências — o molde da recorrência fica de fora
@@ -161,11 +163,7 @@ export async function list(userId: string, query: ListTasksQuery): Promise<TaskR
     return materialized
   }
 
-  const virtuals = await expandRecurrences(
-    userId,
-    new Date(query.scheduledFrom as string),
-    new Date(query.scheduledTo as string),
-  )
+  const virtuals = await expandRecurrences(userId, from as Date, to as Date)
 
   return [...materialized, ...virtuals].sort(
     (a, b) =>

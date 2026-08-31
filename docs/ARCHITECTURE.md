@@ -121,6 +121,7 @@ pnpm smoke:projects <dir>  # árvore de projetos, ícones e página do projeto
 pnpm smoke:write <dir>     # escritas otimistas: atrasa e derruba requisições de propósito
 pnpm smoke:planner <dir>   # grade do dia
 pnpm smoke:drag <dir>      # arrastar tarefa para o planner
+pnpm smoke:calendar <dir>  # faixa do dia todo, criar clicando na grade, editar evento
 pnpm smoke:polish <dir>    # foco, teclado e estados vazios
 pnpm smoke:console <dir>   # captura rápida (Ctrl+K)
 pnpm smoke:notes <dir>     # editor, nota diária e backlinks
@@ -171,7 +172,7 @@ convivem porque nenhum lado usa os do outro.
 ## Endpoints
 
 Públicos: `GET /health`, `POST /auth/register`, `POST /auth/login`.
-Com token: `GET /auth/me`, e os CRUDs de `/tasks`, `/projects` e `/labels`.
+Com token: `GET /auth/me`, e os CRUDs de `/tasks`, `/projects`, `/labels`, `/events` e `/notes`.
 
 `GET /tasks` aceita `projectId`, `labelId`, `status`, `parentId`, `rootOnly`, `search`,
 `dueBefore`, `includeDone` e a janela `scheduledFrom`/`scheduledTo`. **Com a janela, as

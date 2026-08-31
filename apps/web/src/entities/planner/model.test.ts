@@ -20,6 +20,7 @@ import {
   snapMinutes,
   startOfWeek,
   timeFromOffset,
+  toAllDayItems,
   toDateInputValue,
   toPlannerItems,
   toTimeInputValue,
@@ -176,6 +177,22 @@ describe('toPlannerItems', () => {
         }),
       ],
       [event({ startsAt: at(20, 9).toISOString(), endsAt: at(20, 10).toISOString() })],
+      DIA,
+    )
+
+    expect(items).toEqual([])
+  })
+
+  it('não desenha evento de dia inteiro na grade de horas', () => {
+    const items = toPlannerItems(
+      [],
+      [
+        event({
+          allDay: true,
+          startsAt: at(15, 0).toISOString(),
+          endsAt: at(16, 0).toISOString(),
+        }),
+      ],
       DIA,
     )
 
@@ -492,5 +509,97 @@ describe('semana', () => {
     // Às 21h de Brasília o `toISOString()` já virou o dia seguinte; se a chave viesse
     // dele, o bloco cairia na coluna errada toda noite.
     expect(dayKey(new Date(2026, 8, 3, 21, 0))).toBe('2026-09-03')
+  })
+})
+
+describe('toAllDayItems', () => {
+  it('mostra a tarefa que vence no dia', () => {
+    const items = toAllDayItems([task({ dueAt: at(15, 12).toISOString() })], [], DIA)
+
+    expect(items).toHaveLength(1)
+    expect(items[0]?.kind).toBe('task')
+  })
+
+  it('ignora prazo de outro dia', () => {
+    const items = toAllDayItems([task({ dueAt: at(20, 12).toISOString() })], [], DIA)
+
+    expect(items).toEqual([])
+  })
+
+  it('ignora tarefa sem prazo', () => {
+    const items = toAllDayItems([task()], [], DIA)
+
+    expect(items).toEqual([])
+  })
+
+  it('não repete a tarefa que já tem bloco no mesmo dia', () => {
+    const items = toAllDayItems(
+      [
+        task({
+          dueAt: at(15, 12).toISOString(),
+          scheduledStart: at(15, 9).toISOString(),
+          scheduledEnd: at(15, 10).toISOString(),
+        }),
+      ],
+      [],
+      DIA,
+    )
+
+    expect(items).toEqual([])
+  })
+
+  it('mostra a que vence hoje e está agendada para outro dia', () => {
+    const items = toAllDayItems(
+      [
+        task({
+          dueAt: at(15, 12).toISOString(),
+          scheduledStart: at(17, 9).toISOString(),
+          scheduledEnd: at(17, 10).toISOString(),
+        }),
+      ],
+      [],
+      DIA,
+    )
+
+    expect(items).toHaveLength(1)
+  })
+
+  it('mostra evento de dia inteiro e ignora o que tem hora', () => {
+    const items = toAllDayItems(
+      [],
+      [event({ id: 'inteiro', allDay: true }), event({ id: 'com-hora', allDay: false })],
+      DIA,
+    )
+
+    expect(items.map((item) => item.id)).toEqual(['inteiro'])
+  })
+
+  it('põe o evento antes dos prazos, e o prazo mais urgente na frente', () => {
+    const items = toAllDayItems(
+      [
+        task({ id: 'p4', priority: 4, dueAt: at(15, 12).toISOString() }),
+        task({ id: 'p1', priority: 1, dueAt: at(15, 12).toISOString() }),
+      ],
+      [event({ id: 'feriado', allDay: true })],
+      DIA,
+    )
+
+    expect(items.map((item) => item.id)).toEqual(['feriado', 'p1', 'p4'])
+  })
+
+  it('leva projeto e estimativa para o chip', () => {
+    const items = toAllDayItems(
+      [
+        task({
+          dueAt: at(15, 12).toISOString(),
+          estimateMin: 45,
+          project: { id: 'p', name: 'Casa', color: '#4FB477', icon: 'house' },
+        }),
+      ],
+      [],
+      DIA,
+    )
+
+    expect(items[0]).toMatchObject({ color: '#4FB477', projectIcon: 'house', estimateMin: 45 })
   })
 })

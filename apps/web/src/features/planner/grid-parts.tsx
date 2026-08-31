@@ -6,10 +6,13 @@ import {
   hourLabel,
   type LaidOutItem,
   nowOffset,
+  timeFromOffset,
   WORKDAY_START_HOUR,
 } from '../../entities/planner/index.js'
 import { cn } from '../../shared/lib/cn.js'
+import { EventPopover } from './event-popover.js'
 import { plannerDropId } from './planner-dnd.js'
+import { SlotComposer } from './slot-composer.js'
 import { TimeBlock } from './time-block.js'
 
 const COPY = {
@@ -107,6 +110,11 @@ type DayColumnProps = {
   now: Date
   /** Some quando a grade ainda está carregando: "vazio" e "ainda não chegou" são coisas diferentes. */
   showEmpty: boolean
+  /** Horário em que o compositor está aberto nesta coluna, ou `null`. */
+  slot: Date | null
+  onSlot: (start: Date | null) => void
+  /** Na semana, as colunas da direita abrem o cartão para a esquerda. */
+  alignRight?: boolean
   className?: string
   style?: React.CSSProperties
 }
@@ -117,22 +125,63 @@ type DayColumnProps = {
  * Cada coluna é um alvo próprio, com o dia no id. É isso que faz a semana funcionar sem
  * uma segunda regra de arrastar: quem recebe a soltura já sabe em que dia caiu.
  */
-export function DayColumn({ day, items, now, showEmpty, className, style }: DayColumnProps) {
+export function DayColumn({
+  day,
+  items,
+  now,
+  showEmpty,
+  slot,
+  onSlot,
+  alignRight,
+  className,
+  style,
+}: DayColumnProps) {
   // O alvo é a área de 24h, não o container com rolagem: assim `over.rect.top` já
   // desconta a rolagem, e a conta de "onde caiu" vale em qualquer posição do scroll.
   const { setNodeRef } = useDroppable({ id: plannerDropId(day) })
   const marker = nowOffset(day, HOUR_HEIGHT, now)
 
+  // Um cartão por vez nesta coluna: abrir um fecha o outro, senão a coluna acumularia
+  // dois cartões sobrepostos falando de coisas diferentes.
+  const [eventoAberto, setEventoAberto] = useState<string | null>(null)
+  const evento = items.find((item) => item.id === eventoAberto) ?? null
+
+  function abrirCompositor(event: React.MouseEvent<HTMLDivElement>) {
+    // Só o fundo da coluna abre o compositor. Clique que nasce num bloco é do bloco —
+    // e sem esta linha, fechar o cartão clicando fora abriria outro em seguida.
+    if (event.target !== event.currentTarget) return
+
+    const rect = event.currentTarget.getBoundingClientRect()
+    setEventoAberto(null)
+    onSlot(timeFromOffset(event.clientY - rect.top, day, HOUR_HEIGHT))
+  }
+
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: clicar na grade é atalho de ponteiro; pelo teclado se cria no ⌘K ("reunião amanhã 14h") ou em "Agendar", na lista
+    // biome-ignore lint/a11y/useKeyWithClickEvents: idem — a grade não é um controle, é a superfície onde os blocos moram
     <div
       ref={setNodeRef}
       data-planner-grid
       data-day={dayKey(day)}
+      onClick={abrirCompositor}
       className={cn('relative', className)}
       style={style}
     >
       {items.map((item) => (
-        <TimeBlock key={item.id} item={item} day={day} hourHeight={HOUR_HEIGHT} />
+        <TimeBlock
+          key={item.id}
+          item={item}
+          day={day}
+          hourHeight={HOUR_HEIGHT}
+          onOpen={
+            item.kind === 'event'
+              ? () => {
+                  onSlot(null)
+                  setEventoAberto(item.id)
+                }
+              : undefined
+          }
+        />
       ))}
 
       {showEmpty && items.length === 0 ? (
@@ -142,6 +191,26 @@ export function DayColumn({ day, items, now, showEmpty, className, style }: DayC
         >
           {COPY.vazio}
         </p>
+      ) : null}
+
+      {evento ? (
+        <EventPopover
+          item={evento}
+          day={day}
+          hourHeight={HOUR_HEIGHT}
+          alignRight={alignRight}
+          onClose={() => setEventoAberto(null)}
+        />
+      ) : null}
+
+      {slot ? (
+        <SlotComposer
+          start={slot}
+          day={day}
+          hourHeight={HOUR_HEIGHT}
+          alignRight={alignRight}
+          onClose={() => onSlot(null)}
+        />
       ) : null}
 
       {marker !== null ? (
