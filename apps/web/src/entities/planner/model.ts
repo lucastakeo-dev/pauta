@@ -352,6 +352,23 @@ export const DEFAULT_BLOCK_MINUTES = 60
 export const MIN_DURATION_MINUTES = 15
 
 /**
+ * As durações oferecidas ao agendar.
+ *
+ * Mora aqui, e não na tela, porque duas features perguntam a mesma coisa: o formulário
+ * de agendar da lista de tarefas e o compositor que abre ao clicar na grade. Duas
+ * listas divergentes dariam 45 minutos num lugar e não no outro.
+ */
+export const BLOCK_DURATIONS = [15, 30, 45, 60, 90, 120, 180] as const
+
+/** `45 min`, `1h`, `1h30` — curto porque divide a linha com a hora de início. */
+export function durationLabel(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`
+  if (minutes % 60 === 0) return `${minutes / 60}h`
+
+  return `${Math.floor(minutes / 60)}h${minutes % 60}`
+}
+
+/**
  * O que viaja no arrastar. Fica aqui, em `entities`, porque as duas features precisam
  * concordar sobre o formato sem uma importar a outra: a lista de tarefas produz, a
  * grade consome.

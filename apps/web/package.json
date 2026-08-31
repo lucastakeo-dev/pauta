@@ -15,6 +15,7 @@
     "smoke:inbox": "node scripts/smoke-inbox.mjs",
     "smoke:planner": "node scripts/smoke-planner.mjs",
     "smoke:drag": "node scripts/smoke-drag.mjs",
+    "smoke:calendar": "node scripts/smoke-calendar.mjs",
     "smoke:polish": "node scripts/smoke-polish.mjs",
     "smoke:console": "node scripts/smoke-console.mjs",
     "smoke:notes": "node scripts/smoke-notes.mjs",

@@ -1,8 +1,10 @@
 import type { TaskView } from '@pauta/contracts'
 import { type FormEvent, useId, useState } from 'react'
 import {
+  BLOCK_DURATIONS,
   DEFAULT_BLOCK_MINUTES,
   durationInMinutes,
+  durationLabel,
   fromDateTimeInputs,
   toDateInputValue,
   toTimeInputValue,
@@ -17,14 +19,6 @@ const COPY = {
   limpar: 'Tirar do planner',
   fechar: 'Cancelar',
   invalido: 'Informe data e hora.',
-}
-
-const DURACOES = [15, 30, 45, 60, 90, 120, 180] as const
-
-function rotuloDuracao(minutes: number): string {
-  if (minutes < 60) return `${minutes} min`
-  if (minutes % 60 === 0) return `${minutes / 60}h`
-  return `${Math.floor(minutes / 60)}h${minutes % 60}`
 }
 
 type TaskScheduleProps = {
@@ -116,9 +110,9 @@ export function TaskSchedule({ task, onClose }: TaskScheduleProps) {
           onChange={(event) => setDuration(Number(event.target.value))}
           className="h-8 rounded-[4px] border border-line bg-surface px-2 text-ink text-xs outline-none focus:border-iris"
         >
-          {DURACOES.map((minutos) => (
+          {BLOCK_DURATIONS.map((minutos) => (
             <option key={minutos} value={minutos}>
-              {rotuloDuracao(minutos)}
+              {durationLabel(minutos)}
             </option>
           ))}
         </select>

@@ -1,6 +1,7 @@
 export {
   type AllDayItem,
   addDays,
+  BLOCK_DURATIONS,
   blockGeometry,
   DAYS_IN_WEEK,
   DEFAULT_BLOCK_MINUTES,
@@ -9,6 +10,7 @@ export {
   dayKey,
   dayLabel,
   durationInMinutes,
+  durationLabel,
   fitBlockInDay,
   fromDateTimeInputs,
   HOURS_IN_DAY,

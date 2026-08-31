@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { dayKey, HOURS_IN_DAY, isSameDay } from '../../entities/planner/index.js'
 import { AllDayBand, AllDayGutter } from './all-day-band.js'
 import {
@@ -21,6 +21,10 @@ export function DayGrid({ day }: { day: Date }) {
   const { items, allDay, isPending, isError } = useDayPlanner(day)
   const scrollRef = useRef<HTMLDivElement>(null)
   const now = useNowTick()
+
+  // O compositor aberto pertence a um dia. Trocar de dia fecha sozinho, sem efeito:
+  // o horário guardado simplesmente não é mais deste dia.
+  const [slot, setSlot] = useState<Date | null>(null)
 
   useOpenAtWorkday(scrollRef, dayKey(day), isSameDay(day, new Date()))
 
@@ -60,6 +64,8 @@ export function DayGrid({ day }: { day: Date }) {
             items={items}
             now={now}
             showEmpty={!isPending}
+            slot={slot && isSameDay(slot, day) ? slot : null}
+            onSlot={setSlot}
             className="absolute top-0 right-0 bottom-0"
             style={{ left: RULER_WIDTH }}
           />

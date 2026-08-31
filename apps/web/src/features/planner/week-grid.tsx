@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import {
   dayKey,
   HOURS_IN_DAY,
@@ -34,6 +34,7 @@ export function WeekGrid({ reference }: { reference: Date }) {
   const { days, isPending, isError } = useWeekPlanner(reference)
   const scrollRef = useRef<HTMLDivElement>(null)
   const now = useNowTick()
+  const [slot, setSlot] = useState<Date | null>(null)
 
   const hoje = new Date()
   const contemHoje = isSameDay(startOfWeek(reference), startOfWeek(hoje))
@@ -87,12 +88,17 @@ export function WeekGrid({ reference }: { reference: Date }) {
 
           <div className="shrink-0" style={{ width: RULER_WIDTH }} />
 
-          {days.map(({ day, items }) => (
+          {days.map(({ day, items }, indice) => (
             <DayColumn
               key={dayKey(day)}
               day={day}
               items={items}
               now={now}
+              slot={slot && isSameDay(slot, day) ? slot : null}
+              onSlot={setSlot}
+              // Da quinta em diante o cartão abre para a esquerda: aberto para a
+              // direita, ele sairia pela borda da tela nas últimas colunas.
+              alignRight={indice >= 4}
               // Sete vezes "nenhum compromisso neste dia" é ruído, não informação: a
               // semana vazia fala uma vez só, no lugar da grade.
               showEmpty={false}

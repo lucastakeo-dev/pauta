@@ -6,7 +6,8 @@ import { NamedIcon } from '../../shared/ui/icon-catalog.js'
 
 const COPY = {
   faixa: 'Dia todo',
-  arrastar: 'Arrastar para o planner',
+  // Não é "para o planner": o chip já está nele. O que o arrasto faz é dar hora.
+  arrastar: 'Arrastar para um horário',
   vence: 'Vence hoje',
 }
 

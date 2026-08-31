@@ -9,6 +9,7 @@ import { cn } from '../../shared/lib/cn.js'
 import { useResizeBlock } from './use-resize-block.js'
 
 const COPY = {
+  abrir: 'Abrir',
   mover: 'Mover',
   redimensionar: 'Ajustar duração de',
 }
@@ -20,6 +21,8 @@ type TimeBlockProps = {
   item: LaidOutItem
   day: Date
   hourHeight: number
+  /** Só evento tem: é o clique que abre renomear e excluir. */
+  onOpen?: (() => void) | undefined
 }
 
 /** Folga entre colunas vizinhas, para as bordas não se colarem. */
@@ -35,7 +38,7 @@ const COLUMN_GAP_PERCENT = 1
  * Só tarefa se move e se redimensiona — evento é compromisso marcado, e reagendá-lo
  * é assunto do calendário de origem, não do arrastar.
  */
-export function TimeBlock({ item, day, hourHeight }: TimeBlockProps) {
+export function TimeBlock({ item, day, hourHeight, onOpen }: TimeBlockProps) {
   const { top, height } = blockGeometry(item, day, hourHeight)
   const isTask = item.kind === 'task'
   const movable = isTask && !item.continuesFromPreviousDay && !item.continuesToNextDay
@@ -89,6 +92,18 @@ export function TimeBlock({ item, day, hourHeight }: TimeBlockProps) {
           aria-hidden="true"
           className="absolute top-0 bottom-0 left-0 w-[3px] rounded-l-[6px]"
           style={{ backgroundColor: accent }}
+        />
+      ) : null}
+
+      {/* O evento é um botão de verdade cobrindo o bloco: além do clique, entra na
+          ordem do Tab, e é por ele que quem usa teclado chega a renomear e excluir.
+          Tarefa não tem — ela se move, e um botão por cima roubaria o arrasto. */}
+      {onOpen ? (
+        <button
+          type="button"
+          onClick={onOpen}
+          aria-label={`${COPY.abrir} ${item.title}`}
+          className="absolute inset-0 z-10 size-full cursor-pointer"
         />
       ) : null}
 
