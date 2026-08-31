@@ -171,3 +171,26 @@ describe('apagar projeto com filhos', () => {
     expect((await ana.get(`/tasks/${tarefa.id}`)).json().projectId).toBe(api.id)
   })
 })
+
+describe('edição parcial do projeto', () => {
+  it('trocar um campo não repinta o projeto', async () => {
+    // `updateProjectSchema` herdava o `.default()` da cor, e `.partial()` não desfaz
+    // isso: todo PATCH chegava ao model carregando a cor azul padrão.
+    const casa = (await ana.post('/projects', { name: 'Casa', color: '#4FB477' })).json()
+
+    await ana.patch(`/projects/${casa.id}`, { icon: 'coffee' })
+
+    expect((await ana.get('/projects')).json()[0]).toMatchObject({
+      color: '#4FB477',
+      icon: 'coffee',
+    })
+  })
+
+  it('recusa PATCH sem campo nenhum', async () => {
+    // Pelo mesmo motivo o "envie ao menos um campo" nunca disparava — o corpo vazio
+    // já chegava ao refine com uma chave dentro.
+    const casa = await projeto(ana, 'Casa')
+
+    expect((await ana.patch(`/projects/${casa.id}`, {})).statusCode).toBe(400)
+  })
+})
