@@ -18,11 +18,23 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('30d'),
 
   /*
-   * A chave do agente. Opcional de propósito: sem ela o app inteiro continua
-   * funcionando e só o Agent responde 503 dizendo o que falta. Uma chave obrigatória
-   * transformaria um recurso a mais num pré-requisito para abrir o app.
+   * O Agent.
+   *
+   * O provedor é escolha de quem hospeda: a AI SDK fala com os três pelo mesmo código,
+   * e cada adaptador lê a própria chave do ambiente com o nome canônico dela. Por isso
+   * não existe uma `AI_API_KEY` genérica aqui — inventar um nome só nosso obrigaria a
+   * repassar a chave manualmente e quebraria a convenção que a biblioteca já segue.
+   *
+   * Tudo opcional de propósito: sem chave o app inteiro continua funcionando e só o
+   * Agent responde dizendo o que falta. Um recurso a mais nunca vira pré-requisito
+   * para abrir a tela.
    */
+  AI_PROVIDER: z.enum(['anthropic', 'openai', 'google']).default('anthropic'),
+  AI_MODEL: z.string().min(1).default('claude-opus-5'),
+
   ANTHROPIC_API_KEY: z.string().min(1).optional(),
+  OPENAI_API_KEY: z.string().min(1).optional(),
+  GOOGLE_GENERATIVE_AI_API_KEY: z.string().min(1).optional(),
 
   PORT: z.coerce.number().int().positive().default(3334),
   HOST: z.string().default('0.0.0.0'),

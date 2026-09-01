@@ -241,8 +241,9 @@ motivo de não ter acontecido.
 agente que interpreta mal e cria uma tarefa a mais custa um clique; um que apaga o
 projeto errado custa o histórico. Excluir continua sendo gesto humano, com confirmação.
 
-Sem `ANTHROPIC_API_KEY` no servidor, o app inteiro funciona igual e só o Agent responde
-dizendo o que falta — um recurso a mais nunca vira pré-requisito para abrir a tela.
+Sem a chave do provedor no servidor, o app inteiro funciona igual e só o Agent responde
+dizendo qual variável falta — um recurso a mais nunca vira pré-requisito para abrir a
+tela.
 
 ## Moldura: trilho, painel e tela
 

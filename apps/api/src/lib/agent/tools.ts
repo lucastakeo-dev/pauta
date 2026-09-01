@@ -1,4 +1,3 @@
-import type Anthropic from '@anthropic-ai/sdk'
 import {
   createEventSchema,
   createProjectSchema,
@@ -6,6 +5,7 @@ import {
   type ListTasksQuery,
   updateTaskSchema,
 } from '@pauta/contracts'
+import { type ToolSet, tool } from 'ai'
 import { z } from 'zod'
 import * as eventModel from '../../models/event.model.js'
 import * as projectModel from '../../models/project.model.js'
@@ -28,7 +28,7 @@ const idSchema = z.string().uuid()
 /** O esquema de entrada de cada ferramenta, e o que fazer com ele. */
 type Ferramenta = {
   descricao: string
-  entrada: z.ZodType
+  entrada: z.ZodObject
   /** Devolve a linha que a pessoa lê no painel e o que volta para o modelo. */
   executar: (userId: string, input: unknown) => Promise<{ resumo: string; resultado: unknown }>
 }
@@ -205,14 +205,38 @@ const FERRAMENTAS: Record<string, Ferramenta> = {
   criar_compromisso: criarCompromisso,
 }
 
-/** As definições que vão na requisição, geradas do mesmo schema que valida a entrada. */
-export const agentTools: Anthropic.Tool[] = Object.entries(FERRAMENTAS).map(([name, tool]) => ({
-  name,
-  description: tool.descricao,
-  input_schema: z.toJSONSchema(tool.entrada, { io: 'input' }) as Anthropic.Tool['input_schema'],
-}))
-
 export type AgentToolResult = { resumo: string; resultado: unknown; ok: boolean }
+
+/**
+ * As ferramentas no formato que a AI SDK entende, amarradas a uma pessoa.
+ *
+ * São montadas por pedido porque cada `execute` precisa do `userId` — e é dentro dele
+ * que o aviso sai para a tela, no instante em que a ferramenta roda. Esperar o fim do
+ * turno para contar o que foi feito perderia justamente a parte que dá para conferir.
+ */
+export function buildAgentTools(
+  userId: string,
+  aoRodar: (saida: AgentToolResult & { tool: string }) => void,
+): ToolSet {
+  const conjunto: ToolSet = {}
+
+  for (const [name, ferramenta] of Object.entries(FERRAMENTAS)) {
+    conjunto[name] = tool({
+      description: ferramenta.descricao,
+      inputSchema: ferramenta.entrada,
+      execute: async (input: unknown) => {
+        const saida = await runAgentTool(userId, name, input)
+        aoRodar({ ...saida, tool: name })
+
+        // O resultado volta como texto: é o que o modelo lê para decidir o passo
+        // seguinte, e erro nenhum sobe daqui — ele também é resultado.
+        return JSON.stringify(saida.resultado)
+      },
+    })
+  }
+
+  return conjunto
+}
 
 /**
  * Roda uma ferramenta.

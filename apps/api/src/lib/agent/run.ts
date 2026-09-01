@@ -1,18 +1,16 @@
-import Anthropic from '@anthropic-ai/sdk'
 import type { AgentEvent, AgentMessage } from '@pauta/contracts'
-import { env } from '../../config/env.js'
-import { agentTools, runAgentTool } from './tools.js'
+import { isStepCount, type ModelMessage, streamText } from 'ai'
+import { agentKeyName, agentKeyPresente, agentModel } from './provider.js'
+import { buildAgentTools } from './tools.js'
 
 /**
- * Teto de idas ao modelo num turno.
+ * Teto de passos num turno.
  *
- * Cada ida é uma resposta que pode pedir mais ferramentas. Oito cobre com folga o que
+ * Cada passo é uma resposta que pode pedir mais ferramentas. Oito cobre com folga o que
  * um pedido real precisa ("lista o inbox, processa o que é de casa") e impede que uma
  * interpretação ruim vire um laço que gasta sozinho.
  */
-const MAX_IDAS = 8
-
-const MODELO = 'claude-opus-5'
+const MAX_PASSOS = 8
 
 /**
  * O que o modelo precisa saber sobre este app.
@@ -46,29 +44,35 @@ function systemPrompt(agora: Date, timezone: string): string {
 }
 
 /**
- * A falha em pt-BR, sem o corpo cru da API.
+ * O status HTTP que veio junto do erro, quando veio.
+ *
+ * Lido por forma e não por classe do provedor: a AI SDK embrulha o erro de cada um num
+ * tipo próprio, e depender do nome da classe faria a mensagem certa depender de qual
+ * adaptador está instalado.
+ */
+function statusDoErro(cause: unknown): number | undefined {
+  if (typeof cause !== 'object' || cause === null) return undefined
+
+  const status = (cause as { statusCode?: unknown }).statusCode
+  return typeof status === 'number' ? status : undefined
+}
+
+/**
+ * A falha em pt-BR, sem o corpo cru da resposta.
  *
  * O que a pessoa lê precisa dizer o que fazer, e `401 {"type":"error"…}` não diz. O
  * detalhe continua existindo: vai para o log do servidor, que é de quem precisa dele.
  */
 function mensagemDoErro(cause: unknown): string {
-  if (cause instanceof Anthropic.AuthenticationError) {
-    return 'A chave do Agent não foi aceita pela Anthropic.'
-  }
+  const status = statusDoErro(cause)
 
-  if (cause instanceof Anthropic.RateLimitError) {
-    return 'O Agent está sendo usado demais agora. Tente de novo em instantes.'
-  }
+  if (status === 401 || status === 403)
+    return `A chave do Agent (${agentKeyName()}) não foi aceita.`
+  if (status === 429) return 'O Agent está sendo usado demais agora. Tente de novo em instantes.'
+  if (status !== undefined && status >= 500) return 'O provedor do Agent está fora do ar.'
+  if (status !== undefined) return `O Agent recusou o pedido (${status}).`
 
-  if (cause instanceof Anthropic.APIConnectionError) {
-    return 'Não consegui falar com o Agent. Verifique a conexão.'
-  }
-
-  if (cause instanceof Anthropic.APIError) {
-    return `O Agent recusou o pedido (${cause.status}).`
-  }
-
-  return 'O Agent falhou no meio do caminho.'
+  return 'Não consegui falar com o Agent. Verifique a conexão.'
 }
 
 type Emitir = (evento: AgentEvent) => void
@@ -76,13 +80,14 @@ type Emitir = (evento: AgentEvent) => void
 /**
  * Um turno do agente, do pedido até a resposta final.
  *
- * O laço é manual, e não o tool runner do SDK, porque cada ferramenta executada precisa
- * virar um evento na tela **no instante em que roda** — é isso que deixa a pessoa
- * conferir o que foi mexido sem esperar o texto final.
+ * A AI SDK cuida do laço — pedir, executar ferramenta, pedir de novo — e nós lemos o
+ * `fullStream` para transformar cada pedaço no evento que a tela entende. Foi essa
+ * camada que tornou o provedor uma escolha de ambiente: trocar de modelo não mexe em
+ * nada daqui para baixo.
  *
  * Nada estoura para fora: a falha vira evento de erro e o motivo cru volta no retorno,
- * para o controller registrar no log. Uma exceção subindo aqui derrubaria o SSE no meio
- * e a tela ficaria esperando para sempre.
+ * para o controller registrar. Uma exceção subindo aqui derrubaria o SSE no meio e a
+ * tela ficaria esperando para sempre.
  */
 export async function runAgent({
   userId,
@@ -97,68 +102,42 @@ export async function runAgent({
   emitir: Emitir
   agora?: Date
 }): Promise<{ erro?: unknown }> {
-  if (!env.ANTHROPIC_API_KEY) {
-    emitir({ type: 'erro', message: 'O Agent precisa de uma ANTHROPIC_API_KEY configurada.' })
+  if (!agentKeyPresente()) {
+    emitir({ type: 'erro', message: `O Agent precisa de uma ${agentKeyName()} configurada.` })
     return {}
   }
 
-  const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY })
-  const conversa: Anthropic.MessageParam[] = messages.map((mensagem) => ({
+  const conversa: ModelMessage[] = messages.map((mensagem) => ({
     role: mensagem.role,
     content: mensagem.content,
   }))
 
   try {
-    for (let ida = 0; ida < MAX_IDAS; ida += 1) {
-      const stream = client.messages.stream({
-        model: MODELO,
-        max_tokens: 16_000,
-        // O trabalho é pequeno e conversado: consultar, criar, ajustar. Esforço médio
-        // responde rápido e continua acertando; `high` só encareceria a espera.
-        output_config: { effort: 'medium' },
-        thinking: { type: 'adaptive' },
-        system: systemPrompt(agora, timezone),
-        tools: agentTools,
-        messages: conversa,
-      })
+    const stream = streamText({
+      model: agentModel(),
+      system: systemPrompt(agora, timezone),
+      messages: conversa,
+      tools: buildAgentTools(userId, ({ tool, resumo, ok }) =>
+        emitir({ type: 'acao', tool, resumo, ok }),
+      ),
+      stopWhen: isStepCount(MAX_PASSOS),
+    })
 
-      stream.on('text', (delta) => emitir({ type: 'texto', delta }))
+    let falha: unknown
 
-      const resposta = await stream.finalMessage()
+    for await (const parte of stream.fullStream) {
+      if (parte.type === 'text-delta') emitir({ type: 'texto', delta: parte.text })
 
-      if (resposta.stop_reason === 'refusal') {
-        emitir({ type: 'erro', message: 'Não consigo responder a isso.' })
-        return {}
-      }
-
-      const chamadas = resposta.content.filter(
-        (bloco): bloco is Anthropic.ToolUseBlock => bloco.type === 'tool_use',
-      )
-
-      if (chamadas.length === 0) return {}
-
-      conversa.push({ role: 'assistant', content: resposta.content })
-
-      // Em paralelo, e todos os resultados numa mensagem só: separá-los ensina o modelo
-      // a parar de pedir ferramentas em paralelo.
-      const resultados = await Promise.all(
-        chamadas.map(async (chamada) => {
-          const saida = await runAgentTool(userId, chamada.name, chamada.input)
-          emitir({ type: 'acao', tool: chamada.name, resumo: saida.resumo, ok: saida.ok })
-
-          return {
-            type: 'tool_result' as const,
-            tool_use_id: chamada.id,
-            content: JSON.stringify(saida.resultado),
-            ...(saida.ok ? {} : { is_error: true }),
-          }
-        }),
-      )
-
-      conversa.push({ role: 'user', content: resultados })
+      // O erro chega como pedaço do fluxo, não como exceção: o turno pode ter escrito
+      // metade da resposta antes de quebrar, e essa metade já está na tela.
+      if (parte.type === 'error') falha = parte.error
     }
 
-    emitir({ type: 'erro', message: 'Parei por aqui: o pedido deu voltas demais.' })
+    if (falha) {
+      emitir({ type: 'erro', message: mensagemDoErro(falha) })
+      return { erro: falha }
+    }
+
     return {}
   } catch (cause) {
     emitir({ type: 'erro', message: mensagemDoErro(cause) })

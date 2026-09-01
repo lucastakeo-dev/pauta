@@ -19,12 +19,15 @@
     "db:reset": "prisma migrate reset"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.122.0",
+    "@ai-sdk/anthropic": "^4.0.46",
+    "@ai-sdk/google": "^4.0.58",
+    "@ai-sdk/openai": "^4.0.52",
     "@fastify/cors": "^11.3.0",
     "@fastify/jwt": "^10.2.2",
     "@pauta/contracts": "workspace:*",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
+    "ai": "^7.0.86",
     "argon2": "^0.45.1",
     "dotenv": "^17.4.2",
     "fastify": "^5.12.1",
