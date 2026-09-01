@@ -146,18 +146,36 @@ no mesmo lugar, sem procurar na tela o que mudou.
 É isso que torna a escrita otimista honesta: a tela aplica o efeito antes da resposta
 chegar, então sem confirmação "aplicado" e "salvo" ficariam indistinguíveis.
 
-| Tom | Papel ARIA | Some em | Quando |
-|---|---|---|---|
-| Confirmação | `status` (polido) | 3,5s | a ação deu certo |
-| Falha | `alert` (assertivo) | 6s | a ação falhou e foi desfeita |
+| Tom | Ícone | Papel ARIA | Some em | Quando |
+|---|---|---|---|---|
+| Confirmação | círculo com risco, verde | `status` (polido) | 3,5s | a ação deu certo |
+| Informação | `i`, iris | `status` (polido) | 4,5s | algo aconteceu e vale saber |
+| Aviso | triângulo, âmbar | `alert` (assertivo) | 5,5s | deu certo, mas com ressalva |
+| Falha | círculo com ×, vermelho | `alert` (assertivo) | 6s | a ação falhou e foi desfeita |
 
 São dois papéis porque a urgência difere: a confirmação espera a próxima pausa da
 leitura; a falha corrige algo que a pessoa acabou de ver acontecer, e esperar chegaria
 tarde. Nenhuma das duas leva `aria-label` — esses papéis não aceitam nome, e a mensagem
 já é o conteúdo.
 
+**Os avisos moram no canto superior direito**, empilhados e com largura fixa. Embaixo e
+ao centro — onde ficavam — eles cobriam justamente o que a ação acabou de mudar: a lista
+de tarefas e a grade ocupam o meio da tela.
+
+**Duas linhas, não uma.** O título diz qual ação respondeu ("Não consegui excluir a
+tarefa."); a segunda linha traz o que o servidor explicou ("Já existe um projeto com esse
+nome."). Antes a mensagem da API *substituía* a nossa, e sobrava um motivo sem dono. Há
+espaço também para uma ação no aviso — desfazer, abrir, tentar de novo.
+
+**Entra e sai pela mesma borda**, deslizando da direita com fade: 250ms para entrar,
+150ms para sair. A saída existe porque dispensar era um corte seco — o cartão deixava de
+existir no meio do quadro e o olho não tinha o que acompanhar. Ela é mais rápida que a
+entrada de propósito: chegar pede atenção, ir embora não.
+
 Mensagens iguais seguidas viram uma só com contador (`Tarefa concluída. ×3`). Sem isso,
-a regra do "sempre Toast" tornaria a ação mais repetida do app numa pilha de avisos.
+a regra do "sempre Toast" tornaria a ação mais repetida do app numa pilha de avisos. Um
+aviso que já está saindo não recebe contador: ele vai embora em 180ms, e o número
+apareceria só para sumir junto.
 
 Duas exceções, ambas porque existe lugar melhor para a mensagem:
 

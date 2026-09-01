@@ -4,7 +4,7 @@ import type { CaptureDraft } from '../../entities/capture/index.js'
 import { createLabel, labelKeys, useLabels } from '../../entities/label/index.js'
 import { createProject, projectKeys, useProjects } from '../../entities/project/index.js'
 import { createTask, taskKeys } from '../../entities/task/index.js'
-import { ApiRequestError } from '../../shared/api/client.js'
+import { apiErrorDetail } from '../../shared/api/client.js'
 import { useToast } from '../../shared/ui/toast.js'
 
 const AVISOS = {
@@ -116,7 +116,6 @@ export function useCapture() {
     },
 
     // O console fecha ao enviar. Sem este aviso, uma falha aconteceria fora da vista.
-    onError: (cause) =>
-      toast.error(cause instanceof ApiRequestError ? cause.message : AVISOS.capturar.erro),
+    onError: (cause) => toast.error(AVISOS.capturar.erro, { description: apiErrorDetail(cause) }),
   })
 }

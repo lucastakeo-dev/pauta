@@ -28,6 +28,17 @@ export class ApiRequestError extends Error {
   }
 }
 
+/**
+ * O que o servidor explicou, quando explicou.
+ *
+ * Vai na segunda linha do aviso, embaixo do título nosso. Antes a mensagem da API
+ * *substituía* a nossa, e a pessoa lia "Já existe um projeto com esse nome." sem saber
+ * qual ação tinha falhado. As duas juntas dizem o que quebrou e por quê.
+ */
+export function apiErrorDetail(cause: unknown): string | undefined {
+  return cause instanceof ApiRequestError ? cause.message : undefined
+}
+
 type RequestOptions = {
   method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
   body?: unknown

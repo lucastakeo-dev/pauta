@@ -21,7 +21,7 @@ import {
   withSameTime,
 } from '../../entities/planner/index.js'
 import { taskKeys, updateTask } from '../../entities/task/index.js'
-import { ApiRequestError } from '../../shared/api/client.js'
+import { apiErrorDetail } from '../../shared/api/client.js'
 import { useToast } from '../../shared/ui/toast.js'
 
 const AVISOS = {
@@ -78,8 +78,7 @@ export function PlannerDndProvider({ hourHeight, children }: PlannerDndProviderP
     onSuccess: () => toast.success(AVISOS.agendar.ok),
 
     // Sem isto, um arrasto que falha desfaz o bloco na revalidação e não explica nada.
-    onError: (cause) =>
-      toast.error(cause instanceof ApiRequestError ? cause.message : AVISOS.agendar.erro),
+    onError: (cause) => toast.error(AVISOS.agendar.erro, { description: apiErrorDetail(cause) }),
 
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: taskKeys.all })

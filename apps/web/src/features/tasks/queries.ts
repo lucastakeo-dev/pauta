@@ -10,7 +10,7 @@ import {
   toggleTask,
   updateTask,
 } from '../../entities/task/index.js'
-import { ApiRequestError } from '../../shared/api/client.js'
+import { apiErrorDetail } from '../../shared/api/client.js'
 import { useToast } from '../../shared/ui/toast.js'
 
 /**
@@ -27,10 +27,6 @@ const AVISOS = {
 
 /** Chave da criação, para a lista saber quais tarefas ainda estão a caminho. */
 const CREATE_TASK_KEY = ['tasks', 'create'] as const
-
-function mensagem(cause: unknown, padrao: string) {
-  return cause instanceof ApiRequestError ? cause.message : padrao
-}
 
 /**
  * Estado de servidor da feature de tarefas.
@@ -105,7 +101,7 @@ export function useCreateTask() {
       toast.success(AVISOS.criar.ok)
     },
 
-    onError: (cause) => toast.error(mensagem(cause, AVISOS.criar.erro)),
+    onError: (cause) => toast.error(AVISOS.criar.erro, { description: apiErrorDetail(cause) }),
   })
 }
 
@@ -170,7 +166,7 @@ export function useUpdateTask() {
 
     onError: (cause, _variables, context) => {
       context?.restore()
-      toast.error(mensagem(cause, AVISOS.editar.erro))
+      toast.error(AVISOS.editar.erro, { description: apiErrorDetail(cause) })
     },
 
     onSettled: invalidate,
@@ -191,7 +187,7 @@ export function useDeleteTask() {
 
     onError: (cause, _id, context) => {
       context?.restore()
-      toast.error(mensagem(cause, AVISOS.excluir.erro))
+      toast.error(AVISOS.excluir.erro, { description: apiErrorDetail(cause) })
     },
 
     onSettled: invalidate,
@@ -231,7 +227,7 @@ export function useToggleTask() {
 
     onError: (cause, _variables, context) => {
       context?.restore()
-      toast.error(mensagem(cause, AVISOS.concluir.erro))
+      toast.error(AVISOS.concluir.erro, { description: apiErrorDetail(cause) })
     },
 
     onSettled: invalidate,

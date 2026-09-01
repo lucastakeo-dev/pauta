@@ -151,8 +151,16 @@ try {
 
   await page.getByRole('button', { name: /Remover tarefa: Titulo novo/ }).click()
 
-  await falhas.getByText(/servidor|não consegui/i).waitFor({ timeout: 5000 })
-  check('falha ao excluir avisa na tela', true, (await falhas.innerText()).trim().split('\n')[2])
+  // O aviso tem duas linhas: o título diz qual ação falhou, a segunda linha traz o que
+  // o servidor respondeu. Antes a mensagem da API substituía a nossa, e sobrava só
+  // "não foi possível falar com o servidor" — sem dizer o que tinha se perdido.
+  await falhas.getByText('Não consegui excluir a tarefa.').waitFor({ timeout: 5000 })
+  const detalheDaFalha = (await falhas.innerText()).trim()
+  check(
+    'a falha diz a ação e o motivo, em duas linhas',
+    /servidor/i.test(detalheDaFalha),
+    JSON.stringify(detalheDaFalha.replace(/\n/g, ' · ')),
+  )
 
   await linha('Titulo novo').waitFor({ timeout: 5000 })
   check('falha ao excluir devolve a tarefa à lista', true)
