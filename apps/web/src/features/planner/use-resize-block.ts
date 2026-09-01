@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { type PointerEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { blockGeometry, type PlannerItem, resizeEnd } from '../../entities/planner/index.js'
 import { taskKeys, updateTask } from '../../entities/task/index.js'
-import { ApiRequestError } from '../../shared/api/client.js'
+import { apiErrorDetail } from '../../shared/api/client.js'
 import { useToast } from '../../shared/ui/toast.js'
 
 const AVISOS = {
@@ -41,8 +41,7 @@ export function useResizeBlock({ item, day, hourHeight, enabled }: UseResizeBloc
 
     onSuccess: () => toast.success(AVISOS.duracao.ok),
 
-    onError: (cause) =>
-      toast.error(cause instanceof ApiRequestError ? cause.message : AVISOS.duracao.erro),
+    onError: (cause) => toast.error(AVISOS.duracao.erro, { description: apiErrorDetail(cause) }),
 
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: taskKeys.all })

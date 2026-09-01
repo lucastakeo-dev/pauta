@@ -9,7 +9,7 @@ import {
   useProjects,
 } from '../../entities/project/index.js'
 import { taskKeys } from '../../entities/task/index.js'
-import { ApiRequestError } from '../../shared/api/client.js'
+import { apiErrorDetail } from '../../shared/api/client.js'
 import { useToast } from '../../shared/ui/toast.js'
 
 const AVISOS = {
@@ -17,10 +17,6 @@ const AVISOS = {
   editar: { ok: 'Projeto atualizado.', erro: 'Não consegui salvar o projeto.' },
   mover: { ok: 'Projeto movido.', erro: 'Não consegui mover o projeto.' },
   excluir: { ok: 'Projeto excluído.', erro: 'Não consegui excluir o projeto.' },
-}
-
-function mensagem(cause: unknown, padrao: string) {
-  return cause instanceof ApiRequestError ? cause.message : padrao
 }
 
 export { useProjects }
@@ -69,7 +65,7 @@ export function useMoveProject() {
       toast.success(AVISOS.mover.ok)
     },
     // O 422 de ciclo tem mensagem própria vinda da API — ela explica melhor que a nossa.
-    onError: (cause) => toast.error(mensagem(cause, AVISOS.mover.erro)),
+    onError: (cause) => toast.error(AVISOS.mover.erro, { description: apiErrorDetail(cause) }),
   })
 }
 
@@ -85,6 +81,6 @@ export function useDeleteProject() {
       void queryClient.invalidateQueries({ queryKey: taskKeys.all })
       toast.success(AVISOS.excluir.ok)
     },
-    onError: (cause) => toast.error(mensagem(cause, AVISOS.excluir.erro)),
+    onError: (cause) => toast.error(AVISOS.excluir.erro, { description: apiErrorDetail(cause) }),
   })
 }
