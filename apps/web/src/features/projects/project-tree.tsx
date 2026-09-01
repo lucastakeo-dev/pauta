@@ -1,3 +1,4 @@
+import { useDraggable, useDroppable } from '@dnd-kit/core'
 import { Link } from '@tanstack/react-router'
 import { ChevronDown, Layers } from 'lucide-react'
 import {
@@ -10,6 +11,7 @@ import { usePersistentSet } from '../../shared/lib/persistent.js'
 import { NamedIcon } from '../../shared/ui/icon-catalog.js'
 import { sidebarRow, sidebarRowActive, sidebarRowOnPath } from '../../shared/ui/sidebar-row.js'
 import { NewProjectDialog } from './project-dialog.js'
+import { ProjectDndProvider, useDropIndicator } from './project-dnd.js'
 import { ProjectMenu } from './project-menu.js'
 import { useProjects } from './queries.js'
 
@@ -20,6 +22,7 @@ const COPY = {
   recolher: 'Recolher',
   abrir: 'Abrir projeto',
   emAberto: 'em aberto',
+  mover: 'Mover projeto',
 }
 
 /** O que a pessoa recolheu. Guardado por navegador — é preferência, não dado. */
@@ -67,40 +70,42 @@ export function ProjectTree({ selectedId, onSelect }: ProjectTreeProps) {
   }
 
   return (
-    <ul className="flex flex-col">
-      {/*
+    <ProjectDndProvider roots={arvore}>
+      <ul className="flex flex-col">
+        {/*
         Só no modo filtro. Sem esta linha, largar o filtro dependeria de descobrir que
         clicar de novo no projeto ativo o solta — e ninguém descobre isso sozinho.
         No modo navegação ela não faria sentido: o índice já é a visão de tudo.
       */}
-      {onSelect ? (
-        <li className={cn('group', linha, selectedId ? linhaInativa : linhaAtiva)}>
-          <button
-            type="button"
-            onClick={() => onSelect(null)}
-            aria-pressed={!selectedId}
-            className={cn(rotulo, 'flex-1', selectedId ? rotuloInativo : rotuloAtivo)}
-          >
-            {/* Também com ícone, ainda que "Todas" não seja um projeto: sem ele o rótulo
+        {onSelect ? (
+          <li className={cn('group', linha, selectedId ? linhaInativa : linhaAtiva)}>
+            <button
+              type="button"
+              onClick={() => onSelect(null)}
+              aria-pressed={!selectedId}
+              className={cn(rotulo, 'flex-1', selectedId ? rotuloInativo : rotuloAtivo)}
+            >
+              {/* Também com ícone, ainda que "Todas" não seja um projeto: sem ele o rótulo
                 começaria 24px à esquerda de todos os outros e a coluna quebraria logo
                 na primeira linha. */}
-            <Layers aria-hidden="true" className="size-4 shrink-0" />
-            {COPY.todas}
-          </button>
-        </li>
-      ) : null}
+              <Layers aria-hidden="true" className="size-4 shrink-0" />
+              {COPY.todas}
+            </button>
+          </li>
+        ) : null}
 
-      {arvore.map((node) => (
-        <Node
-          key={node.id}
-          node={node}
-          recolhidos={recolhidos}
-          onToggle={alternar}
-          selectedId={selectedId}
-          onSelect={onSelect}
-        />
-      ))}
-    </ul>
+        {arvore.map((node) => (
+          <Node
+            key={node.id}
+            node={node}
+            recolhidos={recolhidos}
+            onToggle={alternar}
+            selectedId={selectedId}
+            onSelect={onSelect}
+          />
+        ))}
+      </ul>
+    </ProjectDndProvider>
   )
 }
 
@@ -120,6 +125,25 @@ function Node({
   const temFilhos = node.children.length > 0
   const aberto = temFilhos && !recolhidos.has(node.id)
   const ativo = selectedId === node.id
+
+  /*
+    A linha é alvo de soltura e o rótulo é a alça. Separados porque são coisas
+    diferentes: solta-se na linha inteira, mas pegar tem de ser no nome — a seta de
+    recolher e os botões da ponta precisam continuar respondendo ao clique.
+  */
+  const { setNodeRef: soltarRef } = useDroppable({ id: node.id })
+  const { listeners, setNodeRef: arrastarRef, isDragging } = useDraggable({ id: node.id })
+
+  const indicador = useDropIndicator()
+  const mira = indicador?.overId === node.id ? indicador.zone : null
+
+  /*
+    Só os `listeners` do dnd-kit, sem os `attributes`: eles trazem `role="button"`, e o
+    nome do projeto é um link de verdade — trocar o papel dele tiraria da navegação por
+    leitor de tela a lista de destinos que a barra é. O caminho de teclado para mover
+    está em "Mover para", no menu da linha.
+  */
+  const alca = { ...listeners, ref: arrastarRef, draggable: false }
 
   // Pasta que contém o selecionado: ganha o peso do texto, não a barra. A barra aponta
   // uma linha só — se subisse pela árvore, três linhas diriam "é aqui" ao mesmo tempo.
@@ -155,14 +179,38 @@ function Node({
 
   return (
     <li>
-      <div className={cn('group relative', linha, ativo ? linhaAtiva : linhaInativa)}>
+      <div
+        ref={soltarRef}
+        className={cn(
+          'group relative',
+          linha,
+          ativo ? linhaAtiva : linhaInativa,
+          isDragging && 'opacity-40',
+          // Aninhar é a única soltura sem traço: o alvo é a linha inteira, então ela
+          // mesma se acende.
+          mira === 'inside' && 'bg-iris/15 ring-1 ring-iris ring-inset',
+        )}
+      >
+        {/* O traço mostra onde a linha vai encostar. Fica fora do fluxo para não
+            empurrar nada enquanto o ponteiro passeia. */}
+        {mira === 'before' || mira === 'after' ? (
+          <span
+            aria-hidden="true"
+            className={cn(
+              'pointer-events-none absolute right-0 left-0 z-10 h-0.5 rounded-full bg-iris',
+              mira === 'before' ? '-top-px' : '-bottom-px',
+            )}
+          />
+        ) : null}
         {onSelect ? (
           <button
             type="button"
             onClick={() => onSelect(node.id)}
             aria-pressed={ativo}
             aria-label={descricao}
-            className={cn(rotulo, aparencia)}
+            title={`${COPY.mover}: ${node.name}`}
+            className={cn(rotulo, aparencia, 'cursor-grab active:cursor-grabbing')}
+            {...alca}
           >
             {nome}
           </button>
@@ -171,7 +219,9 @@ function Node({
             to="/projects/$projectId"
             params={{ projectId: node.id }}
             aria-label={`${COPY.abrir}: ${descricao}`}
-            className={cn(rotulo, aparencia)}
+            title={`${COPY.mover}: ${node.name}`}
+            className={cn(rotulo, aparencia, 'cursor-grab active:cursor-grabbing')}
+            {...alca}
           >
             {nome}
           </Link>

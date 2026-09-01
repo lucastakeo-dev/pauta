@@ -146,14 +146,28 @@ export async function move(
     }
   }
 
-  const row = await prisma.project.update({
-    where: { id },
-    data: {
-      parentId,
-      position: input.position ?? (await nextPosition(userId, parentId)),
-    },
-    select: selection,
+  // A ordem do grupo de destino é regravada inteira, e não só a do projeto movido.
+  // Gravar `position: 2` sozinho colide com o irmão que já ocupa a 2, e o desempate
+  // silencioso por nome faz o projeto aparecer num lugar que ninguém pediu.
+  const irmaos = await prisma.project.findMany({
+    where: { userId, parentId: parentId ?? null, id: { not: id } },
+    orderBy: [{ position: 'asc' }, { name: 'asc' }],
+    select: { id: true },
   })
+
+  // Sem posição, vai para o fim. Fora da faixa, encosta na borda mais próxima.
+  const destino = Math.min(Math.max(input.position ?? irmaos.length, 0), irmaos.length)
+  const ordem = irmaos.map((irmao) => irmao.id)
+  ordem.splice(destino, 0, id)
+
+  await prisma.$transaction([
+    prisma.project.update({ where: { id }, data: { parentId: parentId ?? null } }),
+    ...ordem.map((irmaoId, index) =>
+      prisma.project.update({ where: { id: irmaoId }, data: { position: index } }),
+    ),
+  ])
+
+  const row = await prisma.project.findFirstOrThrow({ where: { id }, select: selection })
 
   return toRecord(row)
 }
@@ -226,24 +240,6 @@ export async function update(
 export async function remove(userId: string, id: string): Promise<void> {
   await assertOwned(userId, id)
   await prisma.project.delete({ where: { id } })
-}
-
-/** Reordena em bloco: recebe a ordem inteira e grava as posições numa transação. */
-export async function reorder(userId: string, ids: string[]): Promise<ProjectRecord[]> {
-  const owned = await prisma.project.findMany({
-    where: { userId, id: { in: ids } },
-    select: { id: true },
-  })
-
-  if (owned.length !== ids.length) {
-    throw new NotFoundError('Projeto')
-  }
-
-  await prisma.$transaction(
-    ids.map((id, index) => prisma.project.update({ where: { id }, data: { position: index } })),
-  )
-
-  return list(userId, { includeArchived: true })
 }
 
 /** Confere dono. Usado aqui e pelo model de tarefa antes de vincular. */
