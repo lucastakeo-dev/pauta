@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ChevronDown, Layers, Pencil } from 'lucide-react'
+import { ChevronDown, Layers } from 'lucide-react'
 import {
   buildProjectTree,
   containsProject,
@@ -7,10 +7,10 @@ import {
 } from '../../entities/project/index.js'
 import { cn } from '../../shared/lib/cn.js'
 import { usePersistentSet } from '../../shared/lib/persistent.js'
-import { IconButton } from '../../shared/ui/icon-button.js'
 import { NamedIcon } from '../../shared/ui/icon-catalog.js'
 import { sidebarRow, sidebarRowActive, sidebarRowOnPath } from '../../shared/ui/sidebar-row.js'
-import { EditProjectDialog, NewProjectDialog } from './project-dialog.js'
+import { NewProjectDialog } from './project-dialog.js'
+import { ProjectMenu } from './project-menu.js'
 import { useProjects } from './queries.js'
 
 const COPY = {
@@ -19,7 +19,6 @@ const COPY = {
   expandir: 'Expandir',
   recolher: 'Recolher',
   abrir: 'Abrir projeto',
-  editar: 'Editar projeto',
   emAberto: 'em aberto',
 }
 
@@ -218,14 +217,7 @@ function Node({
           o `focus-within` os revela quando o Tab chega neles.
         */}
         <span className="absolute right-1 flex items-center gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
-          <EditProjectDialog
-            project={node}
-            trigger={
-              <IconButton aria-label={`${COPY.editar}: ${node.name}`} title={COPY.editar}>
-                <Pencil aria-hidden="true" className="size-3" />
-              </IconButton>
-            }
-          />
+          <ProjectMenu project={node} />
 
           <NewProjectDialog parentId={node.id} />
         </span>

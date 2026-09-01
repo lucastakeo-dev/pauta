@@ -1,7 +1,12 @@
 import { Link } from '@tanstack/react-router'
 import { FolderTree } from 'lucide-react'
-import { buildProjectTree, flattenProjectTree } from '../entities/project/index.js'
+import {
+  buildProjectTree,
+  flattenProjectTree,
+  useArchivedProjects,
+} from '../entities/project/index.js'
 import { NewProjectDialog } from '../features/projects/project-dialog.js'
+import { ProjectMenu } from '../features/projects/project-menu.js'
 import { ProjectTree } from '../features/projects/project-tree.js'
 import { useProjects } from '../features/projects/queries.js'
 import { Button } from '../shared/ui/button.js'
@@ -15,6 +20,8 @@ const COPY = {
   vazioTitulo: 'Nenhum projeto ainda.',
   vazioAjuda: 'Projetos agrupam tarefas, e podem conter outros projetos.',
   aberto: 'em aberto',
+  arquivados: 'Arquivados',
+  arquivadosAjuda: 'Fora das listas e da barra, com as tarefas intactas.',
   subprojeto: 'subprojeto',
   subprojetos: 'subprojetos',
   raiz: 'na raiz',
@@ -29,6 +36,7 @@ const COPY = {
  */
 export function ProjectsPage() {
   const { data: projects } = useProjects()
+  const { data: arquivados } = useArchivedProjects()
 
   const arvore = buildProjectTree(projects ?? [])
   const linhas = flattenProjectTree(arvore)
@@ -84,6 +92,35 @@ export function ProjectsPage() {
               ))}
             </ul>
           )}
+
+          {/*
+            O arquivo mora aqui e não na barra: é a visão de cima dos projetos, e o que
+            está arquivado não deveria ocupar a coluna que se olha o dia inteiro. A seção
+            só existe quando há algo dentro — um "Arquivados (0)" fixo seria um convite a
+            uma tela vazia.
+          */}
+          {arquivados && arquivados.length > 0 ? (
+            <section className="flex flex-col gap-2 pt-4">
+              <div className="flex items-baseline gap-2">
+                <h2 className="font-medium text-ink text-sm">{COPY.arquivados}</h2>
+                <span className="tabular text-ink-subtle text-xs">{arquivados.length}</span>
+              </div>
+
+              <p className="text-ink-subtle text-xs">{COPY.arquivadosAjuda}</p>
+
+              <ul className="flex flex-col divide-y divide-line/60 border-line/60 border-y">
+                {arquivados.map((projeto) => (
+                  <li key={projeto.id} className="flex items-center gap-3 py-2.5 pr-1 pl-0">
+                    <NamedIcon name={projeto.icon} className="size-4 shrink-0 text-ink-subtle" />
+                    <span className="min-w-0 flex-1 truncate text-ink-muted text-sm">
+                      {projeto.name}
+                    </span>
+                    <ProjectMenu project={projeto} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
         </div>
       </main>
     </>

@@ -2,7 +2,7 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import { cn } from '../lib/cn.js'
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: 'primary' | 'ghost' | 'outline'
+  variant?: 'primary' | 'ghost' | 'outline' | 'danger'
   loading?: boolean
   children: ReactNode
 }
@@ -13,6 +13,9 @@ const VARIANTS = {
   // Existe porque os componentes do shadcn a pedem — mantê-la aqui evita editar o
   // componente gerado, o que facilita atualizá-lo no futuro.
   outline: 'border border-line-strong bg-transparent text-ink hover:bg-surface-raised',
+  // Só para o que apaga. É a cor que o app usa para atraso e erro, então ela já chega
+  // com o significado pronto: isto não volta atrás.
+  danger: 'bg-danger text-canvas hover:bg-danger/90',
 } as const
 
 export function Button({
