@@ -56,18 +56,16 @@ export type ProjectView = z.infer<typeof projectViewSchema>
 
 export const projectListSchema = z.array(projectViewSchema)
 
-/** Reordenação da barra lateral: manda a ordem inteira, não um índice de cada vez. */
-export const reorderProjectsSchema = z.object({
-  ids: z.array(uuidSchema).min(1, 'Informe a nova ordem dos projetos.'),
-})
-export type ReorderProjectsInput = z.infer<typeof reorderProjectsSchema>
-
 /**
  * Mover na árvore.
  *
  * Rota própria e não um campo do PATCH porque a operação é outra: além de gravar o novo
  * pai, ela precisa recusar mover um projeto para dentro de um descendente dele — o que
- * desligaria a subárvore inteira da raiz.
+ * desligaria a subárvore inteira da raiz — e regravar a ordem do grupo de destino.
+ *
+ * É também a única rota de ordenação: existia uma `/projects/reorder` que recebia a
+ * lista inteira, sem cliente nenhum e sem teste. Depois que mover passou a reindexar os
+ * irmãos, ela só duplicava este trabalho.
  */
 export const moveProjectSchema = z.object({
   /** Novo pai. `null` leva para a raiz. */

@@ -136,6 +136,57 @@ describe('mover projeto', () => {
     expect(response.statusCode).toBe(200)
   })
 
+  it('insere na posição pedida entre os irmãos', async () => {
+    const a = await projeto(ana, 'A')
+    const b = await projeto(ana, 'B')
+    const c = await projeto(ana, 'C')
+
+    await ana.post(`/projects/${c.id}/move`, { parentId: null, position: 0 })
+
+    const nomes = (await ana.get('/projects')).json().map((p: { name: string }) => p.name)
+    expect(nomes).toEqual(['C', 'A', 'B'])
+    // Regressão: gravar só a posição do movido colidia com a do irmão que já estava
+    // na 0, e o desempate por nome decidia a ordem no lugar de quem arrastou.
+    expect([a.id, b.id]).toHaveLength(2)
+  })
+
+  it('sem posição, vai para o fim dos irmãos', async () => {
+    await projeto(ana, 'A')
+    const b = await projeto(ana, 'B')
+    await projeto(ana, 'C')
+
+    await ana.post(`/projects/${b.id}/move`, { parentId: null })
+
+    const nomes = (await ana.get('/projects')).json().map((p: { name: string }) => p.name)
+    expect(nomes).toEqual(['A', 'C', 'B'])
+  })
+
+  it('mudar de pai também numera o grupo de destino', async () => {
+    const casa = await projeto(ana, 'Casa')
+    await projeto(ana, 'Contas', casa.id)
+    await projeto(ana, 'Reformas', casa.id)
+    const solta = await projeto(ana, 'Mercado')
+
+    await ana.post(`/projects/${solta.id}/move`, { parentId: casa.id, position: 1 })
+
+    const filhos = (await ana.get('/projects'))
+      .json()
+      .filter((p: { parentId: string | null }) => p.parentId === casa.id)
+      .map((p: { name: string }) => p.name)
+
+    expect(filhos).toEqual(['Contas', 'Mercado', 'Reformas'])
+  })
+
+  it('posição fora da faixa encosta na borda', async () => {
+    const a = await projeto(ana, 'A')
+    await projeto(ana, 'B')
+
+    await ana.post(`/projects/${a.id}/move`, { parentId: null, position: 99 })
+
+    const nomes = (await ana.get('/projects')).json().map((p: { name: string }) => p.name)
+    expect(nomes).toEqual(['B', 'A'])
+  })
+
   it('recusa mover para pai de outra pessoa', async () => {
     const bruno = await createClient(app, 'bruno@exemplo.dev')
     const dele = (await bruno.post('/projects', { name: 'Projeto do Bruno' })).json()

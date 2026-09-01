@@ -21,6 +21,18 @@ function check(name, passed, detail = '') {
   console.log(`${passed ? 'OK  ' : 'FALHA'}  ${name}${detail ? ` — ${detail}` : ''}`)
 }
 
+/** Arrasta em passos: um único movimento não dispara os sensores do dnd-kit. */
+async function dragTo(page, from, to) {
+  const origem = await from.boundingBox()
+  await page.mouse.move(origem.x + origem.width / 2, origem.y + origem.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(origem.x + origem.width / 2, origem.y + origem.height / 2 + 10, {
+    steps: 4,
+  })
+  await page.mouse.move(to.x, to.y, { steps: 16 })
+  await page.mouse.up()
+}
+
 const browser = await chromium.launch({
   executablePath: '/usr/bin/google-chrome',
   args: ['--no-sandbox'],
@@ -338,6 +350,59 @@ try {
   const tarefas = await fetch(`${API}/tasks`, { headers: auth }).then((r) => r.json())
   const funda = tarefas.find((tarefa) => tarefa.title === 'Tarefa funda')
   check('a tarefa do subprojeto continua viva', funda?.projectId === promovido?.id)
+
+  // 11. Arrastar reordena e troca de pai. Sobraram na raiz: Plataforma, Pessoal.
+  const ordemNaApi = async () =>
+    (await fetch(`${API}/projects`, { headers: auth }).then((r) => r.json()))
+      .filter((projeto) => projeto.parentId === null)
+      .map((projeto) => projeto.name)
+
+  const pontoNa = async (nome, fatia) => {
+    const caixa = await linhaDe(nome).boundingBox()
+    return { x: caixa.x + caixa.width / 2, y: caixa.y + caixa.height * fatia }
+  }
+
+  const antesDoArrasto = await ordemNaApi()
+  check(
+    'a raiz começa na ordem de criação',
+    antesDoArrasto.join() === 'Plataforma,Pessoal',
+    antesDoArrasto.join(' · '),
+  )
+
+  // Solta no topo de Plataforma: entra antes dela.
+  await dragTo(page, linhaDe('Pessoal'), await pontoNa('Plataforma', 0.1))
+  await page.waitForTimeout(1_200)
+  const depoisDoArrasto = await ordemNaApi()
+  check(
+    'arrastar para a borda de cima reordena os irmãos',
+    depoisDoArrasto.join() === 'Pessoal,Plataforma',
+    depoisDoArrasto.join(' · '),
+  )
+  await page.screenshot({ path: `${outDir}/08-reordenado.png` })
+
+  // Solta no meio: vira filho.
+  await dragTo(page, linhaDe('Pessoal'), await pontoNa('Plataforma', 0.5))
+  await page.waitForTimeout(1_200)
+  const aninhados = await fetch(`${API}/projects`, { headers: auth }).then((r) => r.json())
+  const aninhado = aninhados.find((projeto) => projeto.name === 'Pessoal')
+  const novoPai = aninhados.find((projeto) => projeto.name === 'Plataforma')
+  check(
+    'arrastar para o miolo da linha vira subprojeto',
+    aninhado?.parentId === novoPai?.id,
+    JSON.stringify(aninhado?.parentId),
+  )
+
+  // 12. E o caminho de teclado: "Mover para" devolve o projeto à raiz.
+  await linhaDe('Pessoal').hover()
+  await barra.getByRole('button', { name: /Ações do projeto: Pessoal/ }).click()
+  await page.getByRole('menuitem', { name: 'Mover para' }).click()
+  await page.getByRole('menuitem', { name: 'Raiz', exact: true }).click()
+  await page.waitForTimeout(1_200)
+
+  const devolvido = (await fetch(`${API}/projects`, { headers: auth }).then((r) => r.json())).find(
+    (projeto) => projeto.name === 'Pessoal',
+  )
+  check('"Mover para" leva de volta à raiz sem arrastar', devolvido?.parentId === null)
 } finally {
   await browser.close()
 }

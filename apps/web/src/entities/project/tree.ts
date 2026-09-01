@@ -84,3 +84,82 @@ export function projectPath(nodes: ProjectNode[], id: string): ProjectNode[] {
 
   return []
 }
+
+/** Onde a soltura cai em relação à linha de destino. */
+export type DropZone = 'before' | 'inside' | 'after'
+
+/** O projeto, em qualquer nível da árvore. */
+export function findProject(nodes: ProjectNode[], id: string): ProjectNode | null {
+  for (const node of nodes) {
+    if (node.id === id) return node
+
+    const abaixo = findProject(node.children, id)
+    if (abaixo) return abaixo
+  }
+
+  return null
+}
+
+/**
+ * Para onde arrastar leva, traduzido no que a API espera.
+ *
+ * A conta que interessa é a da posição: o servidor insere o projeto numa lista de
+ * irmãos que **não** o contém, então o índice do alvo tem de ser medido nessa mesma
+ * lista. Medir na lista com o arrastado dentro erra por um sempre que ele já estava
+ * acima do alvo — o clássico "soltei embaixo e ele foi parar em cima".
+ *
+ * Devolve `null` para soltura que não faz sentido: em cima de si mesmo, dentro da
+ * própria subárvore (o servidor recusaria, e oferecer o gesto seria mentira) ou onde
+ * nada mudaria de lugar.
+ */
+export function dropTarget(
+  roots: ProjectNode[],
+  draggedId: string,
+  overId: string,
+  zone: DropZone,
+): { parentId: string | null; position?: number } | null {
+  if (draggedId === overId) return null
+
+  const dragged = findProject(roots, draggedId)
+  const over = findProject(roots, overId)
+  if (!dragged || !over) return null
+
+  // Um projeto não entra na própria subárvore: isso desligaria os dois da raiz.
+  if (containsProject(dragged, overId)) return null
+
+  if (zone === 'inside') {
+    // Já é filho direto e vai para o fim de um grupo onde ele já está no fim.
+    const filhos = over.children
+    if (filhos.at(-1)?.id === draggedId) return null
+
+    return { parentId: overId }
+  }
+
+  const paiDoAlvo = parentIdOf(roots, overId)
+  if (paiDoAlvo === undefined) return null
+
+  const irmaos = (paiDoAlvo === null ? roots : (findProject(roots, paiDoAlvo)?.children ?? []))
+    .filter((node) => node.id !== draggedId)
+    .map((node) => node.id)
+
+  const indice = irmaos.indexOf(overId)
+  if (indice === -1) return null
+
+  return { parentId: paiDoAlvo, position: zone === 'before' ? indice : indice + 1 }
+}
+
+/** O pai de um projeto: `null` na raiz, `undefined` quando ele não está na árvore. */
+export function parentIdOf(
+  nodes: ProjectNode[],
+  id: string,
+  pai: string | null = null,
+): string | null | undefined {
+  for (const node of nodes) {
+    if (node.id === id) return pai
+
+    const abaixo = parentIdOf(node.children, id, node.id)
+    if (abaixo !== undefined) return abaixo
+  }
+
+  return undefined
+}
