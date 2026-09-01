@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify'
+import { agentRoutes } from './agent.routes.js'
 import { authRoutes } from './auth.routes.js'
 import { eventRoutes } from './event.routes.js'
 import { labelRoutes } from './label.routes.js'
@@ -23,4 +24,5 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   await app.register(eventRoutes)
   await app.register(taskRoutes)
   await app.register(noteRoutes)
+  await app.register(agentRoutes)
 }

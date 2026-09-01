@@ -94,7 +94,7 @@ export function PlannerPage() {
         {mostraLista ? (
           // A lista tem largura máxima e fica centralizada: linha de texto muito larga
           // cansa de ler, e numa tela grande a coluna ficava quase toda vazia.
-          <main className="flex min-w-0 flex-1 flex-col overflow-y-auto px-8 pt-8 pb-6">
+          <main className="flex min-w-0 flex-1 flex-col overflow-y-auto px-4 pt-6 pb-6 md:px-8 md:pt-8">
             <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
               <h1 className="font-semibold text-ink text-lg">{COPY.tarefas}</h1>
 

@@ -1,3 +1,4 @@
+export * from './agent.js'
 export * from './auth.js'
 export * from './common.js'
 export * from './event.js'

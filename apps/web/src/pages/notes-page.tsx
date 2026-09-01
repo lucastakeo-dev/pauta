@@ -39,7 +39,7 @@ export function NotesPage() {
         />
       </SidebarSlot>
 
-      <main className="flex min-w-0 flex-1 flex-col overflow-y-auto px-8 pt-8 pb-6">
+      <main className="flex min-w-0 flex-1 flex-col overflow-y-auto px-4 pt-6 pb-6 md:px-8 md:pt-8">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
           {note.isPending ? (
             <p role="status" aria-live="polite" className="text-ink-subtle text-sm">

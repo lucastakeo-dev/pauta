@@ -85,42 +85,60 @@ function Detalhe({ task, posicao }: { task: TaskView; posicao?: TaskDetailProps[
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-      <header className="flex shrink-0 flex-wrap items-center gap-2 border-line border-b py-3 pr-4 pl-6">
+      <header className="flex shrink-0 flex-wrap items-center gap-2 border-line border-b py-3 pr-3 pl-4 md:pr-4 md:pl-6">
         {/*
           A trilha diz onde se está e quanto falta, não o título — ele está 40px abaixo,
           em corpo maior. "3 de 12" é o que não aparece em nenhum outro lugar da tela, e
           é o que dá noção de progresso a quem está descendo a fila.
         */}
-        <nav aria-label={COPY.trilha} className="min-w-0 flex-1 text-ink-subtle text-xs">
+        <nav
+          aria-label={COPY.trilha}
+          className="min-w-0 flex-1 text-ink-subtle text-xs max-sm:w-full"
+        >
           <span className="truncate">
             {COPY.inbox}
             {posicao ? ` · ${posicao.atual} de ${posicao.total}` : null}
           </span>
         </nav>
 
-        <Button
-          variant="ghost"
-          onClick={() => toggle.mutate({ id: task.id, done: !concluida })}
-          loading={toggle.isPending}
-        >
-          <Check aria-hidden="true" className="size-4" />
-          {COPY.concluir}
-        </Button>
-
-        <Button variant="ghost" onClick={() => remove.mutate(task.id)} loading={remove.isPending}>
-          <Trash2 aria-hidden="true" className="size-4" />
-          {COPY.excluir}
-        </Button>
-
-        {naFila ? (
+        {/*
+          No estreito as ações viram uma linha própria, e as duas secundárias ficam só
+          com o ícone — o nome continua lá para quem lê a tela. Lado a lado com a
+          trilha, os três botões encolhiam até o texto vazar de dentro deles.
+        */}
+        <div className="flex w-full shrink-0 items-center justify-end gap-2 sm:w-auto">
           <Button
-            onClick={() => salvar({ status: 'todo' })}
-            loading={update.isPending}
-            title={COPY.processarAjuda}
+            variant="ghost"
+            onClick={() => toggle.mutate({ id: task.id, done: !concluida })}
+            loading={toggle.isPending}
+            title={COPY.concluir}
+            className="max-sm:px-2.5"
           >
-            {COPY.processar}
+            <Check aria-hidden="true" className="size-4" />
+            <span className="sr-only sm:not-sr-only">{COPY.concluir}</span>
           </Button>
-        ) : null}
+
+          <Button
+            variant="ghost"
+            onClick={() => remove.mutate(task.id)}
+            loading={remove.isPending}
+            title={COPY.excluir}
+            className="max-sm:px-2.5"
+          >
+            <Trash2 aria-hidden="true" className="size-4" />
+            <span className="sr-only sm:not-sr-only">{COPY.excluir}</span>
+          </Button>
+
+          {naFila ? (
+            <Button
+              onClick={() => salvar({ status: 'todo' })}
+              loading={update.isPending}
+              title={COPY.processarAjuda}
+            >
+              {COPY.processar}
+            </Button>
+          ) : null}
+        </div>
       </header>
 
       {/*
@@ -129,7 +147,7 @@ function Detalhe({ task, posicao }: { task: TaskView; posicao?: TaskDetailProps[
         da tela em vez de um painel.
       */}
       <div className="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto lg:grid-cols-[minmax(0,1fr)_16rem] lg:overflow-hidden">
-        <div className="flex min-w-0 max-w-2xl flex-col gap-3 overflow-y-auto px-6 py-7">
+        <div className="flex min-w-0 max-w-2xl flex-col gap-3 overflow-y-auto px-4 py-5 md:px-6 md:py-7">
           <label htmlFor={`${campoId}-titulo`} className="sr-only">
             {COPY.titulo}
           </label>
@@ -164,7 +182,7 @@ function Detalhe({ task, posicao }: { task: TaskView; posicao?: TaskDetailProps[
             }}
             placeholder={COPY.anotacaoVazia}
             className={cn(
-              '-ml-2 min-h-64 w-full flex-1 resize-none rounded-control border border-transparent',
+              '-ml-2 min-h-32 w-full flex-1 resize-none rounded-control border border-transparent md:min-h-64',
               'bg-transparent px-2 py-1.5 text-ink text-sm leading-relaxed outline-none',
               'placeholder:text-ink-subtle',
               'transition-colors hover:border-line focus:border-iris',

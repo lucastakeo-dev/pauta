@@ -4,6 +4,8 @@ import { createPortal } from 'react-dom'
 type SlotContextValue = {
   target: HTMLElement | null
   registrar: (element: HTMLElement | null) => void
+  /** Avisa a moldura que a pessoa escolheu algo aqui dentro. */
+  escolheu: () => void
 }
 
 const SlotContext = createContext<SlotContextValue | null>(null)
@@ -20,9 +22,27 @@ const SlotContext = createContext<SlotContextValue | null>(null)
  * portal o entrega dentro da barra. O portal preserva o contexto do React, então o que é
  * renderizado aqui continua enxergando os providers da página como se estivesse lá.
  */
-export function SidebarSlotProvider({ children }: { children: ReactNode }) {
+export function SidebarSlotProvider({
+  children,
+  onChoice,
+}: {
+  children: ReactNode
+  /**
+   * Chamado quando alguém escolhe algo no trecho da barra: uma tela do planner, um
+   * projeto, uma etiqueta.
+   *
+   * Existe por causa da tela estreita, onde a barra é uma gaveta por cima do conteúdo:
+   * escolher uma tela sem fechá-la deixaria a gaveta cobrindo justamente o que ela
+   * acabou de mudar. Navegar já fecha sozinho — o caminho da URL muda —, mas filtrar e
+   * trocar de tela acontecem sem sair da rota.
+   */
+  onChoice?: (() => void) | undefined
+}) {
   const [target, setTarget] = useState<HTMLElement | null>(null)
-  const value = useMemo<SlotContextValue>(() => ({ target, registrar: setTarget }), [target])
+  const value = useMemo<SlotContextValue>(
+    () => ({ target, registrar: setTarget, escolheu: () => onChoice?.() }),
+    [target, onChoice],
+  )
 
   return <SlotContext.Provider value={value}>{children}</SlotContext.Provider>
 }
@@ -42,4 +62,14 @@ export function SidebarSlot({ children }: { children: ReactNode }) {
   if (!context) throw new Error('<SidebarSlot> precisa estar dentro de <SidebarSlotProvider>.')
 
   return context.target ? createPortal(children, context.target) : null
+}
+
+/**
+ * O aviso de "escolhi isto", para quem desenha o conteúdo da barra.
+ *
+ * Devolve uma função inerte fora do provider, então chamar nunca quebra — é aviso, não
+ * dependência: a lista de projetos funciona igual com ou sem alguém escutando.
+ */
+export function useSidebarChoice(): () => void {
+  return useContext(SlotContext)?.escolheu ?? (() => {})
 }

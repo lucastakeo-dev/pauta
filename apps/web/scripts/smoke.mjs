@@ -203,6 +203,37 @@ try {
   )
   await page.screenshot({ path: `${outDir}/06-cor.png` })
 
+  // 7c. O rodapé: o que espera, o estado da escrita e a porta do Agent.
+  const rodape = page.getByRole('contentinfo', { name: 'Estado do app' })
+  await rodape.waitFor({ timeout: 10_000 })
+
+  // Uma tarefa é criada mais abaixo no roteiro; aqui a conta é a da inbox vazia, então
+  // o que se prova é o estado da escrita, que existe sempre.
+  const textoRodape = await rodape.innerText()
+  check(
+    'o rodapé diz o estado da escrita',
+    /salvo|salvando|carregando/i.test(textoRodape),
+    textoRodape.replace(/\n/g, ' · '),
+  )
+
+  await rodape.getByRole('button', { name: 'Agent' }).click()
+  const agente = page.getByRole('region', { name: 'Agent' })
+  await agente.waitFor({ timeout: 5000 })
+  check('o rodapé abre o Agent', true)
+
+  await agente.getByRole('button', { name: 'Fechar o Agent' }).click()
+  await agente.waitFor({ state: 'detached', timeout: 5000 })
+
+  // O atalho abre o mesmo painel — é o caminho de quem não tira as mãos do teclado.
+  await page.keyboard.press('Control+j')
+  await agente.waitFor({ timeout: 5000 })
+  check('⌘J abre o Agent', true)
+  await page.screenshot({ path: `${outDir}/07-agent.png` })
+
+  await page.keyboard.press('Control+j')
+  await agente.waitFor({ state: 'detached', timeout: 5000 })
+  check('e fecha com o mesmo atalho', true)
+
   // 8. Sair volta ao login, e a área logada volta a ser barrada.
   //    Sair mora no menu da conta, na barra lateral — não mais solto numa faixa no topo.
   await page.getByRole('button', { name: 'Conta', exact: true }).click()
