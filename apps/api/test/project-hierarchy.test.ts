@@ -147,6 +147,47 @@ describe('mover projeto', () => {
   })
 })
 
+describe('arquivar projeto', () => {
+  it('tira das listas sem apagar nada', async () => {
+    const casa = await projeto(ana, 'Casa')
+    const tarefa = await createTask(ana, { projectId: casa.id })
+
+    await ana.patch(`/projects/${casa.id}`, { archived: true })
+
+    expect((await ana.get('/projects')).json()).toEqual([])
+    // A tarefa continua vinculada: arquivar é tirar da vista, não desfazer o vínculo.
+    expect((await ana.get(`/tasks/${tarefa.id}`)).json().projectId).toBe(casa.id)
+  })
+
+  it('aparece com includeArchived, e com a data do arquivamento', async () => {
+    const casa = await projeto(ana, 'Casa')
+    await ana.patch(`/projects/${casa.id}`, { archived: true })
+
+    const lista = (await ana.get('/projects?includeArchived=true')).json()
+
+    expect(lista).toHaveLength(1)
+    expect(lista[0].archivedAt).not.toBeNull()
+  })
+
+  it('restaurar devolve o projeto às listas', async () => {
+    const casa = await projeto(ana, 'Casa')
+    await ana.patch(`/projects/${casa.id}`, { archived: true })
+
+    const restaurado = (await ana.patch(`/projects/${casa.id}`, { archived: false })).json()
+
+    expect(restaurado.archivedAt).toBeNull()
+    expect((await ana.get('/projects')).json()).toHaveLength(1)
+  })
+
+  it('arquivar não mexe no nome nem na cor', async () => {
+    const casa = (await ana.post('/projects', { name: 'Casa', color: '#4FB477' })).json()
+
+    const arquivado = (await ana.patch(`/projects/${casa.id}`, { archived: true })).json()
+
+    expect(arquivado).toMatchObject({ name: 'Casa', color: '#4FB477' })
+  })
+})
+
 describe('apagar projeto com filhos', () => {
   it('promove os filhos à raiz em vez de apagá-los', async () => {
     const trabalho = await projeto(ana, 'Trabalho')
