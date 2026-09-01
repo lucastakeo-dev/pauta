@@ -1,6 +1,6 @@
 import type { AgentAskInput, AgentEvent } from '@pauta/contracts'
 import type { FastifyReply, FastifyRequest } from 'fastify'
-import { env } from '../config/env.js'
+import { agentKeyName, agentKeyPresente } from '../lib/agent/provider.js'
 import { runAgent } from '../lib/agent/run.js'
 
 /**
@@ -12,10 +12,10 @@ import { runAgent } from '../lib/agent/run.js'
  * mudou antes mesmo da frase final.
  */
 export async function ask(request: FastifyRequest<{ Body: AgentAskInput }>, reply: FastifyReply) {
-  if (!env.ANTHROPIC_API_KEY) {
+  if (!agentKeyPresente()) {
     return reply.status(503).send({
       code: 'agent_unavailable',
-      message: 'O Agent precisa de uma ANTHROPIC_API_KEY configurada no servidor.',
+      message: `O Agent precisa de uma ${agentKeyName()} configurada no servidor.`,
     })
   }
 

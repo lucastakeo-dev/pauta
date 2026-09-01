@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { agentTools, runAgentTool } from '../src/lib/agent/tools.js'
+import { buildAgentTools, runAgentTool } from '../src/lib/agent/tools.js'
 import { closeTestApp, createTestApp, resetDatabase, validUser } from './helpers.js'
 
 /**
@@ -34,8 +34,12 @@ beforeEach(async () => {
 })
 
 describe('definições', () => {
-  it('descreve as seis ferramentas, cada uma com schema de entrada', () => {
-    expect(agentTools.map((tool) => tool.name)).toEqual([
+  const ferramentas = () => buildAgentTools(userId, () => {})
+
+  it('entrega as seis ferramentas, cada uma descrita e com schema de entrada', () => {
+    const conjunto = ferramentas()
+
+    expect(Object.keys(conjunto)).toEqual([
       'listar_tarefas',
       'criar_tarefa',
       'atualizar_tarefa',
@@ -44,17 +48,38 @@ describe('definições', () => {
       'criar_compromisso',
     ])
 
-    for (const tool of agentTools) {
-      expect(tool.input_schema.type).toBe('object')
+    for (const tool of Object.values(conjunto)) {
       expect(tool.description?.length ?? 0).toBeGreaterThan(20)
+      expect(tool.inputSchema).toBeDefined()
     }
   })
 
   // A ausência é a decisão: um agente que apaga o projeto errado custa o histórico.
   it('não expõe nenhuma ferramenta que apaga', () => {
-    const nomes = agentTools.map((tool) => tool.name).join(' ')
+    expect(Object.keys(ferramentas()).join(' ')).not.toMatch(/excluir|apagar|remover|delet/i)
+  })
 
-    expect(nomes).not.toMatch(/excluir|apagar|remover|delet/i)
+  // O aviso sai de dentro do `execute`, no instante em que a ferramenta roda — é o que
+  // a tela mostra linha a linha enquanto o turno acontece.
+  it('avisa quem está ouvindo assim que uma ferramenta roda', async () => {
+    const avisos: string[] = []
+    const conjunto = buildAgentTools(userId, (saida) => avisos.push(saida.resumo))
+
+    /*
+      O conjunto é heterogêneo — cada ferramenta tem o próprio schema —, então o tipo do
+      `execute` visto de fora é a interseção de todos e não aceita entrada nenhuma. Aqui
+      quem chama é o teste, no lugar da biblioteca; o cast diz isso.
+    */
+    const criar = conjunto.criar_tarefa as unknown as {
+      execute: (input: unknown, options: unknown) => Promise<unknown>
+    }
+
+    await criar.execute(
+      { title: 'Pelo agente' },
+      { toolCallId: 'teste', messages: [], context: {} },
+    )
+
+    expect(avisos).toEqual(['Criou a tarefa "Pelo agente"'])
   })
 })
 

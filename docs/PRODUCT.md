@@ -61,10 +61,16 @@ das listas e da barra com as tarefas intactas, e volta por um clique no índice.
 existindo, com uma confirmação que descreve o efeito real — tarefas para a inbox, subprojetos para
 a raiz — em vez de um "tem certeza?".
 
-**O Agent conversa com a Claude API pelo servidor, e a conversa mora no cliente.** A chave nunca
-chega ao navegador — o browser fala com a nossa API, que fala com a Anthropic. E o histórico vai
-inteiro a cada pedido em vez de virar tabela: as conversas aqui são curtas e descartáveis, e uma
-tabela de mensagens seria estado a manter para algo que ninguém relê.
+**O Agent fala com o modelo pelo servidor, e o provedor é escolha de quem hospeda.** A chave nunca
+chega ao navegador — o browser fala com a nossa API, que fala com o provedor. Quem faz a ponte é a
+AI SDK da Vercel: `AI_PROVIDER` e `AI_MODEL` no ambiente escolhem entre Anthropic, OpenAI e Google,
+e nada acima disso muda — as mesmas seis ferramentas, o mesmo SSE, a mesma tela. A troca consciente
+é **portabilidade em vez de profundidade**: os parâmetros afiados de um provedor só (thinking
+adaptativo, `effort`, controle de cache) ficam de fora, porque não existem nos três.
+
+**A conversa mora no cliente.** O histórico vai inteiro a cada pedido em vez de virar tabela: as
+conversas aqui são curtas e descartáveis, e uma tabela de mensagens seria estado a manter para algo
+que ninguém relê.
 
 **As ferramentas do Agent chamam os models, e nenhuma apaga.** Chamar os models mantém toda regra
 de negócio num lugar só — o agente erra igual à interface, com a mesma mensagem em pt-BR. E a

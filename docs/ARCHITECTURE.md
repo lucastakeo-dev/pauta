@@ -84,6 +84,7 @@ Nunca para cima, nunca lateral entre features. Dentro da própria feature, use c
 | Validação | Zod 4 via `fastify-type-provider-zod` | schema Zod = validação + tipos, uma fonte só |
 | ORM | Prisma 7 | **dono do schema**; migrations em `apps/api/prisma/migrations` |
 | Auth | JWT próprio (`@fastify/jwt`) + argon2id | token de 30d guardado em `localStorage` |
+| Agent | AI SDK da Vercel (`ai` + `@ai-sdk/*`) | provedor e modelo vêm do ambiente; laço e ferramentas em `lib/agent/` |
 | Banco dev | Docker `pauta-db` (postgres:17-alpine) em `127.0.0.1:5441` | 5432/5433/5439/55432 estão ocupadas por outros projetos da máquina |
 | Banco prod | Supabase | pooler em `DATABASE_URL`, direta em `DIRECT_DATABASE_URL` (migrations exigem a direta) |
 | Lint/format | **Biome 2** (`biome.json` na raiz, único pros 3 pacotes) | 2 espaços, aspas simples, sem `;`, largura 100 |
@@ -177,9 +178,13 @@ Com token: `GET /auth/me`, e os CRUDs de `/tasks`, `/projects`, `/labels`, `/eve
 
 **`POST /agent/ask` responde em SSE**, e é a única rota que não devolve JSON: o turno do Agent pode
 levar dezenas de segundos, então o texto sai em pedaços e cada ferramenta executada vira um evento
-na hora. O laço com a Claude API vive em `lib/agent/` — ele orquestra os models e não toca no
-Prisma, então a regra de "só o model persiste" continua valendo. Sem `ANTHROPIC_API_KEY`, a rota
-responde `503` e o resto da API segue igual.
+na hora. O laço vive em `lib/agent/` — ele orquestra os models e não toca no Prisma, então a regra
+de "só o model persiste" continua valendo.
+
+Quem fala com o modelo é a **AI SDK da Vercel** (`ai` + os adaptadores `@ai-sdk/*`): `AI_PROVIDER`
+(anthropic | openai | google) e `AI_MODEL` decidem no ambiente, e cada adaptador lê a chave com o
+nome canônico dele — `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`. Sem a
+chave do provedor escolhido a rota responde `503` e o resto da API segue igual.
 
 `GET /tasks` aceita `projectId`, `labelId`, `status`, `parentId`, `rootOnly`, `search`,
 `dueBefore`, `includeDone` e a janela `scheduledFrom`/`scheduledTo`. **Com a janela, as
