@@ -169,6 +169,40 @@ try {
   })
   check('dá para voltar ao escuro', true)
 
+  // 7b. A cor principal: troca o acento do app inteiro e é lembrada.
+  //     O avatar é a sonda — ele é pintado com o token do acento.
+  const acentoDoAvatar = () =>
+    page.evaluate(
+      () => getComputedStyle(document.querySelector('[aria-label="Conta"]')).backgroundColor,
+    )
+
+  const roxo = await acentoDoAvatar()
+
+  await page.getByRole('button', { name: 'Conta', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Cor principal' }).click()
+  await page.getByRole('menuitem', { name: 'Laranja' }).click()
+  await page.waitForFunction(() => document.documentElement.classList.contains('accent-laranja'), {
+    timeout: 5000,
+  })
+  await page.keyboard.press('Escape')
+
+  const laranja = await acentoDoAvatar()
+  check('trocar a cor principal repinta o acento', laranja !== roxo, `${roxo} → ${laranja}`)
+
+  // O tema continua sendo o que era: cor e tema são escolhas separadas.
+  check(
+    'trocar a cor não mexe no tema',
+    await page.evaluate(() => document.documentElement.classList.contains('dark')),
+  )
+
+  await page.reload({ waitUntil: 'networkidle' })
+  await trilho.waitFor({ timeout: 10_000 })
+  check(
+    'a cor escolhida sobrevive ao recarregar',
+    await page.evaluate(() => document.documentElement.classList.contains('accent-laranja')),
+  )
+  await page.screenshot({ path: `${outDir}/06-cor.png` })
+
   // 8. Sair volta ao login, e a área logada volta a ser barrada.
   //    Sair mora no menu da conta, na barra lateral — não mais solto numa faixa no topo.
   await page.getByRole('button', { name: 'Conta', exact: true }).click()

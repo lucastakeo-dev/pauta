@@ -6,6 +6,7 @@ import {
   Inbox,
   LogOut,
   Moon,
+  Palette,
   PanelLeftClose,
   PanelLeftOpen,
   Search,
@@ -16,6 +17,7 @@ import type { ComponentProps, ReactNode } from 'react'
 import { useSession } from '../features/auth/session-context.js'
 import { ConsoleOverlay } from '../features/console/console-overlay.js'
 import { useConsoleShortcut } from '../features/console/use-console-shortcut.js'
+import { ACCENTS, type Accent, accentSwatch, useAccent } from '../shared/lib/accent.js'
 import { cn } from '../shared/lib/cn.js'
 import { usePersistentFlag } from '../shared/lib/persistent.js'
 import { type Theme, useTheme } from '../shared/lib/theme.js'
@@ -25,6 +27,9 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '../shared/ui/dropdown-menu.js'
 import { SidebarSlotProvider, SidebarSlotTarget } from '../shared/ui/sidebar-slot.js'
@@ -41,6 +46,7 @@ const COPY = {
   expandir: 'Expandir o menu',
   temaClaro: 'Tema claro',
   temaEscuro: 'Tema escuro',
+  cor: 'Cor principal',
 }
 
 /** Painel aberto ou recolhido. Preferência de quem olha, não dado de servidor. */
@@ -72,6 +78,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const [aberto, alternarMenu] = usePersistentFlag(CHAVE_MENU, true)
   const [theme, setTheme] = useTheme()
+  const [accent, setAccent] = useAccent()
 
   // `startsWith` e não igualdade: a página de um projeto também é "Projetos".
   const ehAtivo = (to: string) => pathname === to || pathname.startsWith(`${to}/`)
@@ -139,6 +146,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               name={user?.name ?? COPY.marca}
               theme={theme}
               onTheme={setTheme}
+              accent={accent}
+              onAccent={setAccent}
               onSignOut={signOut}
             />
           </div>
@@ -244,11 +253,15 @@ function ContaMenu({
   name,
   theme,
   onTheme,
+  accent,
+  onAccent,
   onSignOut,
 }: {
   name: string
   theme: Theme
   onTheme: (theme: Theme) => void
+  accent: string
+  onAccent: (accent: string) => void
   onSignOut: () => void
 }) {
   const inicial = name.trim().slice(0, 2).toUpperCase()
@@ -282,6 +295,32 @@ function ContaMenu({
           {claro ? COPY.temaEscuro : COPY.temaClaro}
         </DropdownMenuItem>
 
+        {/*
+          A cor principal fica junto do tema porque as duas respondem à mesma pergunta:
+          com que cara o app abre. E fica num submenu porque oito amostras numa lista de
+          quatro itens seriam a maior parte do menu.
+        */}
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <Palette aria-hidden="true" className="size-4" />
+            {COPY.cor}
+            {/* A amostra usa o próprio token do acento: seja qual for a escolha, o
+                ponto no menu é exatamente a cor que o app está usando. */}
+            <span aria-hidden="true" className="ml-auto size-3 rounded-full bg-iris" />
+          </DropdownMenuSubTrigger>
+
+          <DropdownMenuSubContent className="grid grid-cols-4 gap-1 p-1.5">
+            {ACCENTS.map((opcao) => (
+              <Amostra
+                key={opcao.key}
+                accent={opcao}
+                ativa={opcao.key === accent}
+                onSelect={() => onAccent(opcao.key)}
+              />
+            ))}
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={onSignOut}>
           <LogOut aria-hidden="true" className="size-4" />
@@ -289,5 +328,42 @@ function ContaMenu({
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  )
+}
+
+/**
+ * Uma cor da paleta.
+ *
+ * A escolhida ganha o mesmo anel que as cores do diálogo de projeto — o app já tem uma
+ * língua para "esta é a cor selecionada", e um risco branco dentro do círculo sumiria
+ * justamente nas amostras claras.
+ */
+function Amostra({
+  accent,
+  ativa,
+  onSelect,
+}: {
+  accent: Accent
+  ativa: boolean
+  onSelect: () => void
+}) {
+  return (
+    <DropdownMenuItem
+      onSelect={onSelect}
+      aria-label={accent.label}
+      title={accent.label}
+      className="flex size-8 items-center justify-center rounded-full p-0 focus:bg-transparent"
+    >
+      <span
+        aria-hidden="true"
+        style={{ backgroundColor: accentSwatch(accent) }}
+        className={cn(
+          'size-5 rounded-full transition-all',
+          ativa
+            ? 'ring-2 ring-ink ring-offset-2 ring-offset-surface-overlay'
+            : 'opacity-80 hover:opacity-100',
+        )}
+      />
+    </DropdownMenuItem>
   )
 }

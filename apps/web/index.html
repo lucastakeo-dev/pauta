@@ -6,22 +6,31 @@
     <meta name="color-scheme" content="dark light" />
 
     <!--
-      Aplica o tema guardado antes do primeiro pixel.
+      Aplica o tema e a cor principal antes do primeiro pixel.
 
       Precisa ser embutido e síncrono: o bundle é módulo, então roda depois da primeira
-      pintura, e o app claro abriria escuro por um quadro. A chave é a mesma de
-      `shared/lib/theme.ts`.
+      pintura, e o app claro abriria escuro por um quadro — e o acento escolhido piscaria
+      roxo antes de virar laranja. As chaves são as mesmas de `shared/lib/theme.ts` e
+      `shared/lib/accent.ts`.
     -->
     <script>
-      const tema = (() => {
+      const guardado = (chave) => {
         try {
-          return localStorage.getItem("pauta.theme")
+          return localStorage.getItem(chave)
         } catch {
           return null
         }
-      })()
+      }
 
-      if (tema === "light" || tema === "dark") document.documentElement.className = tema
+      const tema = guardado("pauta.theme")
+      const acento = guardado("pauta.accent")
+      const acentos = ["laranja", "vermelho", "azul", "verde", "ambar", "roxo", "grafite", "rosa"]
+      const classes = []
+
+      classes.push(tema === "light" ? "light" : "dark")
+      if (acentos.includes(acento)) classes.push(`accent-${acento}`)
+
+      document.documentElement.className = classes.join(" ")
     </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Pauta</title>
