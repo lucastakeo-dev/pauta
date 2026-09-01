@@ -130,10 +130,18 @@ try {
   })
   await page.waitForTimeout(200)
 
-  const caixa = await grade.boundingBox()
-  const pontoNaHora = (h) => ({ x: caixa.x + caixa.width / 2, y: caixa.y + h * HOUR_HEIGHT + 8 })
+  /*
+    A caixa é medida a cada mira, e não uma vez só: a área de 24h vive dentro de um
+    contêiner que rola, então o topo dela anda. Guardar a medida fazia o alvo escorregar
+    uma hora inteira quando algo rolava a grade no meio do caminho.
+  */
+  const pontoNaHora = async (h) => {
+    const caixa = await grade.boundingBox()
+    return { x: caixa.x + caixa.width / 2, y: caixa.y + h * HOUR_HEIGHT + 8 }
+  }
 
-  await page.mouse.click(pontoNaHora(10).x, pontoNaHora(10).y)
+  const dezHoras = await pontoNaHora(10)
+  await page.mouse.click(dezHoras.x, dezHoras.y)
   const cartao = page.getByRole('form', { name: 'Novo no calendário' })
   await cartao.waitFor({ timeout: 5_000 })
 
@@ -166,7 +174,8 @@ try {
   check('com a duração padrão de 1h', duracao === 60, `${duracao}min`)
 
   // 4. A alternância cria tarefa agendada — e ela vive nas duas telas.
-  await page.mouse.click(pontoNaHora(8).x, pontoNaHora(8).y)
+  const oitoHoras = await pontoNaHora(8)
+  await page.mouse.click(oitoHoras.x, oitoHoras.y)
   await cartao.waitFor({ timeout: 5_000 })
   await cartao.getByRole('button', { name: 'Tarefa' }).click()
   await cartao.getByLabel('Título').fill('Escrever proposta')
@@ -206,13 +215,18 @@ try {
   // 6. O chip da faixa é arrastável: é o gesto que vira "vence hoje" em "faço às 13h".
   const chip = page.getByRole('button', { name: /Arrastar para um horário: Pagar condomínio/ })
   await chip.hover()
-  await dragTo(page, chip, pontoNaHora(13))
+  /*
+    9h, e não uma hora mais baixa na grade: perto da borda de baixo o dnd-kit rola o
+    contêiner sozinho durante o arrasto e o alvo escorrega debaixo do ponteiro. A faixa
+    segura encolheu quando o rodapé entrou, e foi o que quebrou este teste.
+  */
+  await dragTo(page, chip, await pontoNaHora(9))
   await page.waitForTimeout(1_000)
 
   const agendada = await fetch(`${API}/tasks/${prazo.id}`, { headers: auth }).then((r) => r.json())
   check(
     'arrastar o prazo para a grade agenda a tarefa',
-    agendada.scheduledStart !== null && new Date(agendada.scheduledStart).getHours() === 13,
+    agendada.scheduledStart !== null && new Date(agendada.scheduledStart).getHours() === 9,
     agendada.scheduledStart
       ? new Date(agendada.scheduledStart).toTimeString().slice(0, 5)
       : 'não agendou',

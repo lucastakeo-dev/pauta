@@ -210,6 +210,40 @@ Duas exceções, ambas porque existe lugar melhor para a mensagem:
 - **Autosave da nota** tem indicador próprio no editor. Não é ação pedida, é consequência
   de digitar.
 
+## O rodapé e o Agent
+
+Uma faixa de 32px atravessa o app inteiro, embaixo de tudo. Ela existe porque duas
+informações não tinham casa: a **fila** — o inbox só aparecia ao abrir o inbox, e o que
+ninguém vê ninguém processa — e o **estado da escrita**, que num app todo otimista era
+invisível até algo dar errado. "Aplicado" e "salvo" eram a mesma imagem na tela.
+
+À esquerda, contadores que levam à tela (`6 por processar`, `3 vencem hoje`) e só
+aparecem quando há o que contar. À direita, o estado (`Tudo salvo`, `Salvando…`, `Sem
+conexão`) e o **Agent**. O estado não é botão: não há o que fazer com ele além de saber.
+
+**O Agent abre numa janela flutuante**, ancorada no canto de baixo à direita — de onde
+o botão está —, com minimizar, expandir e fechar no cabeçalho. Janela e não coluna fixa
+porque ele é conversa passageira sobre o que já está na tela: uma coluna espremeria o
+conteúdo o tempo todo em que estivesse aberta, inclusive parada. Minimizada, ela vira só
+a barra do cabeçalho e a conversa continua viva; expandida, ganha 56rem para quando a
+resposta é longa. No celular ocupa a tela — 400px de janela flutuante em 390px de tela é
+uma janela que não flutua em lugar nenhum.
+
+O atalho é `⌘J`, vizinho do `⌘K`: **o `⌘K` registra o que você já sabe que quer; o `⌘J`
+é para quando o pedido ainda é uma frase solta.**
+
+**Cada ferramenta que ele roda vira uma linha no turno, no instante em que roda.** É o
+que separa este painel de um chat: o que ele diz que fez fica ao lado do que ele fez, e
+dá para conferir sem sair da tela. Uma linha com ✓ é uma escrita que aconteceu; com ⚠, o
+motivo de não ter acontecido.
+
+**Ele não apaga nada.** As seis ferramentas leem, criam e alteram — nenhuma exclui. Um
+agente que interpreta mal e cria uma tarefa a mais custa um clique; um que apaga o
+projeto errado custa o histórico. Excluir continua sendo gesto humano, com confirmação.
+
+Sem `ANTHROPIC_API_KEY` no servidor, o app inteiro funciona igual e só o Agent responde
+dizendo o que falta — um recurso a mais nunca vira pré-requisito para abrir a tela.
+
 ## Moldura: trilho, painel e tela
 
 As telas logadas são três retângulos flutuando sobre um fundo (`shell`, o único degrau

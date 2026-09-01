@@ -175,6 +175,12 @@ convivem porque nenhum lado usa os do outro.
 Públicos: `GET /health`, `POST /auth/register`, `POST /auth/login`.
 Com token: `GET /auth/me`, e os CRUDs de `/tasks`, `/projects`, `/labels`, `/events` e `/notes`.
 
+**`POST /agent/ask` responde em SSE**, e é a única rota que não devolve JSON: o turno do Agent pode
+levar dezenas de segundos, então o texto sai em pedaços e cada ferramenta executada vira um evento
+na hora. O laço com a Claude API vive em `lib/agent/` — ele orquestra os models e não toca no
+Prisma, então a regra de "só o model persiste" continua valendo. Sem `ANTHROPIC_API_KEY`, a rota
+responde `503` e o resto da API segue igual.
+
 `GET /tasks` aceita `projectId`, `labelId`, `status`, `parentId`, `rootOnly`, `search`,
 `dueBefore`, `includeDone` e a janela `scheduledFrom`/`scheduledTo`. **Com a janela, as
 recorrências são expandidas**; sem ela, aparece só o molde da recorrência.

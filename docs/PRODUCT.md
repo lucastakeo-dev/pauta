@@ -61,6 +61,17 @@ das listas e da barra com as tarefas intactas, e volta por um clique no índice.
 existindo, com uma confirmação que descreve o efeito real — tarefas para a inbox, subprojetos para
 a raiz — em vez de um "tem certeza?".
 
+**O Agent conversa com a Claude API pelo servidor, e a conversa mora no cliente.** A chave nunca
+chega ao navegador — o browser fala com a nossa API, que fala com a Anthropic. E o histórico vai
+inteiro a cada pedido em vez de virar tabela: as conversas aqui são curtas e descartáveis, e uma
+tabela de mensagens seria estado a manter para algo que ninguém relê.
+
+**As ferramentas do Agent chamam os models, e nenhuma apaga.** Chamar os models mantém toda regra
+de negócio num lugar só — o agente erra igual à interface, com a mesma mensagem em pt-BR. E a
+ausência de exclusão é a decisão de segurança do recurso: criar demais custa um clique, apagar o
+projeto errado custa o histórico. O erro de uma ferramenta volta como resultado para o modelo, não
+como exceção, para ele corrigir o próprio pedido em vez de derrubar o turno.
+
 **API própria em vez de falar direto com o Supabase.** Custa um app a mais para manter, mas mantém
 regra de negócio num lugar só quando o mobile chegar, e deixa o PostgREST trancado.
 

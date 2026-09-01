@@ -16,6 +16,8 @@ import {
 } from 'lucide-react'
 import type { ComponentProps, ReactNode } from 'react'
 import { useEffect, useState } from 'react'
+import { AgentPanel } from '../features/agent/agent-panel.js'
+import { useAgentShortcut } from '../features/agent/use-agent-shortcut.js'
 import { useSession } from '../features/auth/session-context.js'
 import { ConsoleOverlay } from '../features/console/console-overlay.js'
 import { useConsoleShortcut } from '../features/console/use-console-shortcut.js'
@@ -36,6 +38,7 @@ import {
   DropdownMenuTrigger,
 } from '../shared/ui/dropdown-menu.js'
 import { SidebarSlotProvider, SidebarSlotTarget } from '../shared/ui/sidebar-slot.js'
+import { StatusBar } from './status-bar.js'
 
 const COPY = {
   marca: 'Pauta',
@@ -80,6 +83,7 @@ const NAV = [
 export function AppShell({ children }: { children: ReactNode }) {
   const { user, signOut } = useSession()
   const quickCapture = useConsoleShortcut()
+  const agente = useAgentShortcut()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const [aberto, alternarMenu] = usePersistentFlag(CHAVE_MENU, true)
   const [theme, setTheme] = useTheme()
@@ -120,7 +124,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <SidebarSlotProvider onChoice={() => setGaveta(false)}>
-      <div className="flex h-dvh flex-col gap-1.5 overflow-hidden bg-shell p-1.5 md:flex-row">
+      <div className="flex h-dvh flex-col gap-1.5 overflow-hidden bg-shell p-1.5">
         {/*
           A barra de cima só existe no estreito, e carrega o mínimo: o que abre a
           gaveta, onde se está, e a captura rápida — que no celular não tem ⌘K.
@@ -155,129 +159,140 @@ export function AppShell({ children }: { children: ReactNode }) {
           />
         ) : null}
 
-        {/* Trilho e painel são dois retângulos na tela, mas uma região só para quem
+        {/*
+          A linha do meio: barra e conteúdo. Ela existe porque o rodapé precisa
+          atravessar a largura inteira embaixo dos dois — antes a moldura era uma linha
+          só, e o rodapé teria de morar dentro do conteúdo.
+        */}
+        <div className="flex min-h-0 min-w-0 flex-1 gap-1.5">
+          {/* Trilho e painel são dois retângulos na tela, mas uma região só para quem
             navega por marcos: separá-los daria dois "complementary" sem nome útil. */}
-        <aside
-          aria-label={COPY.barra}
-          /*
+          <aside
+            aria-label={COPY.barra}
+            /*
             Fechada, a gaveta sai da ordem do Tab e da árvore de acessibilidade. Só
             escondê-la com `translate` deixaria a barra inteira alcançável por teclado
             atrás do conteúdo — invisível e focável é o pior dos dois mundos.
           */
-          inert={!desktop && !gaveta}
-          className={cn(
-            'flex shrink-0 gap-1.5',
-            'max-md:fixed max-md:inset-y-1.5 max-md:left-1.5 max-md:z-50',
-            'max-md:transition-transform max-md:duration-200 max-md:ease-entrance',
-            !gaveta && 'max-md:-translate-x-[calc(100%+0.75rem)]',
-          )}
-        >
-          <div className="flex w-13 shrink-0 flex-col items-center gap-1 rounded-card bg-surface py-2.5">
-            <Marca />
-
-            <hr className="my-1.5 w-6 border-line border-t" />
-
-            <nav aria-label={COPY.secoes} className="flex flex-col items-center gap-1">
-              {NAV.map((item) => {
-                const ativo = ehAtivo(item.to)
-                const Icon = item.icon
-
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    aria-current={ativo ? 'page' : undefined}
-                    title={item.label}
-                    className={cn(
-                      'flex size-9 items-center justify-center rounded-[10px]',
-                      'transition-colors duration-100',
-                      ativo
-                        ? 'bg-surface-raised text-ink'
-                        : 'text-ink-subtle hover:bg-surface-raised hover:text-ink-muted',
-                    )}
-                  >
-                    <Icon aria-hidden="true" className="size-[18px]" />
-                    <span className="sr-only">{item.label}</span>
-                  </Link>
-                )
-              })}
-            </nav>
-
-            <span className="flex-1" />
-
-            {/* Recolher mora no cabeçalho do painel, junto do que ele recolhe. Aqui
-                fica só o inverso, e só quando não há painel para carregá-lo. */}
-            {aberto ? null : (
-              <BotaoTrilho onClick={alternarMenu} aria-expanded={false} rotulo={COPY.expandir}>
-                <PanelLeftOpen aria-hidden="true" className="size-[18px]" />
-              </BotaoTrilho>
+            inert={!desktop && !gaveta}
+            className={cn(
+              'flex shrink-0 gap-1.5',
+              'max-md:fixed max-md:inset-y-1.5 max-md:left-1.5 max-md:z-50',
+              'max-md:transition-transform max-md:duration-200 max-md:ease-entrance',
+              !gaveta && 'max-md:-translate-x-[calc(100%+0.75rem)]',
             )}
+          >
+            <div className="flex w-13 shrink-0 flex-col items-center gap-1 rounded-card bg-surface py-2.5">
+              <Marca />
 
-            <BotaoTrilho
-              onClick={() => quickCapture.setOpen(true)}
-              rotulo={`${COPY.console} (${COPY.atalho})`}
-            >
-              <Search aria-hidden="true" className="size-[18px]" />
-            </BotaoTrilho>
+              <hr className="my-1.5 w-6 border-line border-t" />
 
-            <ContaMenu
-              name={user?.name ?? COPY.marca}
-              theme={theme}
-              onTheme={setTheme}
-              accent={accent}
-              onAccent={setAccent}
-              onSignOut={signOut}
-            />
-          </div>
+              <nav aria-label={COPY.secoes} className="flex flex-col items-center gap-1">
+                {NAV.map((item) => {
+                  const ativo = ehAtivo(item.to)
+                  const Icon = item.icon
 
-          {mostraPainel ? (
-            <div className="flex w-[272px] shrink-0 flex-col overflow-hidden rounded-card bg-surface">
-              {/*
+                  return (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      aria-current={ativo ? 'page' : undefined}
+                      title={item.label}
+                      className={cn(
+                        'flex size-9 items-center justify-center rounded-[10px]',
+                        'transition-colors duration-100',
+                        ativo
+                          ? 'bg-surface-raised text-ink'
+                          : 'text-ink-subtle hover:bg-surface-raised hover:text-ink-muted',
+                      )}
+                    >
+                      <Icon aria-hidden="true" className="size-[18px]" />
+                      <span className="sr-only">{item.label}</span>
+                    </Link>
+                  )
+                })}
+              </nav>
+
+              <span className="flex-1" />
+
+              {/* Recolher mora no cabeçalho do painel, junto do que ele recolhe. Aqui
+                fica só o inverso, e só quando não há painel para carregá-lo. */}
+              {aberto ? null : (
+                <BotaoTrilho onClick={alternarMenu} aria-expanded={false} rotulo={COPY.expandir}>
+                  <PanelLeftOpen aria-hidden="true" className="size-[18px]" />
+                </BotaoTrilho>
+              )}
+
+              <BotaoTrilho
+                onClick={() => quickCapture.setOpen(true)}
+                rotulo={`${COPY.console} (${COPY.atalho})`}
+              >
+                <Search aria-hidden="true" className="size-[18px]" />
+              </BotaoTrilho>
+
+              <ContaMenu
+                name={user?.name ?? COPY.marca}
+                theme={theme}
+                onTheme={setTheme}
+                accent={accent}
+                onAccent={setAccent}
+                onSignOut={signOut}
+              />
+            </div>
+
+            {mostraPainel ? (
+              <div className="flex w-[272px] shrink-0 flex-col overflow-hidden rounded-card bg-surface">
+                {/*
                 O cabeçalho nomeia a seção em que se está — não repete a marca nem os
                 destinos. O trilho troca de seção; o painel mostra o que há dentro dela.
                 Enquanto ele espelhava o trilho, clicar no calendário levava às mesmas
                 três opções de novo, e a coluna inteira não dizia nada sobre o calendário.
               */}
-              <header className="flex h-11 shrink-0 items-center gap-2 border-line border-b pr-2 pl-3">
-                <secao.icon aria-hidden="true" className="size-4 shrink-0 text-ink-muted" />
-                <h2 className="min-w-0 flex-1 truncate font-semibold text-ink text-sm">
-                  {secao.label}
-                </h2>
+                <header className="flex h-11 shrink-0 items-center gap-2 border-line border-b pr-2 pl-3">
+                  <secao.icon aria-hidden="true" className="size-4 shrink-0 text-ink-muted" />
+                  <h2 className="min-w-0 flex-1 truncate font-semibold text-ink text-sm">
+                    {secao.label}
+                  </h2>
 
-                {/* Recolher é do monitor: dentro da gaveta, o painel é justamente o
+                  {/* Recolher é do monitor: dentro da gaveta, o painel é justamente o
                     que se veio ver, e quem fecha é o fundo, o Esc ou navegar. */}
-                <button
-                  type="button"
-                  onClick={alternarMenu}
-                  aria-expanded={true}
-                  aria-label={COPY.recolher}
-                  title={COPY.recolher}
+                  <button
+                    type="button"
+                    onClick={alternarMenu}
+                    aria-expanded={true}
+                    aria-label={COPY.recolher}
+                    title={COPY.recolher}
+                    className={cn(
+                      'hidden size-7 shrink-0 items-center justify-center rounded-[8px] md:flex',
+                      'text-ink-subtle transition-colors hover:bg-surface-raised hover:text-ink',
+                    )}
+                  >
+                    <PanelLeftClose aria-hidden="true" className="size-4" />
+                  </button>
+                </header>
+
+                {/* O que a seção atual quer na barra. Vazio é um estado normal. */}
+                <SidebarSlotTarget
                   className={cn(
-                    'hidden size-7 shrink-0 items-center justify-center rounded-[8px] md:flex',
-                    'text-ink-subtle transition-colors hover:bg-surface-raised hover:text-ink',
+                    'flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto p-2',
+                    // O traço entre seções mora aqui e não dentro do grupo: elas chegam
+                    // pelo portal com pais diferentes, então nenhuma sabe sozinha se é a
+                    // primeira da coluna.
+                    'divide-y divide-line',
                   )}
-                >
-                  <PanelLeftClose aria-hidden="true" className="size-4" />
-                </button>
-              </header>
+                />
+              </div>
+            ) : null}
+          </aside>
 
-              {/* O que a seção atual quer na barra. Vazio é um estado normal. */}
-              <SidebarSlotTarget
-                className={cn(
-                  'flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto p-2',
-                  // O traço entre seções mora aqui e não dentro do grupo: elas chegam
-                  // pelo portal com pais diferentes, então nenhuma sabe sozinha se é a
-                  // primeira da coluna.
-                  'divide-y divide-line',
-                )}
-              />
-            </div>
-          ) : null}
-        </aside>
-
-        <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden rounded-card bg-canvas">
-          {children}
+          <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden rounded-card bg-canvas">
+            {children}
+          </div>
         </div>
+
+        <StatusBar agenteAberto={agente.open} onAgente={() => agente.setOpen(!agente.open)} />
+
+        {agente.open ? <AgentPanel onClose={() => agente.setOpen(false)} /> : null}
 
         {quickCapture.open ? <ConsoleOverlay onClose={() => quickCapture.setOpen(false)} /> : null}
       </div>

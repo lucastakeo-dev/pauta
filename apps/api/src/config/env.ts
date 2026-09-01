@@ -17,6 +17,13 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(32, 'JWT_SECRET precisa de pelo menos 32 caracteres.'),
   JWT_EXPIRES_IN: z.string().default('30d'),
 
+  /*
+   * A chave do agente. Opcional de propósito: sem ela o app inteiro continua
+   * funcionando e só o Agent responde 503 dizendo o que falta. Uma chave obrigatória
+   * transformaria um recurso a mais num pré-requisito para abrir o app.
+   */
+  ANTHROPIC_API_KEY: z.string().min(1).optional(),
+
   PORT: z.coerce.number().int().positive().default(3334),
   HOST: z.string().default('0.0.0.0'),
 
