@@ -38,6 +38,18 @@ hora no planner — e "processar" muda o status para `todo` e mais nada. Não co
 tarefa segue viva nas listas e apenas deixa de ser um item por decidir. Um botão que fizesse as
 três coisas obrigaria a escolher o destino antes de ter decidido o que a tarefa é.
 
+**Mover reindexa o grupo de destino; a rota de reordenar deixou de existir.** `POST
+/projects/:id/move` gravava só a posição do projeto movido, o que colidia com a do irmão que já
+ocupava aquele índice — e o desempate silencioso por nome decidia a ordem no lugar de quem
+arrastou. Agora a operação regrava a ordem inteira do grupo numa transação. Com isso, a
+`POST /projects/reorder` (que recebia a lista toda, nunca teve cliente e nunca teve teste) passou a
+duplicar o mesmo trabalho, e foi removida: rota morta que parece viva é pior do que rota nenhuma.
+
+**Arquivar existe porque excluir é definitivo demais para arrumar a barra lateral.** Arquivado sai
+das listas e da barra com as tarefas intactas, e volta por um clique no índice. Excluir continua
+existindo, com uma confirmação que descreve o efeito real — tarefas para a inbox, subprojetos para
+a raiz — em vez de um "tem certeza?".
+
 **API própria em vez de falar direto com o Supabase.** Custa um app a mais para manter, mas mantém
 regra de negócio num lugar só quando o mobile chegar, e deixa o PostgREST trancado.
 

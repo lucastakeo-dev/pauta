@@ -184,8 +184,11 @@ editar uma delas cria a linha de verdade (`POST /tasks/:id/toggle`, `PATCH /task
 devolve `parentId` e `childCount` ordenados por pai — o cliente monta a árvore numa
 passada. Mover tem rota própria, `POST /projects/:id/move`, porque precisa recusar mover
 um projeto para dentro da própria subárvore (`422 project_cycle`): isso desligaria a
-subárvore da raiz, e ela sumiria da barra lateral sem ter sido apagada. Apagar um pai
-promove os filhos à raiz, nunca cascateia.
+subárvore da raiz, e ela sumiria da barra lateral sem ter sido apagada. Ela também
+**regrava a ordem inteira do grupo de destino** — gravar só a posição do movido colidia
+com a do irmão que já ocupava o índice. Apagar um pai promove os filhos à raiz, nunca
+cascateia; `PATCH /projects/:id` com `archived` tira da lista sem apagar nada, e
+`GET /projects?includeArchived=true` é como o arquivo é lido.
 
 ## Regra de dado mora no banco
 

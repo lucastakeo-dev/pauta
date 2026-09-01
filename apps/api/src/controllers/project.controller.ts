@@ -1,9 +1,4 @@
-import type {
-  CreateProjectInput,
-  MoveProjectInput,
-  ReorderProjectsInput,
-  UpdateProjectInput,
-} from '@pauta/contracts'
+import type { CreateProjectInput, MoveProjectInput, UpdateProjectInput } from '@pauta/contracts'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import * as projectModel from '../models/project.model.js'
 import { renderProject, renderProjects } from '../views/task.view.js'
@@ -49,12 +44,4 @@ export async function move(
 ) {
   const project = await projectModel.move(request.userId, request.params.id, request.body)
   return reply.status(200).send(renderProject(project))
-}
-
-export async function reorder(
-  request: FastifyRequest<{ Body: ReorderProjectsInput }>,
-  reply: FastifyReply,
-) {
-  const projects = await projectModel.reorder(request.userId, request.body.ids)
-  return reply.status(200).send(renderProjects(projects))
 }

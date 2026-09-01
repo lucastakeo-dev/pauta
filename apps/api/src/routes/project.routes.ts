@@ -4,7 +4,6 @@ import {
   moveProjectSchema,
   projectListSchema,
   projectViewSchema,
-  reorderProjectsSchema,
   updateProjectSchema,
   uuidSchema,
 } from '@pauta/contracts'
@@ -44,19 +43,6 @@ export async function projectRoutes(app: FastifyInstance): Promise<void> {
       },
     },
     projectController.store,
-  )
-
-  route.post(
-    '/projects/reorder',
-    {
-      schema: {
-        tags: ['projects'],
-        summary: 'Grava a nova ordem da barra lateral',
-        body: reorderProjectsSchema,
-        response: { 200: projectListSchema, 404: apiErrorSchema },
-      },
-    },
-    projectController.reorder,
   )
 
   route.post(
