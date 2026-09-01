@@ -52,10 +52,26 @@
   --color-ink-muted: oklch(0.75 0.012 275);
   --color-ink-subtle: oklch(0.58 0.014 275);
 
-  /* Acento único */
-  --color-iris: oklch(0.68 0.17 285);
-  --color-iris-strong: oklch(0.74 0.18 285);
-  --color-iris-soft: oklch(0.4 0.11 285);
+  /*
+   * Acento único, e agora escolhível.
+   *
+   * O que a pessoa troca é o **matiz**, não a escala: a claridade e o croma de cada
+   * degrau continuam sendo os do sistema, calculados aqui. É o que garante que nenhuma
+   * escolha de cor quebre o contraste — no claro o acento precisa passar de 4,5:1 sobre
+   * branco, e isso é a claridade que decide, não o matiz.
+   *
+   * `--accent-c` é multiplicador, e existe por causa do grafite: um acento neutro é o
+   * mesmo desenho com quase nenhum croma.
+   */
+  --accent-h: 285;
+  --accent-c: 1;
+  /* A claridade do degrau principal. A amostra do menu lê daqui para mostrar a cor
+     que o tema atual vai realmente pintar — no claro o acento é mais escuro. */
+  --accent-l: 0.68;
+
+  --color-iris: oklch(0.68 calc(0.17 * var(--accent-c)) var(--accent-h));
+  --color-iris-strong: oklch(0.74 calc(0.18 * var(--accent-c)) var(--accent-h));
+  --color-iris-soft: oklch(0.4 calc(0.11 * var(--accent-c)) var(--accent-h));
 
   /* Prioridades P1..P4 — do urgente ao neutro */
   --color-p1: oklch(0.68 0.19 25);
@@ -170,9 +186,11 @@
   --color-ink-muted: oklch(0.45 0.012 275);
   --color-ink-subtle: oklch(0.6 0.012 275);
 
-  --color-iris: oklch(0.52 0.2 285);
-  --color-iris-strong: oklch(0.46 0.21 285);
-  --color-iris-soft: oklch(0.92 0.04 285);
+  --accent-l: 0.52;
+
+  --color-iris: oklch(0.52 calc(0.2 * var(--accent-c)) var(--accent-h));
+  --color-iris-strong: oklch(0.46 calc(0.21 * var(--accent-c)) var(--accent-h));
+  --color-iris-soft: oklch(0.92 calc(0.04 * var(--accent-c)) var(--accent-h));
 
   --color-p1: oklch(0.55 0.21 25);
   --color-p2: oklch(0.58 0.15 65);
@@ -182,6 +200,40 @@
   --color-positive: oklch(0.52 0.15 155);
   --color-warning: oklch(0.56 0.14 85);
   --color-danger: oklch(0.53 0.21 25);
+}
+
+/*
+ * A paleta da cor principal.
+ *
+ * Cada uma é um matiz e nada mais — a classe entra no `<html>` ao lado do tema, e os
+ * três degraus do acento se recalculam sozinhos nos dois temas. Os nomes são os que
+ * aparecem no menu; a chave é o que vai para o `localStorage`.
+ */
+.accent-laranja {
+  --accent-h: 55;
+}
+.accent-vermelho {
+  --accent-h: 25;
+}
+.accent-azul {
+  --accent-h: 255;
+}
+.accent-verde {
+  --accent-h: 150;
+}
+.accent-ambar {
+  --accent-h: 85;
+}
+.accent-roxo {
+  --accent-h: 285;
+}
+.accent-rosa {
+  --accent-h: 350;
+}
+/* Neutro: mesmo desenho, quase sem croma. */
+.accent-grafite {
+  --accent-h: 285;
+  --accent-c: 0.1;
 }
 
 @layer base {

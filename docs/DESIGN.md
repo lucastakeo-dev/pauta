@@ -54,6 +54,32 @@ Duas coisas fazem a troca funcionar sem remendo:
 A vitrine tem paleta própria (`paper`, `graphite`) e não participa da troca: ela é lida uma vez,
 de passagem, e o app fica aberto o dia inteiro.
 
+## A cor principal é escolhida
+
+O acento sai de fábrica roxo — o íris que o app sempre teve — e pode virar qualquer uma
+de oito: laranja, vermelho, azul, verde, âmbar, roxo, grafite e rosa. Fica no menu da
+conta, ao lado do tema, porque as duas respondem à mesma pergunta: com que cara o app
+abre.
+
+**O que a escolha troca é o matiz, e só ele.** A claridade e o croma de cada degrau
+(`iris`, `iris-strong`, `iris-soft`) continuam sendo os do sistema, calculados a partir
+de `--accent-h`. É o que garante que nenhuma escolha quebre o contraste: no tema claro o
+acento precisa passar de 4,5:1 sobre branco, e quem decide isso é a claridade — não a cor
+que a pessoa clicou.
+
+A consequência é que **o claro entrega uma versão mais escura do que a amostra sugere à
+primeira vista**: laranja vira terracota, âmbar vira mostarda. É proposital, e a amostra
+não mente sobre isso — ela é desenhada com a claridade do tema atual (`--accent-l`), então
+o círculo do menu é exatamente a cor que o app vai pintar.
+
+O grafite é a única que mexe no croma: um acento neutro é o mesmo desenho com quase
+nenhuma saturação (`--accent-c`).
+
+A classe (`accent-laranja`) entra no `<html>` ao lado da do tema, aplicada pelo script
+embutido no `index.html` **antes do primeiro pixel** — como o tema, para o acento
+escolhido não piscar roxo antes de virar laranja. As duas são independentes: trocar a cor
+não mexe no tema, e vice-versa.
+
 ## Texto
 
 Três níveis, e só três: `ink` (o conteúdo), `ink-muted` (rótulos e apoio), `ink-subtle` (metadados
