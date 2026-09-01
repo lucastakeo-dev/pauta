@@ -2,6 +2,7 @@ import { Calendar, CalendarRange, Columns2, type LucideIcon } from 'lucide-react
 import { cn } from '../../shared/lib/cn.js'
 import { SidebarGroup } from '../../shared/ui/sidebar-group.js'
 import { sidebarRow, sidebarRowActive, sidebarRowIdle } from '../../shared/ui/sidebar-row.js'
+import { useSidebarChoice } from '../../shared/ui/sidebar-slot.js'
 
 const COPY = {
   titulo: 'Telas',
@@ -35,6 +36,10 @@ export function PlannerViewSwitcher({
   value: PlannerView
   onChange: (view: PlannerView) => void
 }) {
+  // Na tela estreita a barra é gaveta: escolher a tela também precisa fechá-la, senão
+  // ela fica por cima da grade que acabou de ser pedida.
+  const escolheu = useSidebarChoice()
+
   return (
     <SidebarGroup title={COPY.titulo}>
       {TELAS.map((tela) => {
@@ -45,7 +50,10 @@ export function PlannerViewSwitcher({
           <button
             key={tela.id}
             type="button"
-            onClick={() => onChange(tela.id)}
+            onClick={() => {
+              onChange(tela.id)
+              escolheu()
+            }}
             aria-pressed={ativa}
             title={tela.descricao}
             className={cn(sidebarRow, ativa ? sidebarRowActive : sidebarRowIdle)}

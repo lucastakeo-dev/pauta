@@ -70,7 +70,7 @@ export function ProjectPage({ projectId }: { projectId: string }) {
     return (
       <>
         {barra}
-        <main className="flex-1 px-8 pt-8">
+        <main className="flex-1 px-4 pt-6 md:px-8 md:pt-8">
           <p role="status" aria-live="polite" className="text-ink-subtle text-sm">
             {COPY.carregando}
           </p>
@@ -83,7 +83,7 @@ export function ProjectPage({ projectId }: { projectId: string }) {
     return (
       <>
         {barra}
-        <main className="flex-1 px-8 pt-8">
+        <main className="flex-1 px-4 pt-6 md:px-8 md:pt-8">
           <p role="alert" className="text-danger text-sm">
             {COPY.naoEncontrado}
           </p>
@@ -97,7 +97,7 @@ export function ProjectPage({ projectId }: { projectId: string }) {
       {barra}
 
       <main className="flex min-w-0 flex-1 flex-col overflow-y-auto">
-        <header className="flex flex-col gap-3 border-line border-b px-8 pt-6">
+        <header className="flex flex-col gap-3 border-line border-b px-4 pt-5 md:px-8 md:pt-6">
           <Trilha caminho={caminho} />
 
           {/* O ícone é o botão de editar, como no Linear. Aqui cabe: a barra lateral
@@ -156,7 +156,7 @@ export function ProjectPage({ projectId }: { projectId: string }) {
           </nav>
         </header>
 
-        <div className="flex flex-1 flex-col px-8 pt-6 pb-6">
+        <div className="flex flex-1 flex-col px-4 pt-5 pb-6 md:px-8 md:pt-6">
           <div className="flex w-full max-w-3xl flex-col gap-6">
             {aba === 'overview' ? (
               <Overview projeto={projeto} />

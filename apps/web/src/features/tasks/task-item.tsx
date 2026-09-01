@@ -193,20 +193,28 @@ export function TaskItem({ task, showProject = true }: TaskItemProps) {
             )
           ) : null}
 
+          {/*
+            Projeto e etiquetas somem na tela estreita. A ponta direita não encolhe —
+            é a régua da lista — então o que ela ganha o título perde, e num celular
+            "Pagar co…" ao lado de três chips não ajuda ninguém. Prazo e prioridade
+            ficam: são o que decide o que fazer agora.
+          */}
           {task.project && showProject ? (
-            <span className="flex min-w-0 items-center gap-1 text-ink-subtle">
+            <span className="hidden min-w-0 items-center gap-1 text-ink-subtle sm:flex">
               <NamedIcon name={task.project.icon} className="size-3.5 shrink-0" />
               <span className="max-w-24 truncate">{task.project.name}</span>
             </span>
           ) : null}
 
-          {etiquetas.map((label) => (
-            <LabelChip key={label.id} label={label} />
-          ))}
+          <span className="hidden shrink-0 items-center gap-1.5 sm:flex">
+            {etiquetas.map((label) => (
+              <LabelChip key={label.id} label={label} />
+            ))}
+          </span>
 
           {escondidas > 0 ? (
             <Chip
-              className="text-ink-subtle"
+              className="hidden text-ink-subtle sm:flex"
               title={task.labels
                 .slice(ETIQUETAS_VISIVEIS)
                 .map((label) => label.name)

@@ -10,6 +10,7 @@ import { cn } from '../../shared/lib/cn.js'
 import { usePersistentSet } from '../../shared/lib/persistent.js'
 import { NamedIcon } from '../../shared/ui/icon-catalog.js'
 import { sidebarRow, sidebarRowActive, sidebarRowOnPath } from '../../shared/ui/sidebar-row.js'
+import { useSidebarChoice } from '../../shared/ui/sidebar-slot.js'
 import { NewProjectDialog } from './project-dialog.js'
 import { ProjectDndProvider, useDropIndicator } from './project-dnd.js'
 import { ProjectMenu } from './project-menu.js'
@@ -59,8 +60,21 @@ type ProjectTreeProps = {
   onSelect?: ((id: string | null) => void) | undefined
 }
 
-export function ProjectTree({ selectedId, onSelect }: ProjectTreeProps) {
+export function ProjectTree({ selectedId, onSelect: aoEscolher }: ProjectTreeProps) {
   const { data: projects } = useProjects()
+  const escolheu = useSidebarChoice()
+
+  /*
+    Filtrar por projeto acontece sem sair da rota, então na tela estreita a gaveta não
+    fecharia sozinha — ficaria por cima da lista que acabou de ser filtrada. No modo
+    navegação isso não é preciso: mudar de URL já fecha.
+  */
+  const onSelect = aoEscolher
+    ? (id: string | null) => {
+        aoEscolher(id)
+        escolheu()
+      }
+    : undefined
   const [recolhidos, alternar] = usePersistentSet(CHAVE_RECOLHIDOS)
 
   const arvore = buildProjectTree(projects ?? [])

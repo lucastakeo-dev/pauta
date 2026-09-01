@@ -291,6 +291,39 @@ são feitas por features que não se conhecem — projeto, etiqueta, tela do pla
 de nota — e todas caem na mesma coluna. Enquanto cada uma trazia a própria altura, a
 coluna parecia quatro listas empilhadas em vez de uma.
 
+### Abaixo de 768px a barra vira gaveta
+
+A moldura de dois trilhos é o que o monitor pede e o que o celular não comporta: em
+390px, trilho e painel somam 324px e sobrava uma fresta de 50px para o conteúdo — a
+lista de tarefas cabia ali, cortada, sem rolagem que a alcançasse.
+
+No estreito, então: **uma barra de cima** com o que abre a gaveta, o nome da seção e a
+captura rápida (o `⌘K` não existe no celular), e a barra lateral inteira — trilho e
+painel juntos — deslizando por cima do conteúdo, com o fundo escurecido atrás.
+
+É a **mesma barra**, não uma segunda navegação para manter em dia. O que muda é onde ela
+mora: no fluxo, no monitor; fixa e fora da tela, no celular.
+
+**Fechada, ela sai do teclado.** Só escondê-la com `translate` deixaria a barra inteira
+alcançável pelo Tab atrás do conteúdo — invisível e focável é o pior dos dois mundos. O
+atributo é `inert`, e é por isso que existe um `useIsDesktop()`: essa parte o CSS não
+resolve.
+
+**Fecha sozinha quando leva a algum lugar**: navegar muda a rota e fecha; escolher uma
+tela do planner, um projeto ou uma etiqueta não muda rota nenhuma, então a barra avisa a
+moldura por um canal próprio (`useSidebarChoice`). Sem isso a gaveta ficaria cobrindo
+justamente a tela que ela acabou de pedir.
+
+**O que a linha da tarefa perde no estreito**: projeto e etiquetas. A ponta direita não
+encolhe — é a régua da lista —, então o que ela ganha o título perde, e "Pagar co…" ao
+lado de três chips não ajuda ninguém. Prazo e prioridade ficam: são o que decide o que
+fazer agora.
+
+**Arrastar continua sendo gesto de ponteiro.** No toque, a barra e a lista rolam em vez
+de arrastar, e é assim de propósito: os dois gestos disputam o mesmo dedo. Quem está no
+celular agenda pelo botão "Agendar" da lista e move projeto pelo "Mover para" do menu —
+os mesmos caminhos que já existiam para o teclado.
+
 ## As três telas do planner
 
 `Hoje` tem três, escolhidas no painel e não numa faixa de abas sobre a grade — a faixa

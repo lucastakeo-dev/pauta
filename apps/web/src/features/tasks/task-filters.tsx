@@ -1,6 +1,7 @@
 import { cn } from '../../shared/lib/cn.js'
 import { SidebarGroup } from '../../shared/ui/sidebar-group.js'
 import { sidebarRow, sidebarRowActive, sidebarRowIdle } from '../../shared/ui/sidebar-row.js'
+import { useSidebarChoice } from '../../shared/ui/sidebar-slot.js'
 import { useLabels } from './queries.js'
 
 const COPY = {
@@ -22,6 +23,7 @@ type TaskFiltersProps = {
 
 export function TaskFilters({ value, onChange }: TaskFiltersProps) {
   const { data: labels } = useLabels()
+  const escolheu = useSidebarChoice()
 
   return (
     <nav className="flex flex-col" aria-label="Filtros">
@@ -32,9 +34,10 @@ export function TaskFilters({ value, onChange }: TaskFiltersProps) {
           <FilterButton
             key={label.id}
             active={value.labelId === label.id}
-            onClick={() =>
+            onClick={() => {
               onChange({ ...value, labelId: value.labelId === label.id ? undefined : label.id })
-            }
+              escolheu()
+            }}
             label={`#${label.name}`}
             color={label.color}
           />

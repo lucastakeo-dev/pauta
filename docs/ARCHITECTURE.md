@@ -126,6 +126,7 @@ pnpm smoke:polish <dir>    # foco, teclado e estados vazios
 pnpm smoke:console <dir>   # captura rápida (Ctrl+K)
 pnpm smoke:notes <dir>     # editor, nota diária e backlinks
 pnpm smoke:landing <dir>   # vitrine
+pnpm smoke:mobile <dir>    # tela estreita (390px): gaveta, e nada vazando pela direita
 ```
 
 Os `smoke` cobrem o que `app.inject()` não alcança, e é de onde vieram os piores bugs do

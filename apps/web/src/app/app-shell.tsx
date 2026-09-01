@@ -5,6 +5,7 @@ import {
   FolderTree,
   Inbox,
   LogOut,
+  Menu,
   Moon,
   Palette,
   PanelLeftClose,
@@ -14,11 +15,13 @@ import {
   Sun,
 } from 'lucide-react'
 import type { ComponentProps, ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { useSession } from '../features/auth/session-context.js'
 import { ConsoleOverlay } from '../features/console/console-overlay.js'
 import { useConsoleShortcut } from '../features/console/use-console-shortcut.js'
 import { ACCENTS, type Accent, accentSwatch, useAccent } from '../shared/lib/accent.js'
 import { cn } from '../shared/lib/cn.js'
+import { useIsDesktop } from '../shared/lib/media.js'
 import { usePersistentFlag } from '../shared/lib/persistent.js'
 import { type Theme, useTheme } from '../shared/lib/theme.js'
 import {
@@ -44,6 +47,8 @@ const COPY = {
   secoes: 'Seções',
   recolher: 'Recolher o menu',
   expandir: 'Expandir o menu',
+  abrirMenu: 'Abrir o menu',
+  fecharMenu: 'Fechar o menu',
   temaClaro: 'Tema claro',
   temaEscuro: 'Tema escuro',
   cor: 'Cor principal',
@@ -80,6 +85,31 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useTheme()
   const [accent, setAccent] = useAccent()
 
+  const desktop = useIsDesktop()
+  const [gaveta, setGaveta] = useState(false)
+
+  /*
+    No estreito a barra é gaveta: some por padrão, cobre a tela quando chamada e some
+    de novo assim que leva a algum lugar. Sem isto, escolher um projeto deixaria a
+    gaveta aberta por cima da tela que ela acabou de abrir.
+  */
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `pathname` é gatilho — mudou de tela, fecha.
+  useEffect(() => setGaveta(false), [pathname])
+
+  useEffect(() => {
+    if (!gaveta) return
+
+    const aoTeclar = (evento: KeyboardEvent) => {
+      if (evento.key === 'Escape') setGaveta(false)
+    }
+
+    window.addEventListener('keydown', aoTeclar)
+    return () => window.removeEventListener('keydown', aoTeclar)
+  }, [gaveta])
+
+  // O painel recolhe no monitor; dentro da gaveta ele é a razão de ela existir.
+  const mostraPainel = desktop ? aberto : true
+
   // `startsWith` e não igualdade: a página de um projeto também é "Projetos".
   const ehAtivo = (to: string) => pathname === to || pathname.startsWith(`${to}/`)
 
@@ -89,11 +119,59 @@ export function AppShell({ children }: { children: ReactNode }) {
   const secao = NAV.find((item) => ehAtivo(item.to)) ?? NAV[0]
 
   return (
-    <SidebarSlotProvider>
-      <div className="flex h-dvh gap-1.5 overflow-hidden bg-shell p-1.5">
+    <SidebarSlotProvider onChoice={() => setGaveta(false)}>
+      <div className="flex h-dvh flex-col gap-1.5 overflow-hidden bg-shell p-1.5 md:flex-row">
+        {/*
+          A barra de cima só existe no estreito, e carrega o mínimo: o que abre a
+          gaveta, onde se está, e a captura rápida — que no celular não tem ⌘K.
+        */}
+        <header className="flex h-11 shrink-0 items-center gap-1 rounded-card bg-surface pr-1.5 pl-1 md:hidden">
+          <BotaoTrilho
+            onClick={() => setGaveta(true)}
+            aria-expanded={gaveta}
+            rotulo={COPY.abrirMenu}
+          >
+            <Menu aria-hidden="true" className="size-[18px]" />
+          </BotaoTrilho>
+
+          <secao.icon aria-hidden="true" className="size-4 shrink-0 text-ink-muted" />
+          <h1 className="min-w-0 flex-1 truncate font-semibold text-ink text-sm">{secao.label}</h1>
+
+          <BotaoTrilho onClick={() => quickCapture.setOpen(true)} rotulo={COPY.console}>
+            <Search aria-hidden="true" className="size-[18px]" />
+          </BotaoTrilho>
+        </header>
+
+        {/*
+          O fundo é um botão de verdade, e não um `div` com clique: fechar a gaveta
+          tocando fora precisa existir para o ponteiro e para quem lê a tela.
+        */}
+        {gaveta ? (
+          <button
+            type="button"
+            aria-label={COPY.fecharMenu}
+            onClick={() => setGaveta(false)}
+            className="fixed inset-0 z-40 bg-shell/80 backdrop-blur-[1px] md:hidden"
+          />
+        ) : null}
+
         {/* Trilho e painel são dois retângulos na tela, mas uma região só para quem
             navega por marcos: separá-los daria dois "complementary" sem nome útil. */}
-        <aside aria-label={COPY.barra} className="flex shrink-0 gap-1.5">
+        <aside
+          aria-label={COPY.barra}
+          /*
+            Fechada, a gaveta sai da ordem do Tab e da árvore de acessibilidade. Só
+            escondê-la com `translate` deixaria a barra inteira alcançável por teclado
+            atrás do conteúdo — invisível e focável é o pior dos dois mundos.
+          */
+          inert={!desktop && !gaveta}
+          className={cn(
+            'flex shrink-0 gap-1.5',
+            'max-md:fixed max-md:inset-y-1.5 max-md:left-1.5 max-md:z-50',
+            'max-md:transition-transform max-md:duration-200 max-md:ease-entrance',
+            !gaveta && 'max-md:-translate-x-[calc(100%+0.75rem)]',
+          )}
+        >
           <div className="flex w-13 shrink-0 flex-col items-center gap-1 rounded-card bg-surface py-2.5">
             <Marca />
 
@@ -152,7 +230,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             />
           </div>
 
-          {aberto ? (
+          {mostraPainel ? (
             <div className="flex w-[272px] shrink-0 flex-col overflow-hidden rounded-card bg-surface">
               {/*
                 O cabeçalho nomeia a seção em que se está — não repete a marca nem os
@@ -166,6 +244,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                   {secao.label}
                 </h2>
 
+                {/* Recolher é do monitor: dentro da gaveta, o painel é justamente o
+                    que se veio ver, e quem fecha é o fundo, o Esc ou navegar. */}
                 <button
                   type="button"
                   onClick={alternarMenu}
@@ -173,7 +253,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   aria-label={COPY.recolher}
                   title={COPY.recolher}
                   className={cn(
-                    'flex size-7 shrink-0 items-center justify-center rounded-[8px]',
+                    'hidden size-7 shrink-0 items-center justify-center rounded-[8px] md:flex',
                     'text-ink-subtle transition-colors hover:bg-surface-raised hover:text-ink',
                   )}
                 >
