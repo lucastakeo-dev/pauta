@@ -486,6 +486,41 @@ mais metade de um ícone de 16. Alinhar por olho deixava um degrau visível a ca
 **A seta fica depois do nome** (`Trabalho ⌄`), como no `work ⌄` do Linear, e não numa
 coluna antes dele — aquela coluna obrigava toda linha sem filhos a carregar um vão vazio.
 Ela é irmã do link, nunca filha: botão dentro de link é HTML inválido e quebra o teclado.
+
+### As ações da linha moram num menu
+
+Editar, arquivar, mover e excluir num `⋯` que aparece sob o mouse, e o `+` ao lado dele.
+Viraram menu quando a terceira ação apareceu: quatro botões fixos numa coluna de 232px
+empurrariam o nome para fora, e **excluir a um clique de distância, colado em editar, é
+acidente esperando acontecer**.
+
+Excluir passa por uma confirmação que **diz o que vai acontecer** — "as tarefas voltam
+para a inbox e os subprojetos sobem para a raiz" — em vez de perguntar "tem certeza?".
+Esse é o comportamento que o servidor já tinha e que ninguém via. O foco começa em
+Cancelar: Enter logo após abrir é o gesto de quem ainda está lendo.
+
+**Arquivar é a saída sem perda**: tira o projeto da barra e das listas, mantém as tarefas
+vinculadas, e o índice `/projects` guarda uma seção "Arquivados" com o caminho de volta.
+A seção só existe quando há algo dentro.
+
+### Arrastar reordena e aninha
+
+Um alvo de soltura por linha, e a faixa vertical decide o significado: os 28% de cima
+entram **antes**, os 28% de baixo entram **depois**, e o miolo — a maior fatia — vira
+**filho**. Aninhar é o gesto que precisa de mira folgada; as bordas ficam a poucos pixels
+da linha vizinha, que também as oferece. A alternativa, uma linha fina de soltura entre
+cada par de irmãos, dobraria o número de alvos e daria três pixels de mira em cada um.
+
+O indicador é o próprio desenho da soltura: traço iris na borda onde a linha vai encostar,
+ou a linha inteira acesa quando o gesto é aninhar. **Ele nunca acende para um gesto
+proibido** — quem valida é a mesma função que calcula o destino, então arrastar um projeto
+para dentro da própria subárvore simplesmente não oferece nada.
+
+A alça é o nome, e só ele: a seta de recolher e os botões da ponta continuam respondendo
+ao clique. O nome segue sendo um link de verdade — os `attributes` do dnd-kit trocariam o
+papel dele por `button` e a barra deixaria de ser uma lista de destinos para quem navega
+por leitor de tela. O caminho de teclado para mover é o **"Mover para"** do menu, que
+lista os destinos possíveis já sem os que dariam ciclo.
 Por isso o fundo da linha mora no contêiner, para os dois acenderem juntos.
 
 **O contador entra no rótulo acessível** (`Trabalho, 5 em aberto`). Fora do link ele

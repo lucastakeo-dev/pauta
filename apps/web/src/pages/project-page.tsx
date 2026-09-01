@@ -1,9 +1,10 @@
 import type { ListTasksQuery } from '@pauta/contracts'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { buildProjectTree, type ProjectNode, projectPath } from '../entities/project/index.js'
 import { EditProjectDialog, NewProjectDialog } from '../features/projects/project-dialog.js'
+import { ProjectMenu } from '../features/projects/project-menu.js'
 import { ProjectTree } from '../features/projects/project-tree.js'
 import { useProjects } from '../features/projects/queries.js'
 import { TaskComposer } from '../features/tasks/task-composer.js'
@@ -45,6 +46,7 @@ type Aba = (typeof ABAS)[number]['id']
  */
 export function ProjectPage({ projectId }: { projectId: string }) {
   const { data: projects, isPending } = useProjects()
+  const navigate = useNavigate()
   const [aba, setAba] = useState<Aba>('overview')
 
   const arvore = buildProjectTree(projects ?? [])
@@ -119,7 +121,13 @@ export function ProjectPage({ projectId }: { projectId: string }) {
               }
             />
 
-            <h1 className="font-semibold text-ink text-lg">{projeto.name}</h1>
+            <h1 className="min-w-0 flex-1 truncate font-semibold text-ink text-lg">
+              {projeto.name}
+            </h1>
+
+            {/* Arquivar e excluir também daqui: quem está dentro do projeto não deveria
+                voltar para a barra lateral só para encontrar as duas ações. */}
+            <ProjectMenu project={projeto} onDeleted={() => navigate({ to: '/projects' })} />
           </div>
 
           {/* As abas ficam coladas na borda de baixo, como no Linear: a linha ativa

@@ -1,6 +1,14 @@
 import type { ProjectView } from '@pauta/contracts'
 import { describe, expect, it } from 'vitest'
-import { buildProjectTree, containsProject, flattenProjectTree, projectPath } from './tree.js'
+import {
+  buildProjectTree,
+  containsProject,
+  dropTarget,
+  findProject,
+  flattenProjectTree,
+  parentIdOf,
+  projectPath,
+} from './tree.js'
 
 function projeto(id: string, parentId: string | null = null, openTaskCount = 0): ProjectView {
   return {
@@ -116,5 +124,74 @@ describe('containsProject', () => {
 
   it('sem seleção, ninguém está no caminho', () => {
     expect(containsProject(trabalho, undefined)).toBe(false)
+  })
+})
+
+describe('findProject e parentIdOf', () => {
+  const arvore = buildProjectTree([projeto('a'), projeto('b', 'a'), projeto('c', 'b')])
+
+  it('acha em qualquer nível', () => {
+    expect(findProject(arvore, 'c')?.id).toBe('c')
+  })
+
+  it('devolve nulo para quem não está na árvore', () => {
+    expect(findProject(arvore, 'z')).toBeNull()
+  })
+
+  it('diz quem é o pai, e `null` na raiz', () => {
+    expect(parentIdOf(arvore, 'c')).toBe('b')
+    expect(parentIdOf(arvore, 'a')).toBeNull()
+  })
+
+  it('distingue "não tem pai" de "não existe"', () => {
+    expect(parentIdOf(arvore, 'z')).toBeUndefined()
+  })
+})
+
+describe('dropTarget', () => {
+  // a, b, c na raiz; d dentro de a.
+  const arvore = buildProjectTree([projeto('a'), projeto('b'), projeto('c'), projeto('d', 'a')])
+
+  it('soltar dentro vira filho, no fim', () => {
+    expect(dropTarget(arvore, 'c', 'a', 'inside')).toEqual({ parentId: 'a' })
+  })
+
+  it('soltar antes usa a posição do alvo', () => {
+    expect(dropTarget(arvore, 'c', 'b', 'before')).toEqual({ parentId: null, position: 1 })
+  })
+
+  it('soltar depois usa a posição seguinte', () => {
+    expect(dropTarget(arvore, 'a', 'b', 'after')).toEqual({ parentId: null, position: 1 })
+  })
+
+  /*
+    O caso que o índice ingênuo erra: `a` está acima de `c`, então na lista sem ele o
+    alvo anda uma casa para trás. Medir na lista com o arrastado dentro devolveria 3, e
+    o projeto acabaria uma posição abaixo do que a pessoa mirou.
+  */
+  it('mede a posição na lista sem o próprio arrastado', () => {
+    expect(dropTarget(arvore, 'a', 'c', 'after')).toEqual({ parentId: null, position: 2 })
+  })
+
+  it('leva para dentro de outro pai com a posição certa', () => {
+    expect(dropTarget(arvore, 'b', 'd', 'before')).toEqual({ parentId: 'a', position: 0 })
+  })
+
+  it('recusa soltar em cima de si mesmo', () => {
+    expect(dropTarget(arvore, 'a', 'a', 'inside')).toBeNull()
+  })
+
+  it('recusa entrar na própria subárvore', () => {
+    expect(dropTarget(arvore, 'a', 'd', 'inside')).toBeNull()
+    expect(dropTarget(arvore, 'a', 'd', 'before')).toBeNull()
+  })
+
+  it('recusa quando o gesto não mudaria nada', () => {
+    // `d` já é o último filho de `a`.
+    expect(dropTarget(arvore, 'd', 'a', 'inside')).toBeNull()
+  })
+
+  it('recusa alvo que não existe', () => {
+    expect(dropTarget(arvore, 'a', 'z', 'after')).toBeNull()
   })
 })

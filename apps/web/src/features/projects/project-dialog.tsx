@@ -95,10 +95,17 @@ export function NewProjectDialog({ parentId, trigger }: NewProjectDialogProps) {
 type EditProjectDialogProps = {
   project: ProjectView
   /** Sem gatilho padrão de propósito: cada tela abre a edição de um lugar diferente. */
-  trigger: ReactNode
+  trigger?: ReactNode | undefined
+  open?: boolean | undefined
+  onOpenChange?: ((open: boolean) => void) | undefined
 }
 
-export function EditProjectDialog({ project, trigger }: EditProjectDialogProps) {
+export function EditProjectDialog({
+  project,
+  trigger,
+  open,
+  onOpenChange,
+}: EditProjectDialogProps) {
   const update = useUpdateProject()
 
   return (
@@ -115,6 +122,8 @@ export function EditProjectDialog({ project, trigger }: EditProjectDialogProps) 
       }}
       onSubmit={(campos) => update.mutateAsync({ id: project.id, input: campos })}
       trigger={trigger}
+      open={open}
+      onOpenChange={onOpenChange}
     />
   )
 }
@@ -127,7 +136,10 @@ type ProjectDialogProps = {
   salvando: boolean
   inicial: Campos
   onSubmit: (campos: Campos) => Promise<unknown>
-  trigger: ReactNode
+  /** Ausente quando quem abre é outro controle — um item de menu, por exemplo. */
+  trigger?: ReactNode | undefined
+  open?: boolean | undefined
+  onOpenChange?: ((open: boolean) => void) | undefined
 }
 
 function ProjectDialog({
@@ -139,11 +151,21 @@ function ProjectDialog({
   inicial,
   onSubmit,
   trigger,
+  open: openControlado,
+  onOpenChange,
 }: ProjectDialogProps) {
   const campoId = useId()
   const erroId = `${campoId}-erro`
 
-  const [open, setOpen] = useState(false)
+  // Aberto por dentro quando há gatilho próprio; por fora quando quem abre é um item
+  // de menu, que precisa se fechar antes de o diálogo aparecer.
+  const [openInterno, setOpenInterno] = useState(false)
+  const controlado = openControlado !== undefined
+  const open = controlado ? openControlado : openInterno
+  const setOpen = (proximo: boolean) => {
+    if (controlado) onOpenChange?.(proximo)
+    else setOpenInterno(proximo)
+  }
   const [campos, setCampos] = useState<Campos>(inicial)
   const [error, setError] = useState<string | null>(null)
 
@@ -175,7 +197,7 @@ function ProjectDialog({
 
   return (
     <Dialog open={open} onOpenChange={abrirOuFechar}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
 
       {/* A grade de ícones deixou o diálogo alto. Sem teto e sem rolagem, numa tela
           baixa o botão de salvar cairia para fora da janela, fora de alcance. */}

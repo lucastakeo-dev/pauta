@@ -21,6 +21,18 @@ function check(name, passed, detail = '') {
   console.log(`${passed ? 'OK  ' : 'FALHA'}  ${name}${detail ? ` — ${detail}` : ''}`)
 }
 
+/** Arrasta em passos: um único movimento não dispara os sensores do dnd-kit. */
+async function dragTo(page, from, to) {
+  const origem = await from.boundingBox()
+  await page.mouse.move(origem.x + origem.width / 2, origem.y + origem.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(origem.x + origem.width / 2, origem.y + origem.height / 2 + 10, {
+    steps: 4,
+  })
+  await page.mouse.move(to.x, to.y, { steps: 16 })
+  await page.mouse.up()
+}
+
 const browser = await chromium.launch({
   executablePath: '/usr/bin/google-chrome',
   args: ['--no-sandbox'],
@@ -244,11 +256,12 @@ try {
   await menu.getByRole('link', { name: 'Projetos' }).click()
   await page.waitForURL((url) => url.pathname === '/projects', { timeout: 10_000 })
 
-  // 6. Trocar o ícone pelo lápis que aparece sob o mouse.
+  // 6. Trocar o ícone pelo menu que aparece sob o mouse.
   await barra.getByRole('link', { name: /Abrir projeto: Trabalho/ }).hover()
-  await barra.getByRole('button', { name: /Editar projeto: Trabalho/ }).click()
+  await barra.getByRole('button', { name: /Ações do projeto: Trabalho/ }).click()
+  await page.getByRole('menuitem', { name: 'Editar' }).click()
   await page.getByRole('heading', { name: 'Editar projeto' }).waitFor({ timeout: 5000 })
-  check('o lápis da barra abre a edição', true)
+  check('o menu da barra abre a edição', true)
 
   await page.locator('label:has(input[aria-label="Café"])').click()
   await page.getByRole('button', { name: 'Salvar' }).click()
@@ -274,6 +287,122 @@ try {
   const cor = depois.find((projeto) => projeto.name === 'Trabalho').color
   check('trocar o ícone não repinta o projeto', cor === '#4FB477', cor)
   await page.screenshot({ path: `${outDir}/04-icones.png` })
+
+  // 8. Arquivar: sai da barra sem levar nada junto, e fica guardado no índice.
+  const linhaPessoal = barra.getByRole('link', { name: /Abrir projeto: Pessoal/ })
+  await linhaPessoal.hover()
+  await barra.getByRole('button', { name: /Ações do projeto: Pessoal/ }).click()
+  await page.getByRole('menuitem', { name: 'Arquivar' }).click()
+  await linhaPessoal.waitFor({ state: 'detached', timeout: 10_000 })
+  check('arquivar tira o projeto da barra', true)
+
+  const arquivadosNaApi = await fetch(`${API}/projects?includeArchived=true`, { headers: auth })
+    .then((r) => r.json())
+    .then((lista) => lista.filter((projeto) => projeto.archivedAt !== null))
+  check(
+    'arquivado não é apagado — só sai das listas',
+    arquivadosNaApi.length === 1 && arquivadosNaApi[0].name === 'Pessoal',
+    `${arquivadosNaApi.length} arquivado(s)`,
+  )
+
+  await page.getByRole('heading', { name: 'Arquivados' }).waitFor({ timeout: 10_000 })
+  check('o índice guarda os arquivados numa seção própria', true)
+  await page.screenshot({ path: `${outDir}/06-arquivados.png` })
+
+  // 9. Restaurar devolve o projeto à barra — arquivar precisa ter volta.
+  await page
+    .locator('main')
+    .getByRole('button', { name: /Ações do projeto: Pessoal/ })
+    .click()
+  await page.getByRole('menuitem', { name: 'Restaurar' }).click()
+  await linhaPessoal.waitFor({ timeout: 10_000 })
+  check('restaurar devolve o projeto à barra', true)
+
+  // 10. Excluir pede confirmação, e a confirmação diz o que vai acontecer.
+  const linhaTrabalho = barra.getByRole('link', { name: /Abrir projeto: Trabalho/ })
+  await linhaTrabalho.hover()
+  await barra.getByRole('button', { name: /Ações do projeto: Trabalho/ }).click()
+  await page.getByRole('menuitem', { name: 'Excluir' }).click()
+
+  const confirmacao = page.getByRole('dialog', { name: 'Excluir este projeto?' })
+  await confirmacao.waitFor({ timeout: 10_000 })
+  const explicacao = await confirmacao.innerText()
+  check(
+    'a confirmação explica o efeito, e não só pergunta',
+    explicacao.includes('inbox') && explicacao.includes('raiz'),
+    JSON.stringify(explicacao.replace(/\n/g, ' ')),
+  )
+  await page.screenshot({ path: `${outDir}/07-excluir.png` })
+
+  await confirmacao.getByRole('button', { name: 'Excluir', exact: true }).click()
+  await linhaTrabalho.waitFor({ state: 'detached', timeout: 10_000 })
+  check('excluir tira o projeto da barra', true)
+
+  // E o que a confirmação prometeu: filhos na raiz, tarefas vivas.
+  const sobraram = await fetch(`${API}/projects`, { headers: auth }).then((r) => r.json())
+  const promovido = sobraram.find((projeto) => projeto.name === 'Plataforma')
+  check(
+    'os subprojetos sobem para a raiz',
+    promovido?.parentId === null,
+    JSON.stringify(promovido?.parentId),
+  )
+
+  const tarefas = await fetch(`${API}/tasks`, { headers: auth }).then((r) => r.json())
+  const funda = tarefas.find((tarefa) => tarefa.title === 'Tarefa funda')
+  check('a tarefa do subprojeto continua viva', funda?.projectId === promovido?.id)
+
+  // 11. Arrastar reordena e troca de pai. Sobraram na raiz: Plataforma, Pessoal.
+  const ordemNaApi = async () =>
+    (await fetch(`${API}/projects`, { headers: auth }).then((r) => r.json()))
+      .filter((projeto) => projeto.parentId === null)
+      .map((projeto) => projeto.name)
+
+  const pontoNa = async (nome, fatia) => {
+    const caixa = await linhaDe(nome).boundingBox()
+    return { x: caixa.x + caixa.width / 2, y: caixa.y + caixa.height * fatia }
+  }
+
+  const antesDoArrasto = await ordemNaApi()
+  check(
+    'a raiz começa na ordem de criação',
+    antesDoArrasto.join() === 'Plataforma,Pessoal',
+    antesDoArrasto.join(' · '),
+  )
+
+  // Solta no topo de Plataforma: entra antes dela.
+  await dragTo(page, linhaDe('Pessoal'), await pontoNa('Plataforma', 0.1))
+  await page.waitForTimeout(1_200)
+  const depoisDoArrasto = await ordemNaApi()
+  check(
+    'arrastar para a borda de cima reordena os irmãos',
+    depoisDoArrasto.join() === 'Pessoal,Plataforma',
+    depoisDoArrasto.join(' · '),
+  )
+  await page.screenshot({ path: `${outDir}/08-reordenado.png` })
+
+  // Solta no meio: vira filho.
+  await dragTo(page, linhaDe('Pessoal'), await pontoNa('Plataforma', 0.5))
+  await page.waitForTimeout(1_200)
+  const aninhados = await fetch(`${API}/projects`, { headers: auth }).then((r) => r.json())
+  const aninhado = aninhados.find((projeto) => projeto.name === 'Pessoal')
+  const novoPai = aninhados.find((projeto) => projeto.name === 'Plataforma')
+  check(
+    'arrastar para o miolo da linha vira subprojeto',
+    aninhado?.parentId === novoPai?.id,
+    JSON.stringify(aninhado?.parentId),
+  )
+
+  // 12. E o caminho de teclado: "Mover para" devolve o projeto à raiz.
+  await linhaDe('Pessoal').hover()
+  await barra.getByRole('button', { name: /Ações do projeto: Pessoal/ }).click()
+  await page.getByRole('menuitem', { name: 'Mover para' }).click()
+  await page.getByRole('menuitem', { name: 'Raiz', exact: true }).click()
+  await page.waitForTimeout(1_200)
+
+  const devolvido = (await fetch(`${API}/projects`, { headers: auth }).then((r) => r.json())).find(
+    (projeto) => projeto.name === 'Pessoal',
+  )
+  check('"Mover para" leva de volta à raiz sem arrastar', devolvido?.parentId === null)
 } finally {
   await browser.close()
 }
