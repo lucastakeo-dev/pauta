@@ -214,3 +214,67 @@ O que o Prisma não expressa está em
 - evento termina depois de começar;
 - **uma nota diária por dia** (UNIQUE parcial — páginas livres ficam de fora);
 - índice trigram no título da nota, para o autocomplete do `[[link]]`.
+
+## Deploy no Supabase
+
+O Supabase é um Postgres de verdade com um PostgREST público na frente. Isso muda duas
+coisas: **como as tabelas nascem** e **quem consegue lê-las**.
+
+### Duas conexões, com papéis diferentes
+
+| Variável | Porta | Para quê |
+|---|---|---|
+| `DATABASE_URL` | 6543 (pooler) | o app em runtime |
+| `DIRECT_DATABASE_URL` | 5432 (direta) | migrations |
+
+Não é preferência: o pooler roda em *transaction mode*, e o Migrate usa advisory lock e
+DDL, que ali quebram. O `prisma7.config.ts` já lê a direta em `directUrl` — quem roda
+`db:deploy` não precisa lembrar disso, só ter as duas variáveis no ambiente.
+
+### As tabelas nascem das migrations
+
+```bash
+pnpm --filter @pauta/api db:deploy      # prisma migrate deploy
+```
+
+**Nunca `db push` em produção.** O `push` compara schemas e não roda o SQL escrito à mão
+— os `CHECK` de domínio e os índices parciais desapareceriam sem aviso nenhum.
+
+### O banco nasce trancado
+
+`prisma/migrations/20260902120000_travar_acesso_direto/migration.sql` liga **RLS em todas
+as tabelas sem criar policy nenhuma** e **revoga os grants** de `anon` e `authenticated`.
+São duas fechaduras diferentes na mesma porta, e cada uma resolve uma falha distinta:
+
+- sem grant, a resposta é `permission denied` — barra antes de qualquer policy existir;
+- com RLS ligado e nenhuma policy, a resposta é *zero linhas* — continua barrando no dia
+  em que alguém devolver um grant para resolver um problema pontual.
+
+Ambas foram verificadas contra um banco vazio que simulava o Supabase (papéis `anon` e
+`authenticated` com os grants padrão): `anon` recebe `permission denied` nas tabelas e no
+próprio `_prisma_migrations`; e, com o `SELECT` devolvido à força, passa a enxergar zero
+linhas.
+
+O que **não** fazemos: `FORCE ROW LEVEL SECURITY`. RLS não se aplica ao dono da tabela, e
+é como dono que a API conecta — forçar deixaria o app sem acesso ao próprio banco, e a
+saída seria escrever policies para nós mesmos, reimplementando em SQL o `userId` que todo
+model já filtra.
+
+A migration é guardada por `IF EXISTS (SELECT 1 FROM pg_roles ...)`: os papéis do
+PostgREST só existem no Supabase, e sem a guarda a mesma migration quebraria no Postgres
+local e no banco de teste.
+
+### Ordem de subida
+
+1. Criar o projeto no Supabase e pegar as duas connection strings.
+2. `DIRECT_DATABASE_URL=... pnpm --filter @pauta/api db:deploy`.
+3. Conferir no SQL Editor: `SELECT tablename, rowsecurity FROM pg_tables WHERE schemaname='public'` — todas com `rowsecurity = true`.
+4. Publicar a API com as duas URLs e o `JWT_SECRET` (32+ caracteres, **outro** do de dev).
+5. Publicar o front com `VITE_API_URL` apontando para a API, e `CORS_ORIGINS` na API apontando para o front.
+
+### O que fica de fora, e é decisão consciente
+
+A API conecta como dono do banco. O passo seguinte de endurecimento seria um papel
+próprio só com CRUD nas nossas tabelas, sem DDL — melhor postura, mas exige separar as
+credenciais de migration das de runtime e é fácil de fazer errado a ponto de perder
+acesso. Fica registrado como próximo passo, não como pendência esquecida.
