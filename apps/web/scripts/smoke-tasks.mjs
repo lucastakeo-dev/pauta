@@ -2,7 +2,7 @@
  * Fumaça da tela de tarefas, com navegador de verdade.
  *
  * Cobre o que só aparece no browser: entrada rápida, atualização otimista ao concluir,
- * edição inline, filtro por projeto e o estado vazio.
+ * o modal de detalhe, filtro por projeto e o estado vazio.
  *
  * Uso: node scripts/smoke-tasks.mjs [diretorio-de-saida]
  * Requer web em :5176 e API em :3334.
@@ -20,7 +20,7 @@ function check(name, passed, detail = '') {
 }
 
 /**
- * O título da tarefa é sempre um `<button>` (clicar edita). Um `getByText` casaria
+ * O título da tarefa é sempre um `<button>` (clicar abre o detalhe). Um `getByText` casaria
  * também com o rótulo sr-only do checkbox, que repete o título.
  */
 function tarefa(page, titulo) {
@@ -105,13 +105,53 @@ try {
   )
   await page.getByLabel('Mostrar concluídas').uncheck()
 
-  // 6. Edição inline do título.
+  // 6. O título abre a tarefa inteira, e é lá que se renomeia.
   await tarefa(page, 'Comprar café').click()
-  await page.keyboard.press('ControlOrMeta+a')
-  await page.keyboard.type('Comprar café especial')
+  const detalhe = page.getByRole('dialog')
+  await detalhe.waitFor({ timeout: 10_000 })
+  check('clicar no título abre o detalhe da tarefa', true)
+
+  // A trilha do modal repõe o contexto que a linha dava e some ao abrir.
+  const trilha = await detalhe.innerText()
+  check(
+    'o modal mostra de onde a tarefa vem',
+    trilha.includes('Sem projeto'),
+    JSON.stringify(trilha.split('\n')[0]),
+  )
+
+  // As subtarefas: o banco já sabia dividir uma tarefa, faltava onde fazer isso.
+  const novaSubtarefa = detalhe.getByLabel('Nova subtarefa')
+  await novaSubtarefa.fill('Moer os grãos')
+  await novaSubtarefa.press('Enter')
+
+  // Pela caixa de marcar, e não pelo texto: o rótulo dela repete o título, então um
+  // `getByText` casaria duas vezes na mesma linha.
+  const caixaDaSubtarefa = detalhe.getByRole('checkbox', { name: 'Concluir Moer os grãos' })
+  await caixaDaSubtarefa.waitFor({ timeout: 10_000 })
+  check('a subtarefa criada entra na lista', true)
+
+  await caixaDaSubtarefa.click()
+  await detalhe.getByText('1 de 1').waitFor({ timeout: 10_000 })
+  check('concluir a subtarefa move o progresso', true)
+
+  await detalhe.getByLabel('Título').fill('Comprar café especial')
   await page.keyboard.press('Enter')
+  await page.keyboard.press('Escape')
+  await detalhe.waitFor({ state: 'detached', timeout: 10_000 })
+
   await tarefa(page, 'Comprar café especial').waitFor({ timeout: 10_000 })
-  check('edição inline salva o novo título', true)
+  check('renomear pelo modal salva o novo título', true)
+
+  // E a contagem chega até a linha da lista, que já sabia mostrá-la.
+  const linhaComSubtarefa = page
+    .getByRole('listitem')
+    .filter({ hasText: 'Comprar café especial' })
+    .first()
+  check(
+    'a linha da lista mostra a contagem de subtarefas',
+    (await linhaComSubtarefa.innerText()).includes('1/1'),
+    JSON.stringify((await linhaComSubtarefa.innerText()).replace(/\n/g, ' ')),
+  )
 
   // 7. Projeto novo nasce num diálogo, com nome e cor.
   const gatilhoProjeto = page.getByRole('button', { name: 'Novo projeto' })
@@ -187,6 +227,49 @@ try {
   )
   const contador = await page.getByRole('button', { name: /^Casa/ }).getAttribute('aria-label')
   check('projeto mostra a contagem de tarefas em aberto', contador?.includes('1'), contador ?? '')
+
+  // 8b. A criação com todos os campos, pelo modal do campo de entrada.
+  await composer.fill('Levar o carro na revisão')
+  await page.getByRole('button', { name: 'Mais opções' }).click()
+
+  const criacao = page.getByRole('dialog', { name: 'Nova tarefa' })
+  await criacao.waitFor({ timeout: 10_000 })
+
+  // O que já estava digitado vira o título: as duas formas de criar são o mesmo gesto
+  // começando, não caminhos concorrentes.
+  check(
+    'o modal abre com o que já estava escrito',
+    (await criacao.getByLabel('Título').inputValue()) === 'Levar o carro na revisão',
+  )
+
+  await criacao.getByRole('button', { name: 'P2', exact: true }).click()
+  await criacao.getByLabel('Projeto').selectOption({ label: 'Casa' })
+  await criacao.getByRole('button', { name: 'Criar' }).click()
+  await criacao.waitFor({ state: 'detached', timeout: 10_000 })
+
+  const criadaNoModal = page
+    .getByRole('listitem')
+    .filter({ hasText: 'Levar o carro na revisão' })
+    .first()
+  await criadaNoModal.waitFor({ timeout: 10_000 })
+  check(
+    'a tarefa nasce com o projeto escolhido no modal',
+    (await criadaNoModal.innerText()).includes('Casa'),
+    JSON.stringify((await criadaNoModal.innerText()).replace(/\n/g, ' ')),
+  )
+
+  // A prioridade não se lê da tela — as barras são desenho, e afirmar cor é frágil.
+  // O token está no `localStorage`, então dá para perguntar ao servidor.
+  const token = await page.evaluate(() => localStorage.getItem('pauta.token'))
+  const nasApi = await fetch('http://localhost:3334/tasks?includeDone=true', {
+    headers: { authorization: `Bearer ${token}` },
+  }).then((r) => r.json())
+  const doModal = nasApi.find((tarefa) => tarefa.title === 'Levar o carro na revisão')
+  check(
+    'e com a prioridade escolhida, já processada',
+    doModal?.priority === 2 && doModal?.status === 'todo',
+    `P${doModal?.priority}, ${doModal?.status}`,
+  )
 
   // 9. Remover.
   await page.getByRole('button', { name: /Remover tarefa: Trocar lâmpada/ }).click()

@@ -127,11 +127,18 @@ try {
     await route.continue()
   })
 
-  const inicioEdicao = Date.now()
+  // Renomear passa pelo modal: o título da linha abre a tarefa, e o campo mora lá.
   await page.getByRole('button', { name: 'Titulo antigo', exact: true }).click()
-  await page.keyboard.press('ControlOrMeta+a')
-  await page.keyboard.type('Titulo novo')
+  const detalhe = page.getByRole('dialog')
+  await detalhe.waitFor({ timeout: 10_000 })
+  await detalhe.getByLabel('Título').fill('Titulo novo')
+
+  // O relógio começa no Enter, que é o que dispara o PATCH — abrir o modal e digitar
+  // não estão sendo medidos, e não deveriam estar.
+  const inicioEdicao = Date.now()
   await page.keyboard.press('Enter')
+  await page.keyboard.press('Escape')
+  await detalhe.waitFor({ state: 'detached', timeout: 5_000 })
   await linha('Titulo novo').waitFor({ timeout: LIMITE_OTIMISTA_MS })
   const msEdicao = Date.now() - inicioEdicao
   check('editar aplica sem esperar o servidor', true, `${msEdicao}ms de ${LENTIDAO_MS}ms`)

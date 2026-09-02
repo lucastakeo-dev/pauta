@@ -43,6 +43,11 @@ que cabem num horário, e elas não se confundem: compromisso é hora marcada co
 conclui; tarefa é algo a fazer e continua na lista, com caixa de marcar. A tarefa criada assim
 nasce `todo`, e não `inbox` — quem escolheu o horário já decidiu o que ela é.
 
+**Abrir uma tarefa passou a valer mais que renomeá-la rápido.** O clique no título da linha abria uma
+caixa de renomear; agora abre a tarefa inteira. As duas coisas disputavam o mesmo alvo, e a segunda
+é a que se procura numa lista — renomear continua a um clique de distância, dentro do modal, onde
+também estão prazo, projeto, prioridade, etiquetas e subtarefas.
+
 **O inbox é a saída da captura, e processar é só trocar o status.** Tudo que entra pelo `⌘K`
 nasce com status `inbox`; a tela do inbox é onde isso vira decisão — projeto, prioridade, prazo,
 hora no planner — e "processar" muda o status para `todo` e mais nada. Não conclui nem arquiva: a
