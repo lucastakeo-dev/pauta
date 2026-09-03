@@ -51,6 +51,13 @@ Duas coisas fazem a troca funcionar sem remendo:
 - **`color-scheme` acompanha o tema.** É ele que pinta barra de rolagem, seletor de data e hora e
   o resto dos controles nativos, que não leem os nossos tokens.
 
+A vitrine fala **do produto**, não de como ele foi feito. A primeira versão mostrava
+arquitetura, o parser de datas e a stack — era honesta e o conteúdo era bom, mas
+respondia perguntas que só se faz depois de decidir usar. Quem chega quer saber o que
+resolve a terça-feira dele; o que sobrou de técnico é a única parte que também é promessa
+ao usuário — o código é aberto e os dados são de quem os coloca lá. O resto está no
+repositório, a um clique de qualquer tela dela.
+
 A vitrine tem paleta própria (`paper`, `graphite`) e não participa da troca: ela é lida uma vez,
 de passagem, e o app fica aberto o dia inteiro.
 

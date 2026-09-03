@@ -2,22 +2,28 @@ import { Link } from '@tanstack/react-router'
 import { REPO_URL } from './landing-nav.js'
 
 const COPY = {
-  eyebrow: 'Ferramenta pessoal, código aberto',
-  titulo1: 'Planejar o dia',
-  titulo2: 'num app só.',
+  eyebrow: 'Agenda, tarefas e notas — num app só',
+  titulo1: 'O seu dia inteiro',
+  titulo2: 'numa tela só.',
   descricao:
-    'Tarefas, agenda e notas no mesmo lugar, feitos para o teclado. ' +
-    'Construído do zero para uso próprio — e aberto para quem quiser ler o código.',
-  entrar: 'Entrar',
+    'Compromissos, tarefas e anotações no mesmo lugar. Capture em segundos, arraste para a ' +
+    'hora e veja o dia se montar — sem trocar de aba e sem tirar as mãos do teclado.',
+  entrar: 'Começar agora',
   codigo: 'Ver o código',
 }
 
-/** Números reais do projeto. Vitrine técnica não inventa métrica. */
-const NUMEROS = [
-  { valor: '293', rotulo: 'testes automatizados' },
-  { valor: '7', rotulo: 'suítes no navegador' },
-  { valor: '4', rotulo: 'módulos no v1' },
-  { valor: '0', rotulo: 'dependência de parser de data' },
+/**
+ * Os quatro pilares, logo abaixo da dobra.
+ *
+ * Antes havia números do projeto aqui — testes, suítes, módulos. Eram verdadeiros e não
+ * respondiam a pergunta de quem chega: *o que eu faço com isto?* Contagem de teste
+ * interessa a quem vai ler o código, e essa pessoa clica em "ver o código".
+ */
+const PILARES = [
+  { nome: 'Planner do dia', texto: 'Compromissos e tarefas na mesma linha do tempo' },
+  { nome: 'Tarefas', texto: 'Projetos, etiquetas, subtarefas e recorrência' },
+  { nome: 'Captura rápida', texto: '⌘K de qualquer tela, com data em português' },
+  { nome: 'Notas', texto: 'Nota do dia automática e links entre páginas' },
 ] as const
 
 export function Hero() {
@@ -55,13 +61,13 @@ export function Hero() {
           </div>
         </div>
 
-        <dl className="mt-24 grid grid-cols-2 gap-x-8 gap-y-10 border-rule border-t pt-10 lg:grid-cols-4">
-          {NUMEROS.map((numero) => (
-            <div key={numero.rotulo} className="flex flex-col gap-1">
-              <dt className="landing-display text-[clamp(2.25rem,5vw,3.5rem)]">{numero.valor}</dt>
-              <dd className="font-mono text-[11px] text-graphite-soft uppercase tracking-wide">
-                {numero.rotulo}
-              </dd>
+        <dl className="mt-24 grid grid-cols-1 gap-x-8 gap-y-8 border-rule border-t pt-10 sm:grid-cols-2 lg:grid-cols-4">
+          {PILARES.map((pilar) => (
+            <div key={pilar.nome} className="flex flex-col gap-2">
+              <dt className="landing-display text-[clamp(1.25rem,2.5vw,1.6rem)] tracking-tight">
+                {pilar.nome}
+              </dt>
+              <dd className="max-w-52 text-graphite-soft text-sm leading-relaxed">{pilar.texto}</dd>
             </div>
           ))}
         </dl>

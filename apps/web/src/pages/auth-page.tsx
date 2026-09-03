@@ -4,15 +4,24 @@ import { AuthForm, type AuthMode } from '../features/auth/auth-form.js'
 const COPY = {
   marca: 'Pauta',
   voltar: 'Voltar',
-  eyebrow: 'Ferramenta pessoal, código aberto',
-  frase: 'Tarefas, agenda e notas no mesmo lugar, feitos para o teclado.',
+  eyebrow: 'Agenda, tarefas e notas — num app só',
+  frase:
+    'Capture em segundos, arraste para a hora e veja o dia se montar — sem trocar de aba ' +
+    'e sem tirar as mãos do teclado.',
 }
 
-/** Os mesmos números da vitrine — amarram as duas telas sem repetir o discurso. */
-const NUMEROS = [
-  { valor: '293', rotulo: 'testes' },
-  { valor: '8', rotulo: 'suítes no navegador' },
-  { valor: '4', rotulo: 'módulos' },
+/**
+ * Os mesmos pilares da vitrine, em uma linha cada.
+ *
+ * Antes havia números do projeto aqui — testes, suítes, módulos. Numa tela de entrar,
+ * eles respondiam a pergunta errada: quem chegou até o formulário já decidiu entrar, e
+ * o que ajuda é lembrar o que vai encontrar do outro lado.
+ */
+const PILARES = [
+  'Planner do dia com compromissos e tarefas juntos',
+  'Tarefas com projetos, etiquetas e subtarefas',
+  'Captura rápida em português, com ⌘K',
+  'Notas do dia e páginas ligadas por [[link]]',
 ] as const
 
 /**
@@ -61,16 +70,17 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
           <p className="mt-6 max-w-sm text-graphite-soft text-lg leading-relaxed">{COPY.frase}</p>
 
-          <dl className="mt-12 flex gap-10 border-rule border-t pt-8">
-            {NUMEROS.map((numero) => (
-              <div key={numero.rotulo} className="flex flex-col gap-1">
-                <dt className="landing-display text-3xl">{numero.valor}</dt>
-                <dd className="font-mono text-[10px] text-graphite-soft uppercase tracking-wide">
-                  {numero.rotulo}
-                </dd>
-              </div>
+          <ul className="mt-12 flex flex-col gap-3 border-rule border-t pt-8">
+            {PILARES.map((pilar) => (
+              <li key={pilar} className="flex items-start gap-3 text-graphite-soft text-sm">
+                <span
+                  aria-hidden="true"
+                  className="mt-1.5 size-1 shrink-0 rounded-full bg-graphite-faint"
+                />
+                {pilar}
+              </li>
             ))}
-          </dl>
+          </ul>
         </aside>
       </main>
     </div>
