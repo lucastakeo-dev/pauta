@@ -204,42 +204,6 @@ Arquivos centrais:
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-## Roadmap
-
-- [x] Planner, tarefas, captura rapida e notas
-- [x] Inbox com fila e processamento
-- [x] Agent com ferramentas sobre os proprios dados
-- [x] Tema claro e cor principal escolhivel
-- [x] Tela estreita, com a barra virando gaveta
-- [ ] Comentarios na tarefa
-- [ ] Deploy (Supabase + Vercel)
-- [ ] Importar tarefas de Notion, ClickUp e afins
-- [ ] Sync com Google Calendar e Microsoft 365
-- [ ] Modulo de financas
-- [ ] App mobile
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-## Contributing
-
-Branches e commits seguem Conventional Commits em ingles. Tarefa grande vira **waves**: blocos
-sequenciais, uma branch por wave.
-
-1. Crie uma branch curta e especifica.
-2. Faca uma mudanca pequena e focada, alinhada ao padrao existente.
-3. Valide com teste ou comando — nunca com suposicao.
-4. Abra um pull request seguindo [o template](.github/pull_request_template.md).
-
-Exemplos:
-
-```txt
-docs/update-readme
-fix/login-token-expiry
-feat/add-task-comments
-```
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 ## Collaborators
 
 <a href="https://github.com/lucastakeo-dev" title="lucastakeo-dev">
