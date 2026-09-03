@@ -45,7 +45,7 @@ mkdirSync(outDir, { recursive: true })
 try {
   // 1. A raiz é pública: visitante anônimo vê a vitrine, não o login.
   await page.goto(WEB, { waitUntil: 'networkidle' })
-  await page.getByRole('heading', { name: /Planejar o dia/ }).waitFor({ timeout: 10_000 })
+  await page.getByRole('heading', { name: /O seu dia inteiro/ }).waitFor({ timeout: 10_000 })
   check('a raiz mostra a vitrine para quem não entrou', true)
 
   // 2. Área logada sem sessão manda para o login.

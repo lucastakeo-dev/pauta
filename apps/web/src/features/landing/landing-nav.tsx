@@ -2,15 +2,14 @@ import { Link } from '@tanstack/react-router'
 
 const COPY = {
   marca: 'Pauta',
-  entrar: 'Entrar',
+  entrar: 'Começar agora',
   codigo: 'Ver o código',
 }
 
 const SECOES = [
-  { href: '#modulos', label: 'Módulos' },
-  { href: '#arquitetura', label: 'Arquitetura' },
-  { href: '#parser', label: 'Parser' },
-  { href: '#stack', label: 'Stack' },
+  { href: '#recursos', label: 'Recursos' },
+  { href: '#rotina', label: 'Rotina' },
+  { href: '#teclado', label: 'Teclado' },
 ] as const
 
 export const REPO_URL = 'https://github.com/lucastakeo-dev/pauta'

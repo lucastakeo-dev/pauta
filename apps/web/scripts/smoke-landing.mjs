@@ -39,40 +39,49 @@ try {
 
   // 1. As cinco seções existem.
   for (const titulo of [
-    /Planejar o dia/,
-    /O que existe/,
-    /Fronteiras que/,
-    /A biblioteca errava/,
-    /Escolhas/,
+    /O seu dia inteiro/,
+    /Quatro coisas/,
+    /Anotar é fácil/,
+    /As mãos não saem/,
+    /Comece pelo dia de hoje/,
   ]) {
     await page.getByRole('heading', { name: titulo }).first().waitFor({ timeout: 10_000 })
   }
   check('as cinco seções renderizam', true)
 
-  // 2. Os números são os reais do projeto.
+  // 2. A página fala do que o app faz, e nomeia os quatro pilares.
   const corpo = await page.textContent('body')
-  check('mostra os números do projeto', corpo.includes('293') && corpo.includes('testes'))
-
-  // 3. A seção da arquitetura traz a saída real do lint.
   check(
-    'a arquitetura mostra a mensagem real do lint',
-    corpo.includes('só models/ acessa o Prisma'),
+    'os quatro pilares aparecem',
+    ['Planner do dia', 'Tarefas', 'Captura rápida', 'Notas'].every((pilar) =>
+      corpo.includes(pilar),
+    ),
   )
 
-  // 4. A comparação do parser mostra o erro do chrono.
-  check('o parser mostra o caso do chrono', corpo.includes('almoço amanhã 13h'))
+  // 3. A rotina mostra a frase virando compromisso — é a promessa mais difícil de
+  //    explicar sem ver.
+  check(
+    'a rotina mostra a captura sendo interpretada',
+    corpo.includes('almoço com a Ana amanhã 13h') && corpo.includes('amanhã às 13:00'),
+  )
+
+  // 4. Nenhum discurso de stack sobrou: a vitrine é de produto.
+  check(
+    'a vitrine não fala de stack nem de arquitetura interna',
+    !/Prisma|Fastify|TanStack|chrono-node|MVC/.test(corpo),
+  )
 
   await page.screenshot({ path: `${outDir}/01-topo.png` })
 
   // 5. Navegação por âncora rola a página.
   const antes = await page.evaluate(() => window.scrollY)
-  await page.getByRole('link', { name: 'Arquitetura' }).click()
+  await page.getByRole('link', { name: 'Rotina' }).click()
   await page.waitForTimeout(900)
   const depois = await page.evaluate(() => window.scrollY)
   check('a navegação por âncora rola', depois > antes, `${antes} → ${Math.round(depois)}`)
 
   // 6. O CTA leva ao login.
-  await page.getByRole('link', { name: 'Entrar', exact: true }).first().click()
+  await page.getByRole('link', { name: 'Começar agora', exact: true }).first().click()
   await page.waitForURL((url) => url.pathname === '/signin', { timeout: 10_000 })
   check('o CTA leva ao login', true)
 
