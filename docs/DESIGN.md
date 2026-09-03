@@ -433,6 +433,54 @@ linguagem natural ("reunião amanhã 14h") e a lista tem "Agendar" para quem nav
 teclado. O bloco de evento é um botão de verdade, então renomear e excluir também estão
 no Tab.
 
+## A tarefa inteira num modal
+
+Uma tarefa era uma linha, e o que não coubesse nela não existia — só o inbox mostrava
+tudo, e só lá. O modal é essa mesma tela sem trocar de tela: abre de qualquer lista,
+sobre o que já estava aberto.
+
+**É literalmente o mesmo componente de campos** (`TaskFields`) que o detalhe do inbox
+usa. Uma segunda cópia começaria idêntica e divergiria no primeiro campo novo — e aí
+seriam duas verdades sobre o que uma tarefa tem.
+
+O que muda entre os dois hospedeiros é só para onde a mudança vai: no detalhe e no
+modal, direto para o servidor a cada campo; na criação, para um rascunho que existe
+enquanto o modal está aberto. Por isso o texto avisa a cada tecla no rascunho e só ao
+sair do campo no que já existe — uma requisição por letra digitada encheria a fila de
+escritas.
+
+**O título da linha abre a tarefa; não renomeia mais no lugar.** Renomear virou um dos
+campos que o modal já tem. Clicar num item de lista esperando abri-lo e receber um
+cursor no meio da linha era a surpresa que sobrava — e o Enter dentro do campo continua
+sendo o que salva, como em qualquer lista.
+
+**O modal abre sem foco em campo nenhum.** Abrir é para ler; editar é o passo seguinte.
+Com o foco automático do Radix, ele abria com o título selecionado, como se estivesse
+esperando ser reescrito.
+
+A trilha do cabeçalho — projeto · prioridade · prazo · hora — repõe o contexto que a
+linha da lista dava e que some no instante em que ela é aberta.
+
+### Criar com todos os campos
+
+O campo de uma linha continua sendo o caminho mais curto entre pensar e registrar. O
+modal existe para o outro caso: quando o projeto, o prazo e a prioridade já se sabem na
+hora de criar, e abrir a tarefa depois só para preencher é trabalho repetido.
+
+O gatilho fica **dentro do campo**, na ponta direita, e leva junto o que já foi digitado:
+as duas formas são o mesmo gesto começando, não caminhos concorrentes.
+
+### Subtarefas, e a barra
+
+O banco sabia dividir uma tarefa desde o começo — `parent_id`, e a contagem de
+concluídas viaja em toda tarefa. Faltava a tela: dava para ver `2/5` na linha da lista e
+não havia onde criar a terceira.
+
+O progresso aparece duas vezes de propósito: **"3 de 7" e a barra**. O número é o que o
+leitor de tela lê; a barra responde antes de ser lida, e é ela que mostra que a tarefa
+andou desde ontem. A barra é `aria-hidden` justamente porque diria a mesma coisa uma
+segunda vez.
+
 ## O inbox: fila e detalhe
 
 A tela existe para dar saída ao que o `⌘K` captura. Antes dela, capturar era fácil e

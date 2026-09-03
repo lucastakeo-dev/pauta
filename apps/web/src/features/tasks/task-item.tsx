@@ -1,7 +1,7 @@
 import { useDraggable } from '@dnd-kit/core'
 import type { LabelView, TaskView } from '@pauta/contracts'
 import { CalendarClock, GripVertical, Repeat2, Trash2 } from 'lucide-react'
-import { type KeyboardEvent, useState } from 'react'
+import { useState } from 'react'
 import { DEFAULT_BLOCK_MINUTES, type DragPayload } from '../../entities/planner/index.js'
 import {
   dueLabel,
@@ -14,7 +14,8 @@ import {
 import { cn } from '../../shared/lib/cn.js'
 import { Checkbox } from '../../shared/ui/checkbox.js'
 import { NamedIcon } from '../../shared/ui/icon-catalog.js'
-import { useDeleteTask, useToggleTask, useUpdateTask } from './queries.js'
+import { useDeleteTask, useToggleTask } from './queries.js'
+import { TaskDialog } from './task-dialog.js'
 import { TaskSchedule } from './task-schedule.js'
 
 const COPY = {
@@ -52,12 +53,10 @@ type TaskItemProps = {
  */
 export function TaskItem({ task, showProject = true }: TaskItemProps) {
   const toggle = useToggleTask()
-  const update = useUpdateTask()
   const remove = useDeleteTask()
 
-  const [editing, setEditing] = useState(false)
+  const [aberta, setAberta] = useState(false)
   const [scheduling, setScheduling] = useState(false)
-  const [draft, setDraft] = useState(task.title)
 
   // O payload é o contrato com a grade — definido em `entities`, para as duas features
   // concordarem sem uma importar a outra.
@@ -77,27 +76,6 @@ export function TaskItem({ task, showProject = true }: TaskItemProps) {
   const timeRange = timeRangeLabel(task)
   const etiquetas = task.labels.slice(0, ETIQUETAS_VISIVEIS)
   const escondidas = task.labels.length - etiquetas.length
-
-  function commit() {
-    const title = draft.trim()
-    setEditing(false)
-
-    // Título vazio significa desistir da edição, não apagar a tarefa.
-    if (!title || title === task.title) {
-      setDraft(task.title)
-      return
-    }
-
-    update.mutate({ id: task.id, input: { title } })
-  }
-
-  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === 'Enter') commit()
-    if (event.key === 'Escape') {
-      setDraft(task.title)
-      setEditing(false)
-    }
-  }
 
   return (
     <li
@@ -137,29 +115,26 @@ export function TaskItem({ task, showProject = true }: TaskItemProps) {
           className="shrink-0"
         />
 
-        {editing ? (
-          <input
-            // biome-ignore lint/a11y/noAutofocus: o campo só existe após o clique de editar, então o foco é a intenção
-            autoFocus
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            onBlur={commit}
-            onKeyDown={handleKeyDown}
-            className="h-6 min-w-0 flex-1 rounded-[4px] bg-surface-raised px-1.5 text-ink text-sm outline-none"
-          />
-        ) : (
-          <button
-            type="button"
-            onClick={() => setEditing(true)}
-            title={task.title}
-            className={cn(
-              'min-w-0 flex-1 truncate text-left text-sm transition-colors',
-              done ? 'text-ink-subtle line-through' : 'text-ink',
-            )}
-          >
-            {task.title}
-          </button>
-        )}
+        {/*
+          O título abre a tarefa inteira, e não uma caixa de renomear.
+          
+          Antes ele editava o nome ali mesmo. Com o modal, renomear é um dos campos que
+          ele já tem — e clicar num item de lista esperando abri-lo, para receber um
+          cursor no meio da linha, era a surpresa que sobrava.
+        */}
+        <button
+          type="button"
+          onClick={() => setAberta(true)}
+          title={task.title}
+          // Sem `aria-label`: o nome do botão é o título da tarefa, que é o que se
+          // procura numa lista. "Abrir" seria prefixo repetido em toda linha.
+          className={cn(
+            'min-w-0 flex-1 truncate text-left text-sm transition-colors',
+            done ? 'text-ink-subtle line-through' : 'text-ink',
+          )}
+        >
+          {task.title}
+        </button>
 
         {/* Tudo que descreve a tarefa mora encostado à direita, na mesma ordem em toda
             linha: o olho desce a coluna procurando prazo ou etiqueta sem reler o meio. */}
@@ -233,6 +208,8 @@ export function TaskItem({ task, showProject = true }: TaskItemProps) {
           <TaskSchedule task={task} onClose={() => setScheduling(false)} />
         </div>
       ) : null}
+
+      {aberta ? <TaskDialog task={task} open onOpenChange={setAberta} /> : null}
 
       {/*
         As ações cobrem a ponta direita em vez de empurrá-la. O fundo é o mesmo da linha
