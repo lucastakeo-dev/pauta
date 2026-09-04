@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { cn } from '../../shared/lib/cn.js'
 import { useUpdateTask } from './queries.js'
 import { TaskActions } from './task-actions.js'
+import { TaskComments } from './task-comments.js'
 import { Campo, TaskFields, type TaskValues, valuesOf } from './task-fields.js'
 import { TaskSchedule } from './task-schedule.js'
 import { TaskSubtasks } from './task-subtasks.js'
@@ -109,6 +110,7 @@ export function TaskCampos({ task }: { task: TaskView }) {
       onText={aplicar}
       concluida={task.status === 'done'}
       progresso={<TaskSubtasks task={task} />}
+      conversa={<TaskComments task={task} />}
       planner={
         <Campo rotulo={COPY.planner}>
           {agendando ? (

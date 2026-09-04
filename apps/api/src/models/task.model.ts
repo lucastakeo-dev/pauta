@@ -374,17 +374,63 @@ async function createRecurrence(
   return created.id
 }
 
+/**
+ * Id da linha que uma escrita deve tocar, conferindo que ela é sua.
+ *
+ * Um id virtual (`uuid@AAAA-MM-DD`) não tem linha ainda: escrever nele materializa a
+ * ocorrência primeiro. É o que faz "concluir a repetição de terça" gravar em terça, e
+ * não no molde. Toda escrita que aceita id de tarefa passa por aqui — inclusive as de
+ * fora deste model, como o comentário.
+ */
+export async function resolveWritableId(userId: string, id: string): Promise<string> {
+  const virtual = parseVirtualTaskId(id)
+
+  if (virtual) return materializeOccurrence(userId, virtual)
+
+  await requireRow(userId, id)
+  return id
+}
+
+/**
+ * O mesmo, mas sem criar nada: `null` quando a ocorrência ainda é só cálculo.
+ *
+ * É a versão para leitura. `resolveWritableId` num GET faria a consulta materializar a
+ * ocorrência — abrir uma repetição para olhar já gravaria linha no banco, e a lista de
+ * repetições da semana mudaria só porque alguém passou o olho nela.
+ */
+export async function resolveExistingId(userId: string, id: string): Promise<string | null> {
+  const virtual = parseVirtualTaskId(id)
+
+  if (!virtual) {
+    await requireRow(userId, id)
+    return id
+  }
+
+  const template = await requireRow(userId, virtual.templateId)
+
+  if (!template.recurrence) {
+    throw new NotFoundError('Tarefa')
+  }
+
+  assertValidOccurrence(template.recurrence, virtual.occurrenceOn)
+
+  const row = await prisma.task.findFirst({
+    where: {
+      recurrenceId: template.recurrence.id,
+      occurrenceOn: new Date(`${virtual.occurrenceOn}T00:00:00.000Z`),
+    },
+    select: { id: true },
+  })
+
+  return row?.id ?? null
+}
+
 export async function update(
   userId: string,
   id: string,
   input: UpdateTaskInput,
 ): Promise<TaskRecord> {
-  const virtual = parseVirtualTaskId(id)
-  const targetId = virtual ? await materializeOccurrence(userId, virtual) : id
-
-  if (!virtual) {
-    await requireRow(userId, targetId)
-  }
+  const targetId = await resolveWritableId(userId, id)
 
   await assertLinksOwned(userId, input.projectId, input.labelIds, input.parentId, targetId)
 
@@ -429,12 +475,7 @@ export async function update(
 
 /** Concluir e reabrir: a ação mais frequente do app, por isso tem caminho próprio. */
 export async function toggle(userId: string, id: string, done: boolean): Promise<TaskRecord> {
-  const virtual = parseVirtualTaskId(id)
-  const targetId = virtual ? await materializeOccurrence(userId, virtual) : id
-
-  if (!virtual) {
-    await requireRow(userId, targetId)
-  }
+  const targetId = await resolveWritableId(userId, id)
 
   const row = await prisma.task.update({
     where: { id: targetId },

@@ -83,6 +83,24 @@ ausência de exclusão é a decisão de segurança do recurso: criar demais cust
 projeto errado custa o histórico. O erro de uma ferramenta volta como resultado para o modelo, não
 como exceção, para ele corrigir o próprio pedido em vez de derrubar o turno.
 
+**Comentário é tabela, e não mais um campo de texto na tarefa.** A anotação já existia e resolvia
+"o que é esta tarefa"; ela é reescrita à vontade e vive no presente. O que faltava era "o que
+aconteceu com ela" — cliente adiou, faltou o acesso, voltou para revisão —, e isso é datado e se
+acumula. No mesmo campo, cada atualização apagaria a anterior, e é justamente a sequência que se
+relê depois. Os dois convivem na mesma tela porque respondem a perguntas diferentes.
+
+**`edited_at` em vez de comparar `created_at` com `updated_at`.** A alternativa parecia mais barata
+— nenhuma coluna nova — mas exigia uma tolerância chutada: os dois carimbos nascem com alguns
+milissegundos de diferença na mesma inserção, então "iguais" nunca é exatamente igual. Uma coluna
+nulável responde a pergunta certa sem arbitrar folga, e ainda diz *quando* foi editado. É a única
+tabela do projeto sem `updated_at`, e de propósito: a única escrita que um comentário aceita é a
+edição do corpo.
+
+**Publicar comentário é a única escrita do app sem toast.** Todas as outras avisam no canto porque
+o efeito acontece longe de onde se clicou — uma tarefa vai para uma lista que pode estar filtrada.
+O comentário aparece na linha logo abaixo de onde foi digitado; um aviso no canto diria, em outro
+lugar da tela, o que já está visível no lugar certo.
+
 **API própria em vez de falar direto com o Supabase.** Custa um app a mais para manter, mas mantém
 regra de negócio num lugar só quando o mobile chegar, e deixa o PostgREST trancado.
 
@@ -128,6 +146,19 @@ mesma verificação. Investigar em vez de repetir revelou uma corrida na API: co
 links eram gravados em duas operações separadas, e dois autosaves cruzados deixavam a
 nota com o texto certo e sem backlink. Agora é uma transação — e há teste de regressão
 disparando dois PATCH concorrentes.
+
+## Aprendizados dos comentários
+
+**Leitura que materializa não é leitura.** A primeira versão resolvia o id da tarefa com a mesma
+função das escritas, e ela materializa a ocorrência de recorrência quando o id é virtual. O efeito
+seria um `GET` gravando linha: abrir uma repetição só para olhar a conversa a transformaria em
+tarefa de verdade, e a semana no planner mudaria porque alguém passou o olho. A separação em
+`resolveWritableId` / `resolveExistingId` deixa isso explícito no nome de quem chama.
+
+**`<section>` sem nome não é região.** O smoke não achava a seção por `getByRole('region')`, e a
+causa não era o seletor: uma `section` só vira marco de navegação quando tem nome acessível. O
+título estava lá, visível, mas como texto solto. Nomear a seção arrumou o teste e, junto, deu a
+quem usa leitor de tela o salto direto para a conversa numa tarefa comprida.
 
 ## Riscos conhecidos
 

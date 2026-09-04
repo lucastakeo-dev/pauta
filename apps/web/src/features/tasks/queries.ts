@@ -1,5 +1,12 @@
 import type { CreateTaskInput, ListTasksQuery, TaskView, UpdateTaskInput } from '@pauta/contracts'
 import { useMutation, useMutationState, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  commentKeys,
+  createComment,
+  deleteComment,
+  listComments,
+  updateComment,
+} from '../../entities/comment/index.js'
 import { useLabels } from '../../entities/label/index.js'
 import { projectKeys, useProjects } from '../../entities/project/index.js'
 import {
@@ -23,6 +30,9 @@ const AVISOS = {
   excluir: { ok: 'Tarefa excluída.', erro: 'Não consegui excluir a tarefa.' },
   concluir: { ok: 'Tarefa concluída.', erro: 'Não consegui atualizar a tarefa.' },
   reabrir: { ok: 'Tarefa reaberta.', erro: 'Não consegui atualizar a tarefa.' },
+  comentarErro: 'Não consegui publicar o comentário.',
+  editarComentario: { ok: 'Comentário editado.', erro: 'Não consegui editar o comentário.' },
+  excluirComentario: { ok: 'Comentário excluído.', erro: 'Não consegui excluir o comentário.' },
 }
 
 /** Chave da criação, para a lista saber quais tarefas ainda estão a caminho. */
@@ -231,5 +241,82 @@ export function useToggleTask() {
     },
 
     onSettled: invalidate,
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Comentários
+// ---------------------------------------------------------------------------
+
+export function useComments(taskId: string) {
+  return useQuery({
+    queryKey: commentKeys.list(taskId),
+    queryFn: () => listComments(taskId),
+  })
+}
+
+/**
+ * Depois de escrever um comentário, a conversa mudou — e a tarefa também pode ter.
+ *
+ * Comentar numa ocorrência de recorrência materializa ela no servidor: o id virtual
+ * vira linha de verdade, e a lista que mostrava a repetição precisa reler. Invalidar só
+ * a conversa deixaria a tarefa exibindo um id que já não é o dela.
+ */
+function useInvalidateConversa(taskId: string) {
+  const queryClient = useQueryClient()
+
+  return () => {
+    void queryClient.invalidateQueries({ queryKey: commentKeys.list(taskId) })
+    void queryClient.invalidateQueries({ queryKey: taskKeys.all })
+  }
+}
+
+/**
+ * Publicar não avisa em toast, e é a única escrita do app que não avisa: o comentário
+ * aparece na lista logo abaixo de onde foi digitado. Um aviso no canto diria, em outro
+ * lugar da tela, o que já está visível no lugar certo.
+ */
+export function useCreateComment(taskId: string) {
+  const invalidate = useInvalidateConversa(taskId)
+  const toast = useToast()
+
+  return useMutation({
+    mutationFn: (body: string) => createComment(taskId, { body }),
+    onSuccess: invalidate,
+    onError: (cause) => toast.error(AVISOS.comentarErro, { description: apiErrorDetail(cause) }),
+  })
+}
+
+export function useUpdateComment(taskId: string) {
+  const invalidate = useInvalidateConversa(taskId)
+  const toast = useToast()
+
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: string }) => updateComment(taskId, id, { body }),
+
+    onSuccess: () => {
+      invalidate()
+      toast.success(AVISOS.editarComentario.ok)
+    },
+
+    onError: (cause) =>
+      toast.error(AVISOS.editarComentario.erro, { description: apiErrorDetail(cause) }),
+  })
+}
+
+export function useDeleteComment(taskId: string) {
+  const invalidate = useInvalidateConversa(taskId)
+  const toast = useToast()
+
+  return useMutation({
+    mutationFn: (id: string) => deleteComment(taskId, id),
+
+    onSuccess: () => {
+      invalidate()
+      toast.success(AVISOS.excluirComentario.ok)
+    },
+
+    onError: (cause) =>
+      toast.error(AVISOS.excluirComentario.erro, { description: apiErrorDetail(cause) }),
   })
 }

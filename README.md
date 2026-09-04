@@ -125,7 +125,7 @@ Fluxo principal:
 - capture com `⌘K` de qualquer tela — a previa mostra o que foi entendido antes de salvar;
 - processe a fila em `/inbox`: projeto, prioridade, prazo, e o item sai da fila;
 - planeje em `/today`, arrastando a tarefa da lista para a grade de horas;
-- clique no titulo de qualquer tarefa para abrir o modal com subtarefas e propriedades;
+- clique no titulo de qualquer tarefa para abrir o modal com subtarefas, comentarios e propriedades;
 - organize em `/projects`, arrastando na arvore para reordenar ou aninhar;
 - escreva em `/notes`, com nota diaria automatica e `[[link]]` entre paginas;
 - peca ao Agent com `⌘J`: ele cria, agenda e organiza usando as mesmas regras da interface.
