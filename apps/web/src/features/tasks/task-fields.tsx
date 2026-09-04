@@ -64,6 +64,8 @@ type TaskFieldsProps = {
   planner?: ReactNode
   /** As subtarefas, embaixo da anotação. Também só para tarefa que já existe. */
   progresso?: ReactNode
+  /** Os comentários, no fim da coluna. Idem: comentário precisa de tarefa gravada. */
+  conversa?: ReactNode
   /** Rasura o título quando a tarefa está concluída. */
   concluida?: boolean
 }
@@ -83,6 +85,7 @@ export function TaskFields({
   textoAoVivo = false,
   planner,
   progresso,
+  conversa,
   concluida = false,
 }: TaskFieldsProps) {
   const campoId = useId()
@@ -126,6 +129,7 @@ export function TaskFields({
         />
 
         {progresso}
+        {conversa}
       </div>
 
       <aside

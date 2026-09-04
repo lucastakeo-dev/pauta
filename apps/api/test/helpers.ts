@@ -13,6 +13,7 @@ import { prisma } from '../src/config/prisma.js'
 const TABLES = [
   'note_links',
   'notes',
+  'task_comments',
   'task_labels',
   'tasks',
   'recurrences',

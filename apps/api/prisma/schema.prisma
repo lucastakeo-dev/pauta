@@ -45,6 +45,7 @@ model User {
   events      Event[]
   notes       Note[]
   recurrences Recurrence[]
+  comments    TaskComment[]
 
   @@map("users")
 }
@@ -141,8 +142,9 @@ model Task {
   project    Project?    @relation(fields: [projectId], references: [id], onDelete: SetNull)
   parent     Task?       @relation("TaskSubtasks", fields: [parentId], references: [id], onDelete: Cascade)
   subtasks   Task[]      @relation("TaskSubtasks")
-  recurrence Recurrence? @relation(fields: [recurrenceId], references: [id], onDelete: SetNull)
+  recurrence Recurrence?   @relation(fields: [recurrenceId], references: [id], onDelete: SetNull)
   labels     TaskLabel[]
+  comments   TaskComment[]
 
   @@unique([recurrenceId, occurrenceOn])
   @@index([userId, scheduledStart])
@@ -162,6 +164,40 @@ model TaskLabel {
   @@id([taskId, labelId])
   @@index([labelId])
   @@map("task_labels")
+}
+
+/// Comentário datado numa tarefa — o que aconteceu em volta dela.
+///
+/// Separado de `tasks.notes` de propósito: a anotação é o enunciado da tarefa e é
+/// reescrita à vontade, enquanto o comentário se acumula em ordem. No mesmo campo,
+/// toda atualização apagaria a anterior — e é justamente o histórico que se quer ler.
+///
+/// `user_id` é o autor. Hoje só existe um, mas a coluna é a mesma de todas as outras
+/// tabelas: é por ela que o model escopa a consulta, sem depender da tarefa.
+model TaskComment {
+  id     String @id @default(uuid(7)) @db.Uuid
+  taskId String @map("task_id") @db.Uuid
+  userId String @map("user_id") @db.Uuid
+
+  body String @db.VarChar(5000)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  /// Quando o texto foi reescrito; `null` enquanto ninguém mexeu.
+  ///
+  /// No lugar do `updated_at` das outras tabelas de propósito: a única escrita que um
+  /// comentário aceita é a edição do corpo, então "atualizado" e "editado" seriam a
+  /// mesma coluna com nomes diferentes. E `updated_at = created_at` nunca diz "nunca
+  /// editado" com precisão — os dois carimbos nascem com alguns milissegundos de
+  /// diferença, e comparar os dois exigiria uma tolerância chutada.
+  editedAt DateTime? @map("edited_at") @db.Timestamptz(3)
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId, createdAt])
+  @@index([userId])
+  @@map("task_comments")
 }
 
 /// Compromisso com hora marcada. Nasce com `source`/`externalId` mesmo sem Google no v1:

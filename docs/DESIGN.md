@@ -488,6 +488,29 @@ leitor de tela lê; a barra responde antes de ser lida, e é ela que mostra que 
 andou desde ontem. A barra é `aria-hidden` justamente porque diria a mesma coisa uma
 segunda vez.
 
+### Comentários, e por que não são a anotação
+
+Os dois campos ficam na mesma coluna e respondem a perguntas diferentes: a anotação diz
+**o que é** a tarefa, o comentário diz **o que aconteceu com ela**. A anotação se
+reescreve; a conversa se acumula. É por isso que a seção fica embaixo, depois das
+subtarefas — quem abre a tarefa lê o enunciado primeiro, e o histórico é para quando a
+pergunta é "em que pé isso está".
+
+**A hora é relativa, e a exata mora no `title`.** "há 5 min" situa a leitura sem obrigar
+a fazer conta; "04/09/2026 10:32" responde quando alguém precisa da hora mesmo. Passada
+uma semana os papéis se invertem — "há 9 dias" não situa ninguém —, e o texto vira data.
+
+**A caixa de escrever é uma linha até ter texto.** Vazia, é o fim discreto da conversa;
+com texto, cresce e mostra o botão. Um formulário sempre aberto com botão apagado pede
+para ser preenchido, e a maioria das visitas a uma tarefa é para ler.
+
+**`⌘↵` publica; `↵` sozinho quebra linha.** Ao contrário do título e da subtarefa, um
+comentário costuma ter mais de uma linha — e o atalho fica escrito ao lado do botão,
+porque atalho que ninguém vê não existe.
+
+**Iniciais, não foto.** Não há upload de avatar, e um boneco genérico repetido em toda
+linha ocuparia o mesmo espaço sem dizer quem escreveu.
+
 ## O inbox: fila e detalhe
 
 A tela existe para dar saída ao que o `⌘K` captura. Antes dela, capturar era fácil e

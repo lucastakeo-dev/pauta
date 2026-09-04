@@ -22,7 +22,8 @@
     "smoke:landing": "node scripts/smoke-landing.mjs",
     "smoke:mobile": "node scripts/smoke-mobile.mjs",
     "smoke:write": "node scripts/smoke-write.mjs",
-    "smoke:projects": "node scripts/smoke-projects.mjs"
+    "smoke:projects": "node scripts/smoke-projects.mjs",
+    "smoke:comments": "node scripts/smoke-comments.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

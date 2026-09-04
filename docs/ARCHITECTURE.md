@@ -126,6 +126,7 @@ pnpm smoke:calendar <dir>  # faixa do dia todo, criar clicando na grade, editar 
 pnpm smoke:polish <dir>    # foco, teclado e estados vazios
 pnpm smoke:console <dir>   # captura rápida (Ctrl+K)
 pnpm smoke:notes <dir>     # editor, nota diária e backlinks
+pnpm smoke:comments <dir>  # conversa da tarefa: publicar, editar, excluir e não vazar entre tarefas
 pnpm smoke:landing <dir>   # vitrine
 pnpm smoke:mobile <dir>    # tela estreita (390px): gaveta, e nada vazando pela direita
 ```
@@ -174,7 +175,8 @@ convivem porque nenhum lado usa os do outro.
 ## Endpoints
 
 Públicos: `GET /health`, `POST /auth/register`, `POST /auth/login`.
-Com token: `GET /auth/me`, e os CRUDs de `/tasks`, `/projects`, `/labels`, `/events` e `/notes`.
+Com token: `GET /auth/me`, e os CRUDs de `/tasks`, `/projects`, `/labels`, `/events`, `/notes` e
+`/tasks/:taskId/comments`.
 
 **`POST /agent/ask` responde em SSE**, e é a única rota que não devolve JSON: o turno do Agent pode
 levar dezenas de segundos, então o texto sai em pedaços e cada ferramenta executada vira um evento
@@ -192,6 +194,15 @@ recorrências são expandidas**; sem ela, aparece só o molde da recorrência.
 
 Uma ocorrência ainda não materializada é endereçada por `uuid@AAAA-MM-DD`. Concluir ou
 editar uma delas cria a linha de verdade (`POST /tasks/:id/toggle`, `PATCH /tasks/:id`).
+Quem decide isso é `resolveWritableId` no `task.model` — e o par dele, `resolveExistingId`,
+existe para a leitura: um `GET` que materializasse a ocorrência gravaria linha só porque
+alguém passou o olho na repetição.
+
+**Comentários são de uma tarefa**, e por isso vivem sob ela: `GET|POST /tasks/:taskId/comments`
+e `PATCH|DELETE /tasks/:taskId/comments/:id`. A URL carregar as duas partes não é enfeite — é
+o que impede editar, pela rota de uma tarefa, um comentário que é de outra. Comentar numa
+ocorrência virtual materializa ela; listar não. O corpo vem aparado e o `editedAt` é `null`
+até alguém reescrever.
 
 **Projetos são uma árvore.** `POST /projects` aceita `parentId`, e `GET /projects`
 devolve `parentId` e `childCount` ordenados por pai — o cliente monta a árvore numa
@@ -214,6 +225,10 @@ O que o Prisma não expressa está em
 - evento termina depois de começar;
 - **uma nota diária por dia** (UNIQUE parcial — páginas livres ficam de fora);
 - índice trigram no título da nota, para o autocomplete do `[[link]]`.
+
+E na migration dos comentários, `comentarios_na_tarefa`: **comentário vazio não é comentário**
+(`CHECK (btrim(body) <> '')`). O Zod já barra na entrada; o `CHECK` vale para qualquer caminho
+até a tabela.
 
 ## Deploy no Supabase
 
@@ -263,6 +278,11 @@ model já filtra.
 A migration é guardada por `IF EXISTS (SELECT 1 FROM pg_roles ...)`: os papéis do
 PostgREST só existem no Supabase, e sem a guarda a mesma migration quebraria no Postgres
 local e no banco de teste.
+
+**Tabela nova nasce trancada na própria migration.** O `ALTER DEFAULT PRIVILEGES` cuida do
+grant, mas o RLS não é herdado: quem cria a tabela liga o `ROW LEVEL SECURITY` ali mesmo —
+foi o que `comentarios_na_tarefa` fez com `task_comments`. Esquecer essa linha deixa a
+tabela visível ao PostgREST, e o passo 3 da subida é o que pega isso.
 
 ### Ordem de subida
 
