@@ -1,15 +1,15 @@
-import { SlidersHorizontal } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { type FormEvent, useRef, useState } from 'react'
 import { parsePriority } from '../../entities/task/index.js'
 import { cn } from '../../shared/lib/cn.js'
-import { IconButton } from '../../shared/ui/icon-button.js'
+import { Button } from '../../shared/ui/button.js'
 import { useCreateTask } from './queries.js'
 import { NewTaskDialog } from './task-dialog.js'
 
 const COPY = {
   placeholder: 'Nova tarefa… (P1 a P4 para prioridade)',
-  maisOpcoes: 'Mais opções',
-  maisOpcoesAjuda: 'Abrir com prazo, projeto, prioridade e etiquetas',
+  novaTarefa: 'Nova tarefa',
+  novaTarefaAjuda: 'Criar com prazo, projeto, prioridade e etiquetas',
 }
 
 type TaskComposerProps = {
@@ -18,7 +18,12 @@ type TaskComposerProps = {
 
 /**
  * Entrada rápida. É o caminho mais curto entre pensar e registrar, então some do
- * caminho: sem botão, sem modal — digitar e apertar Enter.
+ * caminho: digitar e apertar Enter, sem modal.
+ *
+ * Ao lado dela, um botão com nome abre a criação completa. Ele já existiu como um ícone
+ * escondido dentro do campo, e ninguém o achava — a tela parecia só aceitar tarefas de
+ * uma linha. O botão não concorre com o campo: o que já estava digitado vai junto como
+ * título, então as duas coisas são o mesmo gesto começando.
  *
  * É também o embrião do Console da Fase 3, que fará isso com data em linguagem natural.
  */
@@ -63,8 +68,8 @@ export function TaskComposer({ projectId }: TaskComposerProps) {
       o submit do modal subia até aqui e a entrada rápida criava uma segunda tarefa —
       com o mesmo título, sem projeto e sem prioridade. Dois registros por um clique.
     */
-    <div className="relative">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-1.5">
+    <div className="flex items-center gap-2">
+      <form onSubmit={handleSubmit} className="min-w-0 flex-1">
         <input
           ref={inputRef}
           value={value}
@@ -72,30 +77,26 @@ export function TaskComposer({ projectId }: TaskComposerProps) {
           placeholder={COPY.placeholder}
           aria-label="Nova tarefa"
           className={cn(
-            'h-9 w-full rounded-control border border-line bg-surface pr-10 pl-3 text-ink text-sm',
+            'h-9 w-full rounded-control border border-line bg-surface px-3 text-ink text-sm',
             'placeholder:text-ink-subtle',
             'transition-colors focus:border-iris',
           )}
         />
       </form>
 
-      {/*
-        A porta para o modal fica dentro do campo, e não ao lado dele: o que se digitou
-        vai junto como título, então as duas coisas são o mesmo gesto começando — não
-        duas formas concorrentes de criar.
-      */}
-      <span className="-translate-y-1/2 absolute top-1/2 right-2">
-        <NewTaskDialog
-          projectId={projectId}
-          tituloInicial={value}
-          onCriada={() => setValue('')}
-          trigger={
-            <IconButton aria-label={COPY.maisOpcoes} title={COPY.maisOpcoesAjuda}>
-              <SlidersHorizontal aria-hidden="true" className="size-3.5" />
-            </IconButton>
-          }
-        />
-      </span>
+      <NewTaskDialog
+        projectId={projectId}
+        tituloInicial={value}
+        onCriada={() => setValue('')}
+        trigger={
+          // Mesma altura do campo: os dois formam uma linha só, não um campo com um
+          // botão de outro lugar encostado nele.
+          <Button className="h-9 shrink-0 px-3" title={COPY.novaTarefaAjuda}>
+            <Plus aria-hidden="true" className="size-4" />
+            {COPY.novaTarefa}
+          </Button>
+        }
+      />
     </div>
   )
 }
