@@ -230,7 +230,7 @@ try {
 
   // 8b. A criação com todos os campos, pelo modal do campo de entrada.
   await composer.fill('Levar o carro na revisão')
-  await page.getByRole('button', { name: 'Mais opções' }).click()
+  await page.getByRole('button', { name: 'Nova tarefa', exact: true }).click()
 
   const criacao = page.getByRole('dialog', { name: 'Nova tarefa' })
   await criacao.waitFor({ timeout: 10_000 })
