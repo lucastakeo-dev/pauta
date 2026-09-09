@@ -1,8 +1,9 @@
 import type { NoteView } from '@pauta/contracts'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import type { KeyboardEvent } from 'react'
+import { type KeyboardEvent, useState } from 'react'
 import { cn } from '../../shared/lib/cn.js'
+import { EditorShortcutsButton, EditorShortcutsDialog } from './editor-shortcuts.js'
 import { type SaveState, useAutosave } from './use-autosave.js'
 import { useWikiLinkSuggest } from './use-wiki-link-suggest.js'
 import { WikiLinkHighlight } from './wiki-link-highlight.js'
@@ -55,14 +56,22 @@ export function NoteEditor({ note }: NoteEditorProps) {
   })
 
   const suggest = useWikiLinkSuggest(editor)
+  const [legendaAberta, setLegendaAberta] = useState(false)
 
   /**
-   * Teclas do menu de sugestão.
+   * Teclas que não são do texto.
    *
-   * Interceptadas na fase de captura do contêiner, antes de o ProseMirror vê-las:
-   * com o menu aberto, seta e Enter pertencem a ele, não ao texto.
+   * Interceptadas na fase de captura do contêiner, antes de o ProseMirror vê-las.
+   * `⌘/` abre a legenda de atalhos — só com o foco no editor, que é onde ela serve.
+   * Com o menu de sugestão aberto, seta e Enter pertencem a ele, não ao texto.
    */
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if ((event.metaKey || event.ctrlKey) && event.key === '/') {
+      event.preventDefault()
+      setLegendaAberta(true)
+      return
+    }
+
     if (!suggest.state.open) return
 
     if (event.key === 'ArrowDown') {
@@ -82,7 +91,9 @@ export function NoteEditor({ note }: NoteEditorProps) {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex h-4 items-center justify-end">
+      <div className="flex h-4 items-center justify-end gap-3">
+        <EditorShortcutsButton onClick={() => setLegendaAberta(true)} />
+
         <span
           aria-live="polite"
           className={cn(
@@ -104,6 +115,12 @@ export function NoteEditor({ note }: NoteEditorProps) {
       )}
 
       <WikiLinkMenu state={suggest.state} onPick={suggest.accept} />
+
+      <EditorShortcutsDialog
+        open={legendaAberta}
+        onOpenChange={setLegendaAberta}
+        onFechar={() => editor?.commands.focus()}
+      />
     </div>
   )
 }

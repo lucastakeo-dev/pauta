@@ -165,7 +165,39 @@ try {
   const comLink = await aguardarNoServidor('[[Casa]]')
   check('o link completado chega ao servidor', comLink !== null)
 
-  await page.screenshot({ path: `${outDir}/05-final.png` })
+  // 13. A legenda de atalhos: pelo botão e por ⌘/, e o foco volta ao texto ao fechar.
+  await page.getByRole('button', { name: 'Atalhos' }).click()
+  const legenda = page.getByRole('dialog', { name: 'Atalhos do editor' })
+  await legenda.waitFor({ timeout: 10_000 })
+  check('o botão abre a legenda de atalhos', true)
+
+  const grupos = await legenda.getByRole('region').count()
+  check('a legenda tem os dois grupos', grupos === 2, `${grupos} grupo(s)`)
+  await page.screenshot({ path: `${outDir}/05-atalhos.png` })
+
+  await page.keyboard.press('Escape')
+  await legenda.waitFor({ state: 'detached', timeout: 10_000 })
+  // O Radix devolve o foco num `setTimeout(0)` depois de desmontar o diálogo, então
+  // ler `activeElement` logo após o `detached` corre na frente dele. Espera-se.
+  const focoVoltou = await page
+    .waitForFunction(
+      () => document.activeElement?.getAttribute('aria-label') === 'Conteúdo da nota',
+      null,
+      {
+        timeout: 2_000,
+      },
+    )
+    .then(() => true)
+    .catch(() => false)
+  check('fechar a legenda devolve o foco ao texto', focoVoltou)
+
+  await page.keyboard.press('Control+/')
+  await legenda.waitFor({ timeout: 10_000 })
+  check('⌘/ abre a legenda de dentro do editor', true)
+  await page.keyboard.press('Escape')
+  await legenda.waitFor({ state: 'detached', timeout: 10_000 })
+
+  await page.screenshot({ path: `${outDir}/06-final.png` })
 
   check('sem erros no console', consoleErrors.length === 0, consoleErrors.slice(0, 2).join(' | '))
 } finally {
